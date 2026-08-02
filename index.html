@@ -1,480 +1,239 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Official SBA federal grant and disbursement portal. Apply for business support, disaster relief, and innovation funding.">
-  <title>SBA | U.S. Small Business Administration — Grant Portal</title>
-  <link rel="stylesheet" href="global.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    /* ── Landing-specific styles ── */
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SBA Grant Portal | U.S. Small Business Administration</title>
+    <link rel="stylesheet" href="global.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* Landing Page Specific Styles */
+        .hero { padding: 80px 10% 60px; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: center; background: var(--white); }
+        .hero__eyebrow { color: var(--red); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem; margin-bottom: 12px; display: block; }
+        .hero__title { font-size: 3.5rem; line-height: 1.1; color: var(--navy); margin-bottom: 24px; font-weight: 800; }
+        .hero__text { font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 32px; max-width: 600px; }
+        .hero__image-card { background: var(--navy); border-radius: 20px; padding: 40px; color: white; box-shadow: var(--shadow-lg); position: relative; overflow: hidden; }
+        .hero__image-card::after { content: ''; position: absolute; top: -50%; right: -50%; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; }
 
-    /* Section typography */
-    .section-eyebrow {
-      font-size: var(--text-xs); font-weight: var(--fw-semi);
-      letter-spacing: 0.1em; text-transform: uppercase; color: var(--navy);
-      margin-bottom: var(--sp-3); display: flex; align-items: center; gap: var(--sp-2);
-    }
-    .section-eyebrow::before { content:''; width:20px; height:2px; background:var(--red); border-radius:2px; flex-shrink:0; }
-    .section-title { font-size: clamp(1.5rem, 5vw, var(--text-3xl)); font-weight: var(--fw-bold); color: var(--text-primary); letter-spacing: -0.02em; line-height: 1.2; }
-    .section-sub   { font-size: var(--text-md); color: var(--text-secondary); line-height: 1.7; margin-top: var(--sp-4); max-width: 520px; }
+        .stats-strip { background: var(--navy); color: white; padding: 40px 10%; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center; }
+        .stat-item__val { font-size: 2.5rem; font-weight: 800; display: block; }
+        .stat-item__label { font-size: 0.9rem; opacity: 0.8; }
 
-    /* ── Program cards ── */
-    .program-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--sp-5); }
-    .program-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r-xl); padding: var(--sp-6);
-      transition: box-shadow var(--t-base), border-color var(--t-base), transform var(--t-base);
-    }
-    .program-card:hover { box-shadow: var(--shadow-md); border-color: #b8c8e0; transform: translateY(-2px); }
-    .program-card__icon  { width: 44px; height: 44px; border-radius: var(--r-lg); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; margin-bottom: var(--sp-4); flex-shrink:0; }
-    .program-card__label { font-size: var(--text-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: var(--fw-medium); margin-bottom: 4px; }
-    .program-card__amount { font-size: var(--text-xl); font-weight: var(--fw-bold); color: var(--navy); }
-    .program-card__name  { font-size: var(--text-base); font-weight: var(--fw-semi); color: var(--text-primary); margin: var(--sp-2) 0; }
-    .program-card__desc  { font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.6; }
+        .programs { padding: 80px 10%; background: var(--bg); }
+        .section-header { text-align: center; margin-bottom: 50px; }
+        .program-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+        .program-card { background: var(--surface); padding: 32px; border-radius: var(--r-md); border: 1px solid var(--border); transition: transform 0.3s ease; }
+        .program-card:hover { transform: translateY(-5px); border-color: var(--navy); }
+        .program-card__amount { color: var(--success); font-weight: 800; font-size: 1.25rem; margin-bottom: 12px; display: block; }
 
-    /* ── Services ── */
-    .services-grid  { display: grid; grid-template-columns: repeat(3,1fr); gap: var(--sp-6); }
-    .service-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: var(--r-xl); padding: var(--sp-6);
-      transition: box-shadow var(--t-base), border-color var(--t-base);
-    }
-    .service-card:hover { box-shadow: var(--shadow-md); border-color: #b8c8e0; }
-    .service-card__icon  { width: 40px; height: 40px; background: var(--info-bg); color: var(--info); border-radius: var(--r-md); display: flex; align-items: center; justify-content: center; font-size: 1rem; margin-bottom: var(--sp-4); flex-shrink:0; }
-    .service-card__title { font-size: var(--text-base); font-weight: var(--fw-semi); color: var(--text-primary); margin-bottom: var(--sp-2); }
-    .service-card__desc  { font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.6; }
+        .faq { padding: 80px 20%; background: var(--surface); }
+        .faq-item { border-bottom: 1px solid var(--border); }
+        .faq-question { width: 100%; padding: 20px 0; display: flex; justify-content: space-between; align-items: center; background: none; border: none; font-weight: 600; text-align: left; cursor: pointer; color: var(--navy); }
+        .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out; color: var(--text-secondary); padding-bottom: 0; }
+        .faq-item.active .faq-answer { max-height: 200px; padding-bottom: 20px; }
 
-    /* ── Stat strip ── */
-    .stat-strip { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--sp-6); }
-    .stat-strip__num   { font-size: clamp(1.5rem, 4vw, var(--text-3xl)); font-weight: var(--fw-bold); color: #93C5FD; letter-spacing: -0.02em; }
-    .stat-strip__label { font-size: var(--text-xs); color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 0.06em; font-weight: var(--fw-medium); margin-top: var(--sp-1); }
-
-    /* ── Eligibility section ── */
-    .eligibility-wrap {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: var(--sp-16);
-      align-items: center;
-    }
-    .eligibility-list { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4); }
-    .eligibility-item {
-      display: flex; align-items: flex-start; gap: var(--sp-3);
-      padding: var(--sp-4); background: var(--surface);
-      border: 1px solid var(--border-light); border-radius: var(--r-lg);
-    }
-    .eligibility-item i { color: var(--success); font-size: 0.85rem; margin-top: 2px; flex-shrink: 0; }
-    .eligibility-item span { font-size: var(--text-sm); color: var(--text-secondary); line-height: 1.5; }
-
-    /* ── CTA bottom section ── */
-    .cta-section { background: var(--navy-dark); padding: var(--sp-20) var(--sp-6); }
-    .cta-section__actions { display:flex; gap:var(--sp-4); justify-content:center; flex-wrap:wrap; }
-
-    /* ── Mobile nav drawer (uses global .nav__mobile-menu but override toggle logic) ── */
-    .nav__links.active {
-      display: flex;
-      position: fixed;
-      top: var(--nav-h);
-      left: 0; right: 0;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      flex-direction: column;
-      padding: var(--sp-4);
-      gap: var(--sp-1);
-      z-index: 199;
-      box-shadow: var(--shadow-md);
-    }
-    .nav__links.active .nav__link {
-      padding: var(--sp-3) var(--sp-4);
-      border-radius: var(--r-md);
-      font-size: var(--text-base);
-    }
-    .nav__links.active .nav__cta { width:100%; justify-content:center; margin-left:0; margin-top: var(--sp-2); }
-
-    /* ═══════════════════════════════
-       RESPONSIVE — Tablet (≤900px)
-    ═══════════════════════════════ */
-    @media (max-width: 900px) {
-      .program-grid  { grid-template-columns: 1fr 1fr; }
-      .services-grid { grid-template-columns: 1fr 1fr; }
-      .stat-strip    { grid-template-columns: 1fr 1fr; gap: var(--sp-8); }
-      .eligibility-wrap { grid-template-columns: 1fr; gap: var(--sp-8); }
-      .eligibility-list { grid-template-columns: 1fr 1fr; }
-    }
-
-    /* ═══════════════════════════════
-       RESPONSIVE — Large phone (≤640px)
-    ═══════════════════════════════ */
-    @media (max-width: 640px) {
-      /* Programs — single column */
-      .program-grid  { grid-template-columns: 1fr; gap: var(--sp-4); }
-      .program-card  { padding: var(--sp-4); }
-
-      /* Services — single column */
-      .services-grid { grid-template-columns: 1fr; gap: var(--sp-4); }
-
-      /* Stats — 2x2 grid */
-      .stat-strip { grid-template-columns: 1fr 1fr; gap: var(--sp-6); }
-
-      /* Eligibility — single column */
-      .eligibility-wrap { gap: var(--sp-6); }
-      .eligibility-list { grid-template-columns: 1fr; gap: var(--sp-3); }
-
-      /* Section text */
-      .section-sub { font-size: var(--text-base); }
-
-      /* CTA bottom */
-      .cta-section { padding: var(--sp-12) var(--sp-4); }
-      .cta-section h2 { font-size: var(--text-2xl) !important; }
-      .cta-section__actions { flex-direction: column; align-items: stretch; }
-      .cta-section__actions .btn { width: 100%; justify-content: center; }
-
-      /* Eligibility CTA button */
-      .eligibility-cta { width: 100%; justify-content: center; }
-
-      /* Section spacing */
-      .section { padding: var(--sp-10) 0; }
-    }
-
-    /* ═══════════════════════════════
-       RESPONSIVE — Phone (≤480px)
-    ═══════════════════════════════ */
-    @media (max-width: 480px) {
-      .program-card__amount { font-size: var(--text-lg); }
-      .stat-strip__num { font-size: 1.5rem; }
-      .eligibility-item { padding: var(--sp-3); }
-    }
-  </style>
+        @media (max-width: 1024px) {
+            .hero { grid-template-columns: 1fr; text-align: center; padding: 60px 5%; }
+            .hero__text { margin-inline: auto; }
+            .stats-strip { grid-template-columns: 1fr 1fr; gap: 40px; }
+            .faq { padding: 60px 5%; }
+        }
+        @media (max-width: 480px) {
+            .hero__title { font-size: 2.5rem; }
+            .stats-strip { grid-template-columns: 1fr; }
+        }
+    </style>
 </head>
 <body>
 
-  <div class="gov-banner">
-    <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="U.S. Flag">
-    An official website of the United States Government
-  </div>
+    <div id="pageLoader" class="page-loader"><div class="spinner"></div></div>
 
-  <div class="ticker" aria-hidden="true">
-    <div class="ticker__track">
-      <span>2026 Grant Cycle Now Open — Applications Being Processed</span>
-      <span>SBA Business Support Fund: Up to $1,000,000</span>
-      <span>Disaster Relief Capital available for eligible businesses</span>
-      <span>Veteran-Owned Business Fund — Apply Today</span>
-      <span>Innovation Grants for technology-based small businesses</span>
-      <span>2026 Grant Cycle Now Open — Applications Being Processed</span>
-      <span>SBA Business Support Fund: Up to $1,000,000</span>
-      <span>Disaster Relief Capital available for eligible businesses</span>
+    <div class="gov-banner">
+        <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="U.S. Flag" style="height:12px;">
+        <span>An official website of the United States government</span>
     </div>
-  </div>
 
-  <nav class="nav" role="navigation">
-    <div class="nav__inner">
-      <a href="index.html" class="nav__logo">
-        <span class="nav__logo-mark">SBA</span>
-        <span class="nav__logo-text">U.S. Small Business<br>Administration</span>
-      </a>
-      <div class="nav__links" id="navLinks">
-        <a href="#programs" class="nav__link">Programs</a>
-        <a href="#services" class="nav__link">Services</a>
-        <a href="#eligibility" class="nav__link">Eligibility</a>
-        <a href="#faq" class="nav__link">FAQ</a>
-        <a href="login.html" class="nav__link">Sign In</a>
-        <a href="register1.html" class="btn btn--primary btn--sm nav__cta">Apply Now</a>
-      </div>
-      <button class="nav__mobile-toggle" id="menuToggle" aria-label="Toggle menu" aria-expanded="false">
-        <i class="fa-solid fa-bars"></i>
-      </button>
-    </div>
-  </nav>
+    <header style="background: white; border-bottom: 1px solid var(--border); sticky; top: 0; z-index: 100;">
+        <nav style="display: flex; justify-content: space-between; align-items: center; padding: 15px 10%;">
+            <div class="sba-logo">
+                <svg class="sba-logo__mark" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M8 8 H24 V14 H14 V24 H8 Z" fill="#003087"/>
+                    <path d="M36 46 H46 V36 H52 V52 H36 Z" fill="#c8102e"/>
+                    <text x="10" y="42" font-family="Arial Black" font-size="22" font-weight="900" fill="#003087">S</text>
+                    <text x="24" y="42" font-family="Arial Black" font-size="22" font-weight="900" fill="#003087">B</text>
+                    <text x="38" y="42" font-family="Arial Black" font-size="22" font-weight="900" fill="#003087">A</text>
+                </svg>
+                <div class="sba-logo__text">
+                    <span class="sba-logo__name">U.S. Small Business</span>
+                    <span class="sba-logo__sub">Administration</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 20px; align-items: center;">
+                <a href="login.html" class="btn btn--ghost">Sign In</a>
+                <a href="register.html" class="btn btn--primary">Apply Now</a>
+            </div>
+        </nav>
+    </header>
 
-  <!-- ── HERO ── -->
-  <section class="hero" aria-labelledby="hero-heading">
-    <div class="hero__inner">
-      <div class="hero__content">
-        <div class="hero__eyebrow">
-          <span class="hero__eyebrow-dot"></span>
-          2026 Federal Disbursement Program — Open
-        </div>
-        <h1 class="hero__title" id="hero-heading">
-          Access Federal<br>Grant <em>Capital</em> for<br>Your Business
-        </h1>
-        <p class="hero__subtitle">
-          The U.S. Small Business Administration provides direct access to federal grant programs, disaster relief capital, and business development funding for eligible American businesses.
-        </p>
-        <div class="hero__actions">
-          <a href="terms.html" class="btn btn--white btn--lg">
-            <i class="fa-solid fa-file-signature"></i> Begin Application
-          </a>
-          <a href="login.html" class="btn btn--outline-white btn--lg">Existing Applicant Login</a>
-        </div>
-        <div class="hero__trust">
-          <div class="hero__trust-item"><i class="fa-solid fa-circle-check"></i> 256-bit Encryption</div>
-          <div class="hero__trust-item"><i class="fa-solid fa-circle-check"></i> FedRAMP Authorized</div>
-          <div class="hero__trust-item"><i class="fa-solid fa-circle-check"></i> No Application Fee</div>
-        </div>
-      </div>
-      <div class="hero__panel" aria-hidden="true">
-        <div class="hero__panel-header" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--sp-5);">
-          <span style="font-size:var(--text-xs);font-weight:var(--fw-semi);color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.06em;">2026 Program Status</span>
-          <span style="display:flex;align-items:center;gap:6px;font-size:var(--text-xs);color:#22c55e;font-weight:var(--fw-semi);"><i class="fa-solid fa-circle" style="font-size:6px;"></i> Active</span>
-        </div>
-        <div style="margin-bottom:var(--sp-5);">
-          <div style="font-size:var(--text-xs);color:rgba(255,255,255,0.4);margin-bottom:4px;">Total Disbursed — Current Cycle</div>
-          <div style="font-size:2rem;font-weight:var(--fw-bold);color:white;">$4.2B</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-4);">
-          <div><div style="font-size:var(--text-xs);color:rgba(255,255,255,0.4);margin-bottom:2px;">Applications Approved</div><div style="font-size:var(--text-lg);font-weight:var(--fw-bold);color:white;">28,419</div></div>
-          <div><div style="font-size:var(--text-xs);color:rgba(255,255,255,0.4);margin-bottom:2px;">Processing Time</div><div style="font-size:var(--text-lg);font-weight:var(--fw-bold);color:white;">18–72 hrs</div></div>
-          <div><div style="font-size:var(--text-xs);color:rgba(255,255,255,0.4);margin-bottom:2px;">Funding Range</div><div style="font-size:var(--text-lg);font-weight:var(--fw-bold);color:white;">$50K–$1M</div></div>
-          <div><div style="font-size:var(--text-xs);color:rgba(255,255,255,0.4);margin-bottom:2px;">Cycle Closes</div><div style="font-size:var(--text-lg);font-weight:var(--fw-bold);color:white;">Dec 2026</div></div>
-        </div>
-      </div>
-    </div>
-  </section>
+    <main>
+        <section class="hero">
+            <div>
+                <span class="hero__eyebrow">🇺🇸 Federal Grant Program · FY 2024–2025</span>
+                <h1 class="hero__title">Empowering the American Dream</h1>
+                <p class="hero__text">Access federal funding programs designed to help small businesses start, grow, and recover. Apply for non-repayable grants ranging from $50,000 to $500,000.</p>
+                <div style="display: flex; gap: 15px;">
+                    <a href="register.html" class="btn btn--primary btn--lg">Start Application</a>
+                    <button class="btn btn--outline" onclick="document.getElementById('programs').scrollIntoView()">View Programs</button>
+                </div>
+            </div>
+            <div class="hero__image-card">
+                <h3 style="margin-bottom: 20px;">Platform Live Activity</h3>
+                <div style="margin-bottom: 15px;">
+                    <small style="opacity: 0.7;">Total Disbursed</small>
+                    <div id="hero-disbursed" style="font-size: 2.2rem; font-weight: 800;">$48,729,150,000</div>
+                </div>
+                <div>
+                    <small style="opacity: 0.7;">Active Applications</small>
+                    <div id="hero-apps" style="font-size: 1.5rem; font-weight: 700;">2,841,092</div>
+                </div>
+                <div style="margin-top: 30px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; font-size: 0.85rem;">
+                    ✓ 256-bit SSL Secured Connection
+                </div>
+            </div>
+        </section>
 
-  <!-- ── TRUST BAR ── -->
-  <div class="trust-bar">
-    <div class="trust-bar__inner">
-      <div class="trust-bar__item"><i class="fa-solid fa-shield-halved"></i> FDIC Insured Disbursements</div>
-      <div class="trust-bar__item"><i class="fa-solid fa-lock"></i> End-to-End Encrypted</div>
-      <div class="trust-bar__item"><i class="fa-solid fa-landmark"></i> Authorized under the Small Business Act</div>
-      <div class="trust-bar__item"><i class="fa-solid fa-check-double"></i> Zero Application Fees</div>
-    </div>
-  </div>
+        <section class="stats-strip">
+            <div class="stat-item">
+                <span class="stat-item__val" data-target="48.7">0</span>
+                <span class="stat-item__label">Billion Disbursed</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-item__val" data-target="2.8">0</span>
+                <span class="stat-item__label">Million Members</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-item__val" data-target="50">0</span>
+                <span class="stat-item__label">States Covered</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-item__val" data-target="99.9">0</span>
+                <span class="stat-item__label">Uptime %</span>
+            </div>
+        </section>
 
-  <!-- ── PROGRAMS ── -->
-  <section class="section" id="programs" style="background:var(--bg);">
-    <div class="container">
-      <div style="margin-bottom:var(--sp-10);">
-        <div class="section-eyebrow">Grant Programs</div>
-        <h2 class="section-title">Available Funding Programs</h2>
-        <p class="section-sub">Select the program that best fits your business needs. All programs are federally funded and require no repayment.</p>
-      </div>
-      <div class="program-grid">
-        <div class="program-card">
-          <div class="program-card__icon" style="background:#eff6ff;color:#1d4ed8;"><i class="fa-solid fa-briefcase"></i></div>
-          <div class="program-card__label">Relief Fund</div>
-          <div class="program-card__amount">$50,000</div>
-          <div class="program-card__name">Business Support Fund</div>
-          <p class="program-card__desc">Immediate operational relief for small businesses affected by economic disruptions.</p>
-        </div>
-        <div class="program-card">
-          <div class="program-card__icon" style="background:#f0fdf4;color:#15803d;"><i class="fa-solid fa-chart-line"></i></div>
-          <div class="program-card__label">Standard Grant</div>
-          <div class="program-card__amount">$150,000</div>
-          <div class="program-card__name">Business Standard Grant</div>
-          <p class="program-card__desc">Comprehensive support for growth-stage businesses with demonstrated revenue history.</p>
-        </div>
-        <div class="program-card">
-          <div class="program-card__icon" style="background:#fff7ed;color:#c2410c;"><i class="fa-solid fa-award"></i></div>
-          <div class="program-card__label">Silver Tier</div>
-          <div class="program-card__amount">$500,000</div>
-          <div class="program-card__name">Silver Award Grant</div>
-          <p class="program-card__desc">Designed for established businesses with substantial community and economic impact.</p>
-        </div>
-        <div class="program-card">
-          <div class="program-card__icon" style="background:#fdf4ff;color:#9333ea;"><i class="fa-solid fa-trophy"></i></div>
-          <div class="program-card__label">Platinum Tier</div>
-          <div class="program-card__amount">$1,000,000</div>
-          <div class="program-card__name">Platinum Excellence Fund</div>
-          <p class="program-card__desc">Maximum-tier grant for high-impact enterprises contributing to national economic growth.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+        <section id="programs" class="programs">
+            <div class="section-header">
+                <h2>Available Grant Programs</h2>
+                <p>Select the program that best fits your business needs</p>
+            </div>
+            <div class="program-grid">
+                <div class="program-card">
+                    <span class="program-card__amount">Up to $250,000</span>
+                    <h3>Startup Innovation</h3>
+                    <p>For tech and innovation-focused startups under 3 years old.</p>
+                    <a href="register.html" style="margin-top: 20px; display: inline-block; color: var(--navy); font-weight: 700;">Learn More →</a>
+                </div>
+                <div class="program-card">
+                    <span class="program-card__amount">Up to $500,000</span>
+                    <h3>Disaster Recovery</h3>
+                    <p>Support for businesses affected by natural disasters or economic disruption.</p>
+                    <a href="register.html" style="margin-top: 20px; display: inline-block; color: var(--navy); font-weight: 700;">Learn More →</a>
+                </div>
+                <div class="program-card">
+                    <span class="program-card__amount">Up to $150,000</span>
+                    <h3>Minority Business Grant</h3>
+                    <p>Empowering underrepresented entrepreneurs across America.</p>
+                    <a href="register.html" style="margin-top: 20px; display: inline-block; color: var(--navy); font-weight: 700;">Learn More →</a>
+                </div>
+                <div class="program-card">
+                    <span class="program-card__amount">Up to $100,000</span>
+                    <h3>Export Assistance</h3>
+                    <p>Support for businesses expanding into international markets.</p>
+                    <a href="register.html" style="margin-top: 20px; display: inline-block; color: var(--navy); font-weight: 700;">Learn More →</a>
+                </div>
+            </div>
+        </section>
 
-  <!-- ── STAT STRIP ── -->
-  <section style="background:var(--navy);padding:var(--sp-16) 0;">
-    <div class="container">
-      <div class="stat-strip">
-        <div style="text-align:center;"><div class="stat-strip__num">$4.2B+</div><div class="stat-strip__label">Disbursed in 2026</div></div>
-        <div style="text-align:center;"><div class="stat-strip__num">28,000+</div><div class="stat-strip__label">Businesses Funded</div></div>
-        <div style="text-align:center;"><div class="stat-strip__num">72 hrs</div><div class="stat-strip__label">Max Review Time</div></div>
-        <div style="text-align:center;"><div class="stat-strip__num">50+</div><div class="stat-strip__label">States Covered</div></div>
-      </div>
-    </div>
-  </section>
+        <section class="faq">
+            <div class="section-header">
+                <h2>Frequently Asked Questions</h2>
+            </div>
+            <div class="faq-list">
+                <div class="faq-item">
+                    <button class="faq-question">How long does the application take? <span>+</span></button>
+                    <div class="faq-answer">Initial application takes 10-15 minutes. Review takes 3-5 business days.</div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">Is this grant repayable? <span>+</span></button>
+                    <div class="faq-answer">No, SBA grants are non-repayable funds provided you meet the program's reporting requirements.</div>
+                </div>
+                <div class="faq-item">
+                    <button class="faq-question">What is the tax clearance fee? <span>+</span></button>
+                    <div class="faq-answer">It is a standard federal procedure to verify your business's tax standing before fund release.</div>
+                </div>
+            </div>
+        </section>
+    </main>
 
-  <!-- ── ELIGIBILITY ── -->
-  <section class="section" id="eligibility">
-    <div class="container">
-      <div class="eligibility-wrap">
-        <div>
-          <div class="section-eyebrow">Who Qualifies</div>
-          <h2 class="section-title">Eligibility Requirements</h2>
-          <p class="section-sub">These programs are open to U.S. citizens and legal residents operating qualifying small businesses.</p>
-          <a href="terms.html" class="btn btn--primary btn--lg eligibility-cta" style="margin-top:var(--sp-8);">
-            Check My Eligibility <i class="fa-solid fa-arrow-right"></i>
-          </a>
+    <footer style="background: var(--navy); color: white; padding: 60px 10% 20px; text-align: center;">
+        <div class="sba-logo" style="justify-content: center; margin-bottom: 30px;">
+            <svg width="40" height="40" viewBox="0 0 60 60"><path d="M8 8 H24 V14 H14 V24 H8 Z" fill="white"/></svg>
+            <span style="color: white; font-weight: 800;">Official SBA Portal</span>
         </div>
-        <div class="eligibility-list">
-          <div class="eligibility-item"><i class="fa-solid fa-check"></i><span>U.S. citizen or permanent resident</span></div>
-          <div class="eligibility-item"><i class="fa-solid fa-check"></i><span>Small business with fewer than 500 employees</span></div>
-          <div class="eligibility-item"><i class="fa-solid fa-check"></i><span>Verifiable government-issued photo ID</span></div>
-          <div class="eligibility-item"><i class="fa-solid fa-check"></i><span>Active SSN or EIN on file</span></div>
-          <div class="eligibility-item"><i class="fa-solid fa-check"></i><span>Valid bank account for ACH disbursement</span></div>
-          <div class="eligibility-item"><i class="fa-solid fa-check"></i><span>No outstanding federal tax liens</span></div>
-        </div>
-      </div>
-    </div>
-  </section>
+        <p style="opacity: 0.6; font-size: 0.8rem; margin-bottom: 20px;">© 2025 U.S. Small Business Administration. This is a simulated portal for demonstration purposes.</p>
+    </footer>
 
-  <!-- ── SERVICES ── -->
-  <section class="section section--sm" id="services" style="background:var(--bg);">
-    <div class="container">
-      <div style="text-align:center;margin-bottom:var(--sp-10);">
-        <div class="section-eyebrow" style="justify-content:center;">Platform Services</div>
-        <h2 class="section-title">What the Portal Provides</h2>
-      </div>
-      <div class="services-grid">
-        <div class="service-card">
-          <div class="service-card__icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
-          <div class="service-card__title">Grant Application</div>
-          <p class="service-card__desc">Submit your federal grant application securely through our encrypted portal. Track review status in real time.</p>
-        </div>
-        <div class="service-card">
-          <div class="service-card__icon"><i class="fa-solid fa-fingerprint"></i></div>
-          <div class="service-card__title">Identity Verification</div>
-          <p class="service-card__desc">Secure KYC processing against federal databases. Document verification completed within hours.</p>
-        </div>
-        <div class="service-card">
-          <div class="service-card__icon"><i class="fa-solid fa-building-columns"></i></div>
-          <div class="service-card__title">Direct Disbursement</div>
-          <p class="service-card__desc">Approved funds transferred directly to your verified bank account via ACH or wire transfer.</p>
-        </div>
-      </div>
-    </div>
-  </section>
+    <script type="module">
+        import { initTheme, redirectIfLoggedIn } from './app.js';
+        import { db } from './firebase-config.js';
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  <!-- ── FAQ ── -->
-  <section class="section" id="faq">
-    <div class="container container--md">
-      <div style="text-align:center;margin-bottom:var(--sp-10);">
-        <div class="section-eyebrow" style="justify-content:center;">Questions & Answers</div>
-        <h2 class="section-title">Frequently Asked Questions</h2>
-      </div>
-      <div class="card card--padded card--shadow">
-        <div class="faq-item">
-          <button class="faq-question" aria-expanded="false"><span>Who is eligible for SBA grant programs?</span><i class="fa-solid fa-chevron-down"></i></button>
-          <div class="faq-answer"><p>U.S. citizens and permanent residents operating small businesses with fewer than 500 employees are generally eligible. Specific programs may have additional requirements based on business type, revenue, or geographic location.</p></div>
-        </div>
-        <div class="faq-item">
-          <button class="faq-question" aria-expanded="false"><span>Is there any cost to apply?</span><i class="fa-solid fa-chevron-down"></i></button>
-          <div class="faq-answer"><p>No. All SBA grant applications through this portal are completely free. You will never be asked to pay any fee to submit or process your application.</p></div>
-        </div>
-        <div class="faq-item">
-          <button class="faq-question" aria-expanded="false"><span>How long does the review process take?</span><i class="fa-solid fa-chevron-down"></i></button>
-          <div class="faq-answer"><p>Most applications are reviewed within 18 to 72 hours of submission. You will be notified of status changes via email and your dashboard.</p></div>
-        </div>
-        <div class="faq-item">
-          <button class="faq-question" aria-expanded="false"><span>What documents do I need?</span><i class="fa-solid fa-chevron-down"></i></button>
-          <div class="faq-answer"><p>Required documents include a government-issued photo ID, Social Security Number or EIN, and bank account details for disbursement.</p></div>
-        </div>
-        <div class="faq-item">
-          <button class="faq-question" aria-expanded="false"><span>How will I receive approved funds?</span><i class="fa-solid fa-chevron-down"></i></button>
-          <div class="faq-answer"><p>Approved funds are disbursed directly to your verified bank account via ACH transfer or wire. Disbursement is typically completed within 1–3 business days following approval.</p></div>
-        </div>
-      </div>
-    </div>
-  </section>
+        initTheme();
+        redirectIfLoggedIn();
 
-  <!-- ── CTA ── -->
-  <section class="cta-section">
-    <div class="container" style="text-align:center;">
-      <p style="font-size:var(--text-xs);font-weight:var(--fw-semi);letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:var(--sp-4);">2026 Program Window</p>
-      <h2 style="font-size:clamp(1.5rem,5vw,var(--text-4xl));font-weight:var(--fw-bold);color:white;letter-spacing:-0.02em;margin-bottom:var(--sp-4);line-height:1.15;">Ready to Submit Your Application?</h2>
-      <p style="font-size:var(--text-md);color:rgba(255,255,255,0.5);margin-bottom:var(--sp-8);max-width:460px;margin-left:auto;margin-right:auto;line-height:1.7;">Applications are processed in the order received. Begin your registration to secure your position in the current funding cycle.</p>
-      <div class="cta-section__actions">
-        <a href="terms.html" class="btn btn--white btn--xl"><i class="fa-solid fa-file-signature"></i> Begin Application</a>
-        <a href="login.html" class="btn btn--outline-white btn--xl">Existing Applicant Login</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ── FOOTER ── -->
-  <footer class="footer" role="contentinfo">
-    <div class="footer__inner">
-      <div class="footer__top">
-        <div>
-          <div class="footer__brand-name">SBA Portal</div>
-          <p class="footer__brand-desc">The official U.S. Small Business Administration federal grant and disbursement portal. Authorized under the Small Business Act.</p>
-        </div>
-        <div>
-          <p class="footer__col-title">Programs</p>
-          <div class="footer__links">
-            <a href="register1.html" class="footer__link">Business Support Fund</a>
-            <a href="register1.html" class="footer__link">Disaster Relief Capital</a>
-            <a href="register1.html" class="footer__link">Innovation Grants</a>
-            <a href="register1.html" class="footer__link">Veteran Business Fund</a>
-          </div>
-        </div>
-        <div>
-          <p class="footer__col-title">Account</p>
-          <div class="footer__links">
-            <a href="register1.html" class="footer__link">Register</a>
-            <a href="login.html" class="footer__link">Sign In</a>
-            <a href="forget-password.html" class="footer__link">Forgot Password</a>
-            <a href="support.html" class="footer__link">Contact Support</a>
-          </div>
-        </div>
-        <div>
-          <p class="footer__col-title">Legal</p>
-          <div class="footer__links">
-            <a href="#" class="footer__link">Privacy Policy</a>
-            <a href="terms.html" class="footer__link">Terms of Service</a>
-            <a href="#" class="footer__link">Accessibility</a>
-            <a href="#" class="footer__link">FOIA Requests</a>
-          </div>
-        </div>
-      </div>
-      <div class="footer__legal">
-        <strong>Federal Monitoring Notice:</strong> This system is for authorized use only. Unauthorized access or misuse is prohibited under 18 U.S.C. § 1030. All activity is monitored and recorded.
-      </div>
-    </div>
-  </footer>
-
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      // Mobile nav toggle
-      const menuToggle = document.getElementById("menuToggle");
-      const navLinks   = document.getElementById("navLinks");
-      if (menuToggle && navLinks) {
-        menuToggle.addEventListener("click", () => {
-          const isExpanded = menuToggle.getAttribute("aria-expanded") === "true";
-          menuToggle.setAttribute("aria-expanded", String(!isExpanded));
-          navLinks.classList.toggle("active");
-          // Swap icon
-          const icon = menuToggle.querySelector("i");
-          if (icon) {
-            icon.className = navLinks.classList.contains("active")
-              ? "fa-solid fa-xmark"
-              : "fa-solid fa-bars";
-          }
+        // FAQ Toggle
+        document.querySelectorAll('.faq-question').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const item = btn.parentElement;
+                item.classList.toggle('active');
+                btn.querySelector('span').innerText = item.classList.contains('active') ? '−' : '+';
+            });
         });
-        // Close menu when a link is clicked
-        navLinks.querySelectorAll("a").forEach(link => {
-          link.addEventListener("click", () => {
-            navLinks.classList.remove("active");
-            menuToggle.setAttribute("aria-expanded", "false");
-            const icon = menuToggle.querySelector("i");
-            if (icon) icon.className = "fa-solid fa-bars";
-          });
-        });
-      }
 
-      // FAQ accordion
-      document.querySelectorAll(".faq-question").forEach(q => {
-        q.addEventListener("click", () => {
-          const item   = q.closest(".faq-item");
-          const isOpen = item.classList.contains("open");
-          document.querySelectorAll(".faq-item").forEach(i => {
-            i.classList.remove("open");
-            i.querySelector(".faq-question").setAttribute("aria-expanded","false");
-          });
-          if (!isOpen) { item.classList.add("open"); q.setAttribute("aria-expanded","true"); }
+        // Live Stats
+        async function loadStats() {
+            try {
+                const snap = await getDoc(doc(db, 'config', 'platform'));
+                if (snap.exists()) {
+                    const data = snap.data();
+                    document.getElementById('hero-disbursed').innerText = '$' + data.totalDisbursed.toLocaleString();
+                    document.getElementById('hero-apps').innerText = data.totalApplications.toLocaleString();
+                }
+            } catch (e) {}
+        }
+        loadStats();
+
+        // Count animation
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if(entry.isIntersecting) {
+                    const val = entry.target;
+                    const target = parseFloat(val.dataset.target);
+                    let current = 0;
+                    const inc = target / 50;
+                    const timer = setInterval(() => {
+                        current += inc;
+                        if(current >= target) {
+                            val.innerText = target + (target > 50 ? '' : 'M+');
+                            clearInterval(timer);
+                        } else {
+                            val.innerText = current.toFixed(1);
+                        }
+                    }, 30);
+                }
+            });
         });
-      });
-    });
-  </script>
+        document.querySelectorAll('.stat-item__val').forEach(v => obs.observe(v));
+    </script>
 </body>
 </html>
