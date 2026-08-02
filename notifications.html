@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications | SBA Portal</title>
+    <link rel="stylesheet" href="global.css">
+    <style>
+        .notif-item { padding: 16px; border-bottom: 1px solid var(--border-light); display: flex; gap: 16px; cursor: pointer; transition: 0.2s; position: relative; }
+        .notif-item:hover { background: var(--surface-2); }
+        .notif-item.unread { background: var(--navy-light); }
+        .notif-item.unread::after { content: ''; width: 8px; height: 8px; background: var(--info); border-radius: 50%; position: absolute; right: 20px; top: 20px; }
+        .notif-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+        .notif-info h4 { font-size: 0.95rem; margin-bottom: 4px; }
+        .notif-info p { font-size: 0.85rem; color: var(--text-secondary); }
+        .notif-info small { font-size: 0.75rem; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="layout" style="display: flex; min-height: 100vh;">
+        <!-- Reuse sidebar from dashboard or shared component -->
+        <main style="flex: 1; padding: 40px 10%; background: var(--bg);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h1>Notifications</h1>
+                <button id="markAllBtn" class="btn btn--ghost">Mark all as read</button>
+            </div>
+
+            <div id="notifList" class="card" style="padding: 0; overflow: hidden;">
+                <!-- Notifications loaded here -->
+                <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+                    Loading notifications...
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { db, onSnapshot, collection, query, where, orderBy, updateDoc, doc, getDocs, writeBatch } from './firebase-config.js';
+        import { requireAuth, initTheme, showToast } from './app.js';
+
+        initTheme();
+
+        requireAuth(async (user) => {
+            const q = query(collection(db, 'notifications'), where('uid', '==', user.uid), orderBy('createdAt', 'desc'));
+            
+            onSnapshot(q, (snap) => {
+                const list = document.getElementById('notifList');
+                if(snap.empty) {
+                    list.innerHTML = `<div style="padding: 60px; text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 15px;">🔔</div>
+                        <p>No notifications yet.</p>
+                    </div>`;
+                    return;
+                }
+
+                list.innerHTML = '';
+                snap.forEach(d => {
+                    const n = d.data();
+                    const item = document.createElement('div');
+                    item.className = `notif-item ${n.read ? '' : 'unread'}`;
+                    item.innerHTML = `
+                        <div class="notif-icon" style="background: var(--navy-light)">${getIcon(n.type)}</div>
+                        <div class="notif-info">
+                            <h4>${n.title}</h4>
+                            <p>${n.message}</p>
+                            <small>${timeAgo(n.createdAt)}</small>
+                        </div>
+                    `;
+                    item.onclick = async () => {
+                        if(!n.read) await updateDoc(doc(db, 'notifications', d.id), { read: true });
+                        if(n.link) window.location.href = n.link;
+                    };
+                    list.appendChild(item);
+                });
+            });
+
+            document.getElementById('markAllBtn').onclick = async () => {
+                const unread = await getDocs(query(collection(db, 'notifications'), where('uid', '==', user.uid), where('read', '==', false)));
+                const batch = writeBatch(db);
+                unread.forEach(d => batch.update(d.ref, { read: true }));
+                await batch.commit();
+                showToast("All notifications marked as read", "success");
+            };
+        });
+
+        function getIcon(type) {
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️', action: '⚡' };
+            return icons[type] || '🔔';
+        }
+
+        function timeAgo(ts) {
+            if(!ts) return 'just now';
+            const seconds = Math.floor((new Date() - ts.toDate()) / 1000);
+            if (seconds < 60) return 'Just now';
+            const interval = Math.floor(seconds / 3600);
+            if (interval >= 1) return interval + "h ago";
+            return Math.floor(seconds / 60) + "m ago";
+        }
+    </script>
+</body>
+</html>
