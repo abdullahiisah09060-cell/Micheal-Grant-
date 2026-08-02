@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SBA | Deposit</title>
+  <link rel="stylesheet" href="global.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { padding-bottom: calc(var(--dock-h) + var(--sp-8)); }
+    .method-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: var(--sp-2); margin-bottom: var(--sp-5); }
+    .method-btn {
+      border: 1.5px solid var(--border); border-radius: var(--r-lg);
+      padding: var(--sp-3) var(--sp-2); cursor: pointer; text-align: center;
+      background: var(--surface); transition: all var(--t-fast);
+    }
+    .method-btn.active { border-color: var(--navy); background: var(--navy-light); }
+    .method-btn i { font-size: 1.1rem; display: block; margin-bottom: 5px; color: var(--text-muted); }
+    .method-btn.active i { color: var(--navy); }
+    .method-btn span { font-size: 11px; font-weight: var(--fw-semi); color: var(--text-muted); }
+    .method-btn.active span { color: var(--navy); }
+
+    .wallet-display {
+      background: var(--navy); border-radius: var(--r-lg);
+      padding: var(--sp-4); margin-bottom: var(--sp-5);
+    }
+    .wallet-display__label { font-size: var(--text-xs); color: rgba(255,255,255,0.5); margin-bottom: var(--sp-2); }
+    .wallet-display__address { font-size: 12px; font-weight: var(--fw-medium); color: #fbbf24; word-break: break-all; line-height: 1.5; }
+    .wallet-display__qr { background: white; border-radius: var(--r-md); padding: var(--sp-3); margin-top: var(--sp-3); display: flex; justify-content: center; }
+  </style>
+</head>
+<body>
+
+  <div class="page-loader" id="pageLoader">
+    <div class="page-loader__spinner"></div>
+    <p class="page-loader__text">Loading…</p>
+  </div>
+
+  <header class="page-header">
+    <a href="dashboard.html" class="page-header__back"><i class="fa-solid fa-arrow-left"></i></a>
+    <div class="page-header__logo">SBA</div>
+    <div style="flex:1;">
+      <div class="page-header__title">Deposit Funds</div>
+      <span class="page-header__sub">Crypto transfer · Secure channel</span>
+    </div>
+    <a href="dashboard.html" class="page-header__action"><i class="fa-solid fa-times"></i></a>
+  </header>
+
+  <div style="max-width:480px;margin:0 auto;padding:var(--sp-5) var(--sp-4);">
+
+    <!-- FORM VIEW -->
+    <div id="formView" style="display:none;">
+      <div class="card card--shadow" style="padding:var(--sp-5);">
+
+        <div class="form-group" style="margin-bottom:var(--sp-4);">
+          <label class="form-label form-label--required">Select Asset</label>
+          <div class="method-grid">
+            <div class="method-btn active" onclick="selectMethod('BTC',this)"><i class="fa-brands fa-bitcoin" style="color:#f7931a;"></i><span>BTC</span></div>
+            <div class="method-btn" onclick="selectMethod('USDT',this)"><i class="fa-solid fa-dollar-sign" style="color:#26a17b;"></i><span>USDT</span></div>
+            <div class="method-btn" onclick="selectMethod('USDC',this)"><i class="fa-solid fa-coins" style="color:#2775ca;"></i><span>USDC</span></div>
+            <div class="method-btn" onclick="selectMethod('ETH',this)"><i class="fa-brands fa-ethereum" style="color:#627eea;"></i><span>ETH</span></div>
+            <div class="method-btn" onclick="selectMethod('BNB',this)"><i class="fa-solid fa-bolt" style="color:#f3ba2f;"></i><span>BNB</span></div>
+            <div class="method-btn" onclick="selectMethod('SOL',this)"><i class="fa-solid fa-sun" style="color:#9945ff;"></i><span>SOL</span></div>
+            <div class="method-btn" onclick="selectMethod('TRX',this)"><i class="fa-solid fa-wave-square" style="color:#ef0027;"></i><span>TRX</span></div>
+            <div class="method-btn" onclick="selectMethod('TON',this)"><i class="fa-solid fa-circle-nodes" style="color:#0098ea;"></i><span>TON</span></div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:var(--sp-4);" id="networkGroup">
+          <label class="form-label">Network</label>
+          <select id="networkSelect" class="form-select" onchange="updateAddress()"></select>
+        </div>
+
+        <div class="wallet-display">
+          <div class="wallet-display__label" id="walletLabel">BTC Deposit Address</div>
+          <div class="wallet-display__address" id="walletAddress">bc1qrrc86d42pzejhwxxsjfctmjkj7dl52q0j0qy9k</div>
+          <button onclick="copyAddress()" style="margin-top:var(--sp-2);background:rgba(255,255,255,0.1);border:none;color:rgba(255,255,255,0.7);border-radius:var(--r-sm);padding:4px 10px;font-size:var(--text-xs);cursor:pointer;font-family:var(--font);">
+            <i class="fa-solid fa-copy"></i> Copy Address
+          </button>
+          <div class="wallet-display__qr">
+            <img id="qrImg" src="https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=bc1qrrc86d42pzejhwxxsjfctmjkj7dl52q0j0qy9k" alt="QR Code" style="width:130px;height:130px;">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:var(--sp-4);">
+          <label class="form-label form-label--required">Amount (USD)</label>
+          <div class="input-icon-wrap">
+            <i class="fa-solid fa-dollar-sign input-icon"></i>
+            <input type="number" id="depAmount" class="form-input" placeholder="0.00" min="1">
+          </div>
+          <span class="field-error" id="amountErr">Please enter a valid amount.</span>
+        </div>
+
+        <div class="form-group" style="margin-bottom:var(--sp-5);">
+          <label class="form-label form-label--required">Transfer Receipt</label>
+          <div class="upload-area" id="uploadArea" onclick="document.getElementById('receiptInput').click()">
+            <img id="receiptPreview" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:var(--r-lg);" alt="Receipt">
+            <i class="fa-solid fa-cloud-arrow-up upload-area__icon"></i>
+            <div class="upload-area__label">Upload transaction screenshot</div>
+            <div style="font-size:var(--text-xs);color:var(--text-muted);margin-top:4px;">PNG, JPG accepted</div>
+            <input type="file" id="receiptInput" style="display:none;" accept="image/*">
+          </div>
+          <span class="field-error" id="receiptErr">Please upload your payment receipt.</span>
+        </div>
+
+        <button id="depositBtn" class="btn btn--primary btn--full btn--lg">
+          Submit Deposit <i class="fa-solid fa-arrow-right" style="font-size:0.8rem;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- PENDING VIEW -->
+    <div id="pendingView" style="display:none;">
+      <div class="card card--shadow status-view">
+        <div class="status-view__icon status-view__icon--pending">
+          <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="status-view__title">Deposit Under Review</div>
+        <p class="status-view__desc" id="pendingAmt">Your deposit is being reviewed by our team.</p>
+        <a href="support.html" class="agent-card" style="max-width:320px;margin:0 auto;">
+          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120" class="agent-card__avatar" alt="Officer">
+          <div>
+            <div class="agent-card__name">Sarah Miller — Case Officer</div>
+            <div class="agent-card__status"><i class="fa-solid fa-circle" style="font-size:6px;margin-right:4px;"></i> Online · Chat for updates</div>
+          </div>
+          <i class="fa-solid fa-chevron-right agent-card__chevron"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- SUCCESS VIEW -->
+    <div id="successView" style="display:none;">
+      <div class="card card--shadow status-view">
+        <div class="status-view__icon status-view__icon--success">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="status-view__title">Deposit Confirmed</div>
+        <p class="status-view__desc">Your deposit has been verified and your balance updated.</p>
+        <a href="dashboard.html" class="btn btn--success btn--lg">Return to Dashboard</a>
+      </div>
+    </div>
+
+    <!-- DECLINED VIEW -->
+    <div id="declinedView" style="display:none;">
+      <div class="card card--shadow status-view">
+        <div class="status-view__icon status-view__icon--error">
+          <i class="fa-solid fa-circle-xmark"></i>
+        </div>
+        <div class="status-view__title">Deposit Declined</div>
+        <div class="alert alert--error" style="text-align:left;margin:0 auto var(--sp-6);max-width:320px;">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span id="declineReason">Transaction could not be verified.</span>
+        </div>
+        <button id="retryBtn" class="btn btn--primary btn--lg">Retry</button>
+      </div>
+    </div>
+
+  </div>
+
+  <nav class="bottom-dock">
+    <a href="dashboard.html" class="dock-item"><i class="fa-solid fa-house"></i><span>Home</span></a>
+    <a href="ledger.html" class="dock-item"><i class="fa-solid fa-list-ul"></i><span>Ledger</span></a>
+    <a href="kyc.html" class="dock-item dock-item--cta"><i class="fa-solid fa-shield-halved"></i></a>
+    <a href="support.html" class="dock-item"><i class="fa-solid fa-headset"></i><span>Support</span></a>
+    <a href="settings.html" class="dock-item"><i class="fa-solid fa-user-gear"></i><span>Settings</span></a>
+  </nav>
+
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { doc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+
+    const ADDRESSES = {
+      BTC:  { Bitcoin: 'bc1qrrc86d42pzejhwxxsjfctmjkj7dl52q0j0qy9k' },
+      USDT: { 'BNB Smart Chain (BEP20)': '0x3b424b2999dEF4894f21f1a5bFe89e97Bc21DE1E', 'Ethereum (ERC20)': '0x3b424b2999dEF4894f21f1a5bFe89e97Bc21DE1E', 'Tron (TRC20)': 'TKZcchSTjdJXEoVZmErwfiSUmZFnh6Tjwx', 'Solana (SOL)': '9UgFrLx796JagxDAJARrqzzW7c9DPHfrS2n3UH7vsMf4' },
+      USDC: { 'Base (BASE)': '0x3b424b2999dEF4894f21f1a5bFe89e97Bc21DE1E', 'Ethereum (ERC20)': '0x3b424b2999dEF4894f21f1a5bFe89e97Bc21DE1E', 'Solana (SOL)': '9UgFrLx796JagxDAJARrqzzW7c9DPHfrS2n3UH7vsMf4' },
+      ETH:  { 'Ethereum (ERC20)': '0x3b424b2999dEF4894f21f1a5bFe89e97Bc21DE1E', 'Base (BASE)': '0x3b424b2999dEF4894f21f1a5bFe89e97Bc21DE1E' },
+      BNB:  { 'BNB Smart Chain (BEP20)': '0x3b424b2999dEF4894f21f1a5bFe89e97Bc21DE1E' },
+      SOL:  { 'Solana (SOL)': '9UgFrLx796JagxDAJARrqzzW7c9DPHfrS2n3UH7vsMf4' },
+      TRX:  { 'Tron (TRC20)': 'TKZcchSTjdJXEoVZmErwfiSUmZFnh6Tjwx' },
+      TON:  { 'TON Network': 'UQCleKsmB8o-DF3fjkBR2X7gNrrs81Nv-zb_8mPW4GPx7yj9' }
+    };
+
+    let selectedCoin = 'BTC';
+    let compressedImage = null;
+
+    window.selectMethod = (coin, el) => {
+      selectedCoin = coin;
+      document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      const select = document.getElementById('networkSelect');
+      select.innerHTML = '';
+      Object.entries(ADDRESSES[coin]).forEach(([net, addr]) => {
+        const opt = document.createElement('option');
+        opt.value = addr; opt.textContent = net;
+        select.appendChild(opt);
+      });
+      updateAddress();
+    };
+
+    window.updateAddress = () => {
+      const select = document.getElementById('networkSelect');
+      const addr   = select.value;
+      const net    = select.options[select.selectedIndex]?.text || '';
+      document.getElementById('walletAddress').textContent = addr;
+      document.getElementById('walletLabel').textContent   = `${selectedCoin} (${net}) Deposit Address`;
+      document.getElementById('qrImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(addr)}`;
+    };
+
+    window.copyAddress = () => {
+      const addr = document.getElementById('walletAddress').textContent;
+      navigator.clipboard.writeText(addr).then(() => alert('Address copied!'));
+    };
+
+    // Init
+    selectMethod('BTC', document.querySelector('.method-btn'));
+
+    // Receipt upload
+    document.getElementById('receiptInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.src = ev.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const scale  = 800 / img.width;
+          canvas.width  = 800; canvas.height = img.height * scale;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          compressedImage = canvas.toDataURL('image/jpeg', 0.75);
+          const prev = document.getElementById('receiptPreview');
+          prev.src = compressedImage; prev.style.display = 'block';
+          document.getElementById('uploadArea').classList.add('has-file');
+        };
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function switchView(id) {
+      ['formView','pendingView','successView','declinedView'].forEach(v => {
+        document.getElementById(v).style.display = v === id ? 'block' : 'none';
+      });
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) { location.href = 'login.html'; return; }
+
+      onSnapshot(doc(db, 'users', user.uid), (snap) => {
+        document.getElementById('pageLoader').style.display = 'none';
+        if (!snap.exists()) return;
+        const d = snap.data();
+        const status = d.depositStatus || 'IDLE';
+
+        if (status === 'PENDING') {
+          switchView('pendingView');
+          document.getElementById('pendingAmt').textContent =
+            `Your deposit of $${Number(d.depositAmount||0).toLocaleString()} is being reviewed.`;
+        } else if (['SUCCESSFUL','APPROVED'].includes(status)) {
+          switchView('successView');
+        } else if (['FAILED','DECLINED','REJECTED'].includes(status)) {
+          switchView('declinedView');
+          document.getElementById('declineReason').textContent = d.depositReason || 'Transaction could not be verified on the blockchain.';
+        } else {
+          switchView('formView');
+        }
+      });
+
+      document.getElementById('depositBtn').addEventListener('click', async () => {
+        const amount = Number(document.getElementById('depAmount').value);
+        let valid = true;
+        if (!amount || amount <= 0) { document.getElementById('amountErr').classList.add('show'); valid = false; }
+        else document.getElementById('amountErr').classList.remove('show');
+        if (!compressedImage) { document.getElementById('receiptErr').classList.add('show'); valid = false; }
+        else document.getElementById('receiptErr').classList.remove('show');
+        if (!valid) return;
+
+        const btn = document.getElementById('depositBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>&nbsp; Submitting…';
+
+        try {
+          await updateDoc(doc(db, 'users', user.uid), {
+            depositStatus: 'PENDING',
+            depositAmount: amount,
+            depositProof:  compressedImage,
+            depositMethod: selectedCoin,
+            depositDate:   new Date().toISOString(),
+            chatHistory: arrayUnion({
+              sender: 'USER',
+              text:   `I have deposited $${amount.toLocaleString()} via ${selectedCoin}. Please verify the attached receipt.`,
+              image:  compressedImage,
+              time:   new Date().toISOString()
+            })
+          });
+        } catch (err) {
+          btn.disabled = false;
+          btn.innerHTML = 'Submit Deposit <i class="fa-solid fa-arrow-right" style="font-size:0.8rem;"></i>';
+          alert('Submission failed: ' + err.message);
+        }
+      });
+
+      document.getElementById('retryBtn')?.addEventListener('click', async () => {
+        await updateDoc(doc(db, 'users', user.uid), { depositStatus: 'IDLE' });
+      });
+    });
+  </script>
+</body>
+</html>

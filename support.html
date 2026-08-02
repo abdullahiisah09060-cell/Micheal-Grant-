@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SBA | Support</title>
+  <link rel="stylesheet" href="global.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+    body { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+    .chat-wrap { display: flex; flex-direction: column; flex: 1; max-width: 480px; margin: 0 auto; width: 100%; overflow: hidden; }
+    .chat-agent-bar {
+      background: var(--navy); padding: var(--sp-4) var(--sp-5);
+      display: flex; align-items: center; gap: var(--sp-3);
+    }
+    .chat-agent-bar__avatar { width: 40px; height: 40px; border-radius: var(--r-lg); object-fit: cover; border: 2px solid rgba(255,255,255,0.2); flex-shrink: 0; }
+    .chat-agent-bar__name   { font-size: var(--text-sm); font-weight: var(--fw-semi); color: white; }
+    .chat-agent-bar__status { font-size: var(--text-xs); color: #4ade80; display: flex; align-items: center; gap: 5px; }
+
+    .chat-body {
+      flex: 1; overflow-y: auto; padding: var(--sp-5);
+      display: flex; flex-direction: column; gap: var(--sp-4);
+      background: var(--bg);
+    }
+    .chat-body::-webkit-scrollbar { width: 4px; }
+    .chat-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+    .bubble {
+      max-width: 82%; padding: var(--sp-3) var(--sp-4);
+      border-radius: var(--r-lg); font-size: var(--text-sm);
+      line-height: 1.55;
+    }
+    .bubble--agent {
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text-primary); align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    .bubble--user {
+      background: var(--navy); color: white;
+      align-self: flex-end; border-bottom-right-radius: 4px;
+    }
+    .bubble__time { font-size: 11px; opacity: 0.5; margin-top: 4px; text-align: right; }
+    .bubble img { max-width: 100%; border-radius: var(--r-md); margin-top: var(--sp-2); cursor: pointer; }
+
+    .chat-input-bar {
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: var(--sp-3) var(--sp-4);
+      padding-bottom: calc(var(--sp-3) + env(safe-area-inset-bottom, 0));
+    }
+    .img-preview-strip {
+      display: none; align-items: center; gap: var(--sp-3);
+      padding: var(--sp-2) 0; margin-bottom: var(--sp-2);
+    }
+    .img-preview-strip img { width: 48px; height: 48px; border-radius: var(--r-md); object-fit: cover; border: 1px solid var(--border); }
+    .chat-input-row { display: flex; align-items: center; gap: var(--sp-2); }
+    .chat-input-row input[type="text"] {
+      flex: 1; height: 42px; border: 1.5px solid var(--border);
+      border-radius: var(--r-lg); padding: 0 var(--sp-4);
+      font-size: var(--text-sm); font-family: var(--font);
+      outline: none; background: var(--bg); color: var(--text-primary);
+      transition: border-color var(--t-fast);
+    }
+    .chat-input-row input[type="text"]:focus { border-color: var(--navy); background: white; }
+    .attach-btn {
+      width: 42px; height: 42px; border-radius: var(--r-lg);
+      background: var(--bg); border: 1.5px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-muted); cursor: pointer; flex-shrink: 0;
+      transition: all var(--t-fast);
+    }
+    .attach-btn:hover { border-color: var(--navy); color: var(--navy); }
+    .send-btn {
+      width: 42px; height: 42px; border-radius: var(--r-lg);
+      background: var(--navy); color: white; border: none;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem; cursor: pointer; flex-shrink: 0;
+      transition: background var(--t-fast);
+    }
+    .send-btn:hover { background: var(--navy-mid); }
+    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .kyc-status-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-lg); padding: var(--sp-4);
+      display: flex; align-items: center; gap: var(--sp-3);
+      cursor: pointer; transition: all var(--t-fast);
+      max-width: 480px; margin: 0 auto; width: 100%;
+    }
+    .kyc-status-card:hover { border-color: var(--navy); background: var(--navy-light); }
+  </style>
+</head>
+<body>
+
+  <div class="page-loader" id="pageLoader">
+    <div class="page-loader__spinner"></div>
+    <p class="page-loader__text">Connecting…</p>
+  </div>
+
+  <header class="page-header">
+    <a href="dashboard.html" class="page-header__back"><i class="fa-solid fa-arrow-left"></i></a>
+    <div class="page-header__logo">SBA</div>
+    <div style="flex:1;">
+      <div class="page-header__title">Support</div>
+      <span class="page-header__sub">Secure agent channel</span>
+    </div>
+    <div style="width:8px;height:8px;border-radius:50%;background:#4ade80;animation:pulse 1.5s ease-in-out infinite;flex-shrink:0;" title="Online"></div>
+  </header>
+
+  <div class="chat-wrap">
+
+    <div class="chat-agent-bar">
+      <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120" class="chat-agent-bar__avatar" alt="Sarah Miller">
+      <div>
+        <div class="chat-agent-bar__name">Sarah Miller</div>
+        <div class="chat-agent-bar__status">
+          <span style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;"></span>
+          Online · Case Officer
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-body" id="chatBody"></div>
+
+    <div class="chat-input-bar">
+      <div class="img-preview-strip" id="imgPreviewStrip">
+        <img id="imgPreviewThumb" alt="attachment preview">
+        <button onclick="clearAttachment()" style="background:var(--error-bg);border:none;color:var(--red);border-radius:var(--r-sm);padding:4px 8px;font-size:var(--text-xs);cursor:pointer;font-family:var(--font);">Remove</button>
+      </div>
+      <div class="chat-input-row">
+        <label class="attach-btn" for="attachInput" title="Attach image">
+          <i class="fa-solid fa-paperclip"></i>
+          <input type="file" id="attachInput" style="display:none;" accept="image/*">
+        </label>
+        <input type="text" id="msgInput" placeholder="Type a message…" autocomplete="off">
+        <button class="send-btn" id="sendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- KYC status card below chat on mobile -->
+  <div style="padding:var(--sp-3) var(--sp-4) calc(var(--sp-3) + env(safe-area-inset-bottom,0));background:var(--bg);border-top:1px solid var(--border);">
+    <div class="kyc-status-card" id="kycStatusCard" onclick="location.href='kyc.html'">
+      <div style="width:38px;height:38px;border-radius:var(--r-md);background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--navy);flex-shrink:0;">
+        <i class="fa-solid fa-fingerprint"></i>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:var(--text-xs);color:var(--text-muted);margin-bottom:2px;">Verification Status</div>
+        <div style="font-size:var(--text-sm);font-weight:var(--fw-semi);color:var(--text-primary);" id="kycStatusText">Checking…</div>
+      </div>
+      <span class="badge" id="kycStatusBadge">---</span>
+    </div>
+  </div>
+
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { doc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+
+    const APPROVED = ['VERIFIED','SUCCESSFUL','APPROVED'];
+    let base64Img  = null;
+    let userName   = 'Applicant';
+
+    window.clearAttachment = () => {
+      base64Img = null;
+      document.getElementById('imgPreviewStrip').style.display = 'none';
+      document.getElementById('attachInput').value = '';
+    };
+
+    document.getElementById('attachInput').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const img = new Image();
+        img.src = ev.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const scale  = 600 / img.width;
+          canvas.width = 600; canvas.height = img.height * scale;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          base64Img = canvas.toDataURL('image/jpeg', 0.7);
+          document.getElementById('imgPreviewThumb').src = base64Img;
+          document.getElementById('imgPreviewStrip').style.display = 'flex';
+        };
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function renderMessages(history) {
+      const body = document.getElementById('chatBody');
+      let html = `
+        <div class="bubble bubble--agent">
+          <strong>Sarah Miller:</strong> Hello ${userName}, I'm your assigned case officer. How can I help you today?
+          <div class="bubble__time">Case Officer</div>
+        </div>
+      `;
+      history.forEach(m => {
+        const time = new Date(m.time).toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+        html += `
+          <div class="bubble bubble--${m.sender === 'ADMIN' ? 'agent' : 'user'}">
+            ${m.text ? `<p style="margin:0;">${m.text}</p>` : ''}
+            ${m.image ? `<img src="${m.image}" alt="attachment" onclick="window.open('${m.image}','_blank')">` : ''}
+            <div class="bubble__time">${time}</div>
+          </div>
+        `;
+      });
+      body.innerHTML = html;
+      setTimeout(() => body.scrollTo({ top: body.scrollHeight, behavior: 'smooth' }), 80);
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) { location.href = 'login.html'; return; }
+
+      onSnapshot(doc(db, 'users', user.uid), (snap) => {
+        document.getElementById('pageLoader').style.display = 'none';
+        if (!snap.exists()) return;
+        const d = snap.data();
+        userName = d.fullName || 'Applicant';
+
+        // KYC status card
+        const isVerified = APPROVED.includes(d.kycStatus);
+        const badge = document.getElementById('kycStatusBadge');
+        document.getElementById('kycStatusText').textContent = isVerified ? 'Identity Confirmed' : 'Action Required';
+        badge.textContent  = isVerified ? 'Verified' : 'Pending';
+        badge.className    = `badge badge--${isVerified ? 'success' : 'error'}`;
+
+        renderMessages(d.chatHistory || []);
+      });
+
+      document.getElementById('sendBtn').addEventListener('click', async () => {
+        const text = document.getElementById('msgInput').value.trim();
+        if (!text && !base64Img) return;
+
+        const btn = document.getElementById('sendBtn');
+        btn.disabled = true;
+
+        try {
+          await updateDoc(doc(db, 'users', user.uid), {
+            chatHistory: arrayUnion({
+              sender: 'USER',
+              text:   text,
+              image:  base64Img,
+              time:   new Date().toISOString()
+            })
+          });
+          document.getElementById('msgInput').value = '';
+          clearAttachment();
+        } catch (err) {
+          console.error(err);
+        }
+        btn.disabled = false;
+      });
+
+      document.getElementById('msgInput').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') document.getElementById('sendBtn').click();
+      });
+    });
+  </script>
+</body>
+</html>

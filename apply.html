@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SBA | Grant Application</title>
+  <link rel="stylesheet" href="global.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body { padding-bottom: calc(var(--dock-h) + var(--sp-8)); }
+    .section-label {
+      font-size: var(--text-xs); font-weight: var(--fw-bold); color: var(--navy);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      padding: var(--sp-2) var(--sp-3); background: var(--navy-light);
+      border-left: 3px solid var(--navy); border-radius: 0 var(--r-sm) var(--r-sm) 0;
+      margin: var(--sp-6) 0 var(--sp-4); display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="page-loader" id="pageLoader">
+    <div class="page-loader__spinner"></div>
+    <p class="page-loader__text">Loading…</p>
+  </div>
+
+  <header class="page-header">
+    <a href="dashboard.html" class="page-header__back"><i class="fa-solid fa-arrow-left"></i></a>
+    <div class="page-header__logo">SBA</div>
+    <div style="flex:1;">
+      <div class="page-header__title">Grant Application</div>
+      <span class="page-header__sub">Form 424-B · Federal Program</span>
+    </div>
+    <a href="dashboard.html" class="page-header__action"><i class="fa-solid fa-times"></i></a>
+  </header>
+
+  <div style="max-width:560px;margin:0 auto;padding:var(--sp-5) var(--sp-4);">
+
+    <!-- Alert -->
+    <div id="alertBox" class="alert" style="display:none;margin-bottom:var(--sp-5);">
+      <i id="alertIcon" class="fa-solid fa-circle-exclamation"></i>
+      <span id="alertMsg"></span>
+    </div>
+
+    <!-- FORM VIEW -->
+    <div id="applyForm" style="display:none;">
+
+      <div class="card card--shadow" style="padding:var(--sp-5);">
+        <span class="section-label">1. Personal Identity</span>
+        <div style="display:flex;flex-direction:column;gap:var(--sp-4);">
+          <div class="form-group">
+            <label class="form-label form-label--required">Full Legal Name</label>
+            <input type="text" id="fullName" class="form-input" placeholder="John Doe">
+            <span class="field-error" id="fullNameErr">Full name is required.</span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label form-label--required">Date of Birth</label>
+              <input type="date" id="dob" class="form-input">
+              <span class="field-error" id="dobErr">Required.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label form-label--required">SSN (Last 4)</label>
+              <input type="password" id="ssn" class="form-input" placeholder="••••" maxlength="4">
+              <span class="field-error" id="ssnErr">Required.</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label form-label--required">Home Address</label>
+            <input type="text" id="address" class="form-input" placeholder="123 Main St, City, State">
+            <span class="field-error" id="addressErr">Address is required.</span>
+          </div>
+        </div>
+
+        <span class="section-label">2. Business Profile</span>
+        <div style="display:flex;flex-direction:column;gap:var(--sp-4);">
+          <div class="form-group">
+            <label class="form-label form-label--required">Legal Business Name</label>
+            <input type="text" id="bizName" class="form-input" placeholder="LLC or Corp Name">
+            <span class="field-error" id="bizNameErr">Business name is required.</span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label form-label--required">Business Type</label>
+              <select id="bizType" class="form-select">
+                <option value="sole">Sole Proprietor</option>
+                <option value="llc">LLC</option>
+                <option value="corp">Corporation</option>
+                <option value="ngo">Non-Profit</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label form-label--required">Years in Business</label>
+              <input type="number" id="bizYears" class="form-input" placeholder="0" min="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tax ID / EIN</label>
+            <input type="text" id="ein" class="form-input" placeholder="XX-XXXXXXX">
+          </div>
+        </div>
+
+        <span class="section-label">3. Employment &amp; Income</span>
+        <div style="display:flex;flex-direction:column;gap:var(--sp-4);">
+          <div class="form-group">
+            <label class="form-label">Current Occupation</label>
+            <input type="text" id="job" class="form-input" placeholder="Business Owner">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Annual Household Income</label>
+            <select id="income" class="form-select">
+              <option value="under20k">Under $20,000</option>
+              <option value="20k-50k">$20,000 – $50,000</option>
+              <option value="50k-100k">$50,000 – $100,000</option>
+              <option value="over100k">$100,000+</option>
+            </select>
+          </div>
+        </div>
+
+        <span class="section-label">4. Funding Request</span>
+        <div style="display:flex;flex-direction:column;gap:var(--sp-4);">
+          <div class="form-group">
+            <label class="form-label form-label--required">Grant Program</label>
+            <select id="reqAmount" class="form-select">
+              <option value="50000">$50,000 — Business Relief Fund</option>
+              <option value="150000">$150,000 — Standard Grant</option>
+              <option value="500000">$500,000 — Silver Award</option>
+              <option value="1000000">$1,000,000 — Platinum Tier</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label form-label--required">Purpose of Funds</label>
+            <textarea id="purpose" class="form-textarea" placeholder="Explain how this grant will benefit your business…"></textarea>
+            <span class="field-error" id="purposeErr">Please describe your intended use of funds.</span>
+          </div>
+        </div>
+
+        <span class="section-label">5. Bank Account (Disbursement)</span>
+        <div style="display:flex;flex-direction:column;gap:var(--sp-4);">
+          <div class="form-group">
+            <label class="form-label form-label--required">Bank Name</label>
+            <input type="text" id="bankName" class="form-input" placeholder="e.g. Chase, Bank of America">
+            <span class="field-error" id="bankNameErr">Bank name is required.</span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label form-label--required">Account Number</label>
+              <input type="tel" id="accNum" class="form-input">
+              <span class="field-error" id="accNumErr">Required.</span>
+            </div>
+            <div class="form-group">
+              <label class="form-label form-label--required">Routing Number</label>
+              <input type="tel" id="rtNum" class="form-input">
+              <span class="field-error" id="rtNumErr">Required.</span>
+            </div>
+          </div>
+        </div>
+
+        <button id="submitBtn" class="btn btn--primary btn--full btn--lg" style="margin-top:var(--sp-6);">
+          Submit Application <i class="fa-solid fa-arrow-right" style="font-size:0.8rem;"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- PENDING VIEW -->
+    <div id="pendingView" style="display:none;">
+      <div class="card card--shadow status-view">
+        <div class="status-view__icon status-view__icon--pending">
+          <i class="fa-solid fa-clock"></i>
+        </div>
+        <div class="status-view__title">Application Under Review</div>
+        <p class="status-view__desc">Your grant application has been submitted and is currently being reviewed. This typically takes 18–72 hours.</p>
+        <a href="support.html" class="agent-card" style="max-width:320px;margin:0 auto;">
+          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=120" class="agent-card__avatar" alt="Officer">
+          <div>
+            <div class="agent-card__name">Sarah Miller — Case Officer</div>
+            <div class="agent-card__status"><i class="fa-solid fa-circle" style="font-size:6px;margin-right:4px;"></i> Online · Chat for updates</div>
+          </div>
+          <i class="fa-solid fa-chevron-right agent-card__chevron"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- SUCCESS VIEW -->
+    <div id="successView" style="display:none;">
+      <div class="card card--shadow status-view">
+        <div class="status-view__icon status-view__icon--success">
+          <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div class="status-view__title">Application Approved</div>
+        <p class="status-view__desc">Your grant application has been approved. The allocated funds have been added to your dashboard balance.</p>
+        <a href="dashboard.html" class="btn btn--success btn--lg">Go to Dashboard</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Support FAB -->
+  <a href="support.html" style="position:fixed;bottom:calc(var(--dock-h) + var(--sp-4));right:var(--sp-5);width:48px;height:48px;background:var(--navy);color:white;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-lg);font-size:1.1rem;z-index:100;">
+    <i class="fa-solid fa-headset"></i>
+  </a>
+
+  <nav class="bottom-dock">
+    <a href="dashboard.html" class="dock-item"><i class="fa-solid fa-house"></i><span>Home</span></a>
+    <a href="ledger.html" class="dock-item"><i class="fa-solid fa-list-ul"></i><span>Ledger</span></a>
+    <a href="kyc.html" class="dock-item dock-item--cta"><i class="fa-solid fa-shield-halved"></i></a>
+    <a href="support.html" class="dock-item"><i class="fa-solid fa-headset"></i><span>Support</span></a>
+    <a href="settings.html" class="dock-item"><i class="fa-solid fa-user-gear"></i><span>Settings</span></a>
+  </nav>
+
+  <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { doc, onSnapshot, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js";
+
+    const APPROVED = ['SUCCESSFUL','APPROVED'];
+
+    function showAlert(msg, type = 'error') {
+      const box = document.getElementById('alertBox');
+      box.className = `alert alert--${type}`;
+      box.querySelector('i').className = type === 'error' ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-notch fa-spin';
+      document.getElementById('alertMsg').textContent = msg;
+      box.style.display = 'flex';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function switchView(id) {
+      ['applyForm','pendingView','successView'].forEach(v => {
+        document.getElementById(v).style.display = v === id ? 'block' : 'none';
+      });
+    }
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) { location.href = 'login.html'; return; }
+
+      onSnapshot(doc(db, 'users', user.uid), (snap) => {
+        document.getElementById('pageLoader').style.display = 'none';
+        if (!snap.exists()) return;
+        const d = snap.data();
+
+        if (APPROVED.includes(d.applyStatus)) {
+          switchView('successView');
+        } else if (d.applyStatus === 'PENDING') {
+          switchView('pendingView');
+        } else if (d.applyStatus === 'FAILED') {
+          switchView('applyForm');
+          showAlert(d.applyReason || 'Your application was not approved. Please review and resubmit.');
+        } else {
+          switchView('applyForm');
+        }
+      });
+
+      document.getElementById('submitBtn').addEventListener('click', async () => {
+        const fields = {
+          fullName: document.getElementById('fullName').value.trim(),
+          dob:      document.getElementById('dob').value,
+          ssn:      document.getElementById('ssn').value.trim(),
+          address:  document.getElementById('address').value.trim(),
+          bizName:  document.getElementById('bizName').value.trim(),
+          purpose:  document.getElementById('purpose').value.trim(),
+          bankName: document.getElementById('bankName').value.trim(),
+          accNum:   document.getElementById('accNum').value.trim(),
+          rtNum:    document.getElementById('rtNum').value.trim(),
+        };
+
+        let valid = true;
+        function check(val, errId) {
+          const err = document.getElementById(errId);
+          if (!val) { err.classList.add('show'); valid = false; }
+          else err.classList.remove('show');
+        }
+        check(fields.fullName, 'fullNameErr');
+        check(fields.dob,      'dobErr');
+        check(fields.ssn,      'ssnErr');
+        check(fields.address,  'addressErr');
+        check(fields.bizName,  'bizNameErr');
+        check(fields.purpose,  'purposeErr');
+        check(fields.bankName, 'bankNameErr');
+        check(fields.accNum,   'accNumErr');
+        check(fields.rtNum,    'rtNumErr');
+        if (!valid) { showAlert('Please fill in all required fields.'); return; }
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>&nbsp; Submitting…';
+
+        const amt = Number(document.getElementById('reqAmount').value);
+        try {
+          await updateDoc(doc(db, 'users', user.uid), {
+            applyStatus:     'PENDING',
+            requestedAmount: amt,
+            applicationData: {
+              ...fields,
+              bizType:  document.getElementById('bizType').value,
+              bizYears: document.getElementById('bizYears').value,
+              income:   document.getElementById('income').value,
+              ein:      document.getElementById('ein').value.trim(),
+              job:      document.getElementById('job').value.trim(),
+            },
+            history: arrayUnion({
+              type: 'GRANT APPLICATION', amount: amt,
+              status: 'PENDING', date: new Date().toISOString()
+            })
+          });
+        } catch (err) {
+          btn.disabled = false;
+          btn.innerHTML = 'Submit Application <i class="fa-solid fa-arrow-right" style="font-size:0.8rem;"></i>';
+          showAlert('Submission failed: ' + err.message);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
