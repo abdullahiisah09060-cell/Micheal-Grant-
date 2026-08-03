@@ -1,101 +1,120 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notifications | SBA Portal</title>
+    <title>Notifications | SBA Grant Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .notif-item { padding: 16px; border-bottom: 1px solid var(--border-light); display: flex; gap: 16px; cursor: pointer; transition: 0.2s; position: relative; }
+        .notif-item { padding: 16px; border-bottom: 1px solid var(--border-light); display: flex; gap: 16px; cursor: pointer; transition: background 0.2s; position: relative; }
         .notif-item:hover { background: var(--surface-2); }
-        .notif-item.unread { background: var(--navy-light); }
-        .notif-item.unread::after { content: ''; width: 8px; height: 8px; background: var(--info); border-radius: 50%; position: absolute; right: 20px; top: 20px; }
-        .notif-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
-        .notif-info h4 { font-size: 0.95rem; margin-bottom: 4px; }
-        .notif-info p { font-size: 0.85rem; color: var(--text-secondary); }
-        .notif-info small { font-size: 0.75rem; color: var(--text-muted); }
+        .notif-item.unread { background: var(--navy-light); border-left: 3px solid var(--navy); }
+        .notif-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 1rem; }
     </style>
 </head>
 <body>
-    <div class="layout" style="display: flex; min-height: 100vh;">
-        <!-- Reuse sidebar from dashboard or shared component -->
-        <main style="flex: 1; padding: 40px 10%; background: var(--bg);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                <h1>Notifications</h1>
-                <button id="markAllBtn" class="btn btn--ghost">Mark all as read</button>
-            </div>
+    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
-            <div id="notifList" class="card" style="padding: 0; overflow: hidden;">
-                <!-- Notifications loaded here -->
-                <div style="padding: 40px; text-align: center; color: var(--text-muted);">
-                    Loading notifications...
+    <div class="app-layout">
+        <aside class="app-sidebar" id="appSidebar"></aside>
+        <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
+
+        <main class="app-main">
+            <header class="page-header" id="pageHeader"></header>
+
+            <div class="app-main__content" style="max-width:800px;">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 style="font-weight:800; color:var(--navy);">Recent Alerts</h2>
+                    <button class="btn btn--ghost btn--sm" id="btnMarkAll"><i class="fa-solid fa-check-double"></i> Mark all read</button>
+                </div>
+
+                <div class="card" style="padding:0; overflow:hidden;">
+                    <div id="notifList">
+                        <!-- Items injected here -->
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
     <script type="module">
-        import { db, onSnapshot, collection, query, where, orderBy, updateDoc, doc, getDocs, writeBatch } from './firebase-config.js';
-        import { requireAuth, initTheme, showToast } from './app.js';
+        import { db, collection, query, where, orderBy, onSnapshot, markNotificationRead, markAllRead } from './firebase-config.js';
+        import { requireAuth, buildSidebar, buildPageHeader, initTheme, initNotificationBadge } from './app.js';
 
-        initTheme();
+        requireAuth((user, userData) => {
+            initTheme();
+            buildSidebar({ activeId: 'notifications', userData });
+            buildPageHeader({ title: 'Notifications', subtitle: 'Updates and alerts for your account', backUrl: 'dashboard.html' });
+            initNotificationBadge(user.uid);
 
-        requireAuth(async (user) => {
-            const q = query(collection(db, 'notifications'), where('uid', '==', user.uid), orderBy('createdAt', 'desc'));
+            const q = query(collection(db, "notifications"), where("uid", "==", user.uid), orderBy("createdAt", "desc"));
             
             onSnapshot(q, (snap) => {
                 const list = document.getElementById('notifList');
-                if(snap.empty) {
-                    list.innerHTML = `<div style="padding: 60px; text-align: center;">
-                        <div style="font-size: 3rem; margin-bottom: 15px;">🔔</div>
-                        <p>No notifications yet.</p>
-                    </div>`;
+                if (snap.empty) {
+                    list.innerHTML = `
+                        <div style="text-align:center; padding:60px 20px;">
+                            <div style="font-size:3rem; color:var(--border); margin-bottom:16px;"><i class="fa-solid fa-bell-slash"></i></div>
+                            <h3 style="color:var(--text-secondary);">All caught up!</h3>
+                            <p style="color:var(--text-muted); font-size:0.9rem;">New notifications will appear here.</p>
+                        </div>
+                    `;
                     return;
                 }
 
-                list.innerHTML = '';
-                snap.forEach(d => {
-                    const n = d.data();
-                    const item = document.createElement('div');
-                    item.className = `notif-item ${n.read ? '' : 'unread'}`;
-                    item.innerHTML = `
-                        <div class="notif-icon" style="background: var(--navy-light)">${getIcon(n.type)}</div>
-                        <div class="notif-info">
-                            <h4>${n.title}</h4>
-                            <p>${n.message}</p>
-                            <small>${timeAgo(n.createdAt)}</small>
+                const iconMap = {
+                    info: { icon: 'fa-circle-info', color: 'var(--info)', bg: 'var(--info-bg)' },
+                    success: { icon: 'fa-circle-check', color: 'var(--success)', bg: 'var(--success-bg)' },
+                    warning: { icon: 'fa-triangle-exclamation', color: 'var(--warning)', bg: 'var(--warning-bg)' },
+                    error: { icon: 'fa-circle-xmark', color: 'var(--error)', bg: 'var(--error-bg)' },
+                    action: { icon: 'fa-bolt', color: 'var(--navy)', bg: 'var(--navy-light)' }
+                };
+
+                list.innerHTML = snap.docs.map(doc => {
+                    const data = doc.data();
+                    const style = iconMap[data.type] || iconMap.info;
+                    return `
+                        <div class="notif-item ${data.read ? '' : 'unread'}" onclick="handleNotifClick('${doc.id}', '${data.link}')">
+                            <div class="notif-icon" style="background:${style.bg}; color:${style.color};">
+                                <i class="fa-solid ${style.icon}"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                    <div style="font-weight:700; font-size:0.95rem; margin-bottom:4px;">${data.title}</div>
+                                    <div style="font-size:0.7rem; color:var(--text-muted);">${timeAgo(data.createdAt)}</div>
+                                </div>
+                                <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.4;">${data.message}</p>
+                            </div>
                         </div>
                     `;
-                    item.onclick = async () => {
-                        if(!n.read) await updateDoc(doc(db, 'notifications', d.id), { read: true });
-                        if(n.link) window.location.href = n.link;
-                    };
-                    list.appendChild(item);
-                });
+                }).join('');
             });
 
-            document.getElementById('markAllBtn').onclick = async () => {
-                const unread = await getDocs(query(collection(db, 'notifications'), where('uid', '==', user.uid), where('read', '==', false)));
-                const batch = writeBatch(db);
-                unread.forEach(d => batch.update(d.ref, { read: true }));
-                await batch.commit();
-                showToast("All notifications marked as read", "success");
+            window.handleNotifClick = async (id, link) => {
+                await markNotificationRead(id);
+                if (link) window.location.href = link;
             };
+
+            document.getElementById('btnMarkAll').onclick = () => markAllRead(user.uid);
+
+            function timeAgo(ts) {
+                if(!ts) return 'just now';
+                const seconds = Math.floor((new Date() - ts.toDate()) / 1000);
+                let interval = seconds / 31536000;
+                if (interval > 1) return Math.floor(interval) + "y ago";
+                interval = seconds / 2592000;
+                if (interval > 1) return Math.floor(interval) + "mo ago";
+                interval = seconds / 86400;
+                if (interval > 1) return Math.floor(interval) + "d ago";
+                interval = seconds / 3600;
+                if (interval > 1) return Math.floor(interval) + "h ago";
+                interval = seconds / 60;
+                if (interval > 1) return Math.floor(interval) + "m ago";
+                return "just now";
+            }
         });
-
-        function getIcon(type) {
-            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️', action: '⚡' };
-            return icons[type] || '🔔';
-        }
-
-        function timeAgo(ts) {
-            if(!ts) return 'just now';
-            const seconds = Math.floor((new Date() - ts.toDate()) / 1000);
-            if (seconds < 60) return 'Just now';
-            const interval = Math.floor(seconds / 3600);
-            if (interval >= 1) return interval + "h ago";
-            return Math.floor(seconds / 60) + "m ago";
-        }
     </script>
 </body>
 </html>
