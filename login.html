@@ -1,103 +1,136 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign In | SBA Portal</title>
+    <title>Sign In | SBA Grant Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
-    <style>
-        .auth-container { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .auth-card { width: 100%; max-width: 420px; padding: 40px; }
-        .auth-logo { margin: 0 auto 30px; justify-content: center; }
-    </style>
 </head>
-<body>
-    <div id="pageLoader" class="page-loader"><div class="spinner"></div></div>
+<body style="display:flex; flex-direction:column; min-height:100vh;">
 
-    <div class="gov-banner" style="position: fixed; top: 0; width: 100%;">
-        <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" style="height:10px;">
-        <span>Official Government Portal</span>
+    <div class="gov-banner">
+        <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="USA Flag" style="height:11px;">
+        <span>An official website of the United States government</span>
     </div>
 
-    <div class="auth-container">
-        <div class="card auth-card">
-            <div class="sba-logo auth-logo">
-                <svg width="40" height="40" viewBox="0 0 60 60"><path d="M8 8 H24 V14 H14 V24 H8 Z" fill="#003087"/><path d="M36 46 H46 V36 H52 V52 H36 Z" fill="#c8102e"/></svg>
-                <div class="sba-logo__text">
-                    <span class="sba-logo__name">SBA Portal</span>
-                    <span class="sba-logo__sub">Secure Sign In</span>
+    <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:20px;">
+        <div style="max-width:440px; width:100%;">
+            <div style="text-align:center; margin-bottom:32px;">
+                <div class="sba-logo" style="justify-content:center; margin-bottom:12px;">
+                    <svg class="sba-logo__mark" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/>
+                        <path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/>
+                        <text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text>
+                        <text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text>
+                        <text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text>
+                    </svg>
+                </div>
+                <h1 style="font-size:1.5rem; font-weight:800; color:var(--navy);">Sign In to Your Account</h1>
+                <p style="color:var(--text-secondary); font-size:0.9rem; margin-top:8px;">Access your grant application and portal</p>
+            </div>
+
+            <div class="card">
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <div style="position:relative;">
+                            <i class="fa-solid fa-envelope" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                            <input type="email" id="email" class="form-input" placeholder="name@example.com" required style="padding-left:40px;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                            <label class="form-label" style="margin-bottom:0;">Password</label>
+                            <a href="forgot-password.html" style="font-size:0.8rem; font-weight:600; color:var(--navy); text-decoration:none;">Forgot?</a>
+                        </div>
+                        <div style="position:relative;">
+                            <i class="fa-solid fa-lock" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                            <input type="password" id="password" class="form-input" placeholder="••••••••" required style="padding-left:40px; padding-right:44px;">
+                            <button type="button" id="togglePass" style="position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer;">
+                                <i class="fa-solid fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="loginError" class="alert alert--error mb-4" style="display:none;"></div>
+
+                    <button type="submit" class="btn btn--primary btn--full btn--lg" id="submitBtn">Sign In</button>
+                </form>
+
+                <div style="margin:24px 0; display:flex; align-items:center; gap:16px;">
+                    <div style="flex:1; height:1px; background:var(--border-light);"></div>
+                    <span style="font-size:0.75rem; color:var(--text-muted); font-weight:700; text-transform:uppercase;">or</span>
+                    <div style="flex:1; height:1px; background:var(--border-light);"></div>
+                </div>
+
+                <div style="text-align:center;">
+                    <p style="font-size:0.9rem; color:var(--text-secondary);">Don't have an account?</p>
+                    <a href="register.html" style="display:block; margin-top:8px; font-weight:700; color:var(--navy); text-decoration:none;">Apply for a Grant Now &rarr;</a>
                 </div>
             </div>
 
-            <form id="loginForm">
-                <div class="form-group">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" id="email" class="form-input" required placeholder="name@example.com">
-                </div>
-                <div class="form-group">
-                    <div style="display: flex; justify-content: space-between;">
-                        <label class="form-label">Password</label>
-                        <a href="forgot-password.html" style="font-size: 0.8rem; color: var(--navy);">Forgot?</a>
-                    </div>
-                    <input type="password" id="password" class="form-input" required placeholder="••••••••">
-                </div>
-                
-                <div id="errorBox" class="alert alert--error" style="display: none; margin-bottom: 20px; padding: 10px; font-size: 0.85rem; border-radius: 6px; background: #fee2e2; color: #991b1b;"></div>
-
-                <button type="submit" id="submitBtn" class="btn btn--primary btn--full">Sign In</button>
-            </form>
-
-            <div style="margin-top: 30px; text-align: center; font-size: 0.9rem;">
-                Don't have an account? <a href="register.html" style="color: var(--navy); font-weight: 600;">Apply Now →</a>
+            <div style="text-align:center; margin-top:32px;">
+                <a href="index.html" style="font-size:0.85rem; color:var(--text-muted); text-decoration:none; font-weight:600;">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Homepage
+                </a>
             </div>
         </div>
     </div>
 
     <script type="module">
-        import { auth, signInWithEmailAndPassword, getUserData, setUserOnline, isAdmin } from './firebase-config.js';
-        import { initTheme, showToast, redirectIfLoggedIn, showLoader, hideLoader } from './app.js';
+        import { 
+            auth, signInWithEmailAndPassword, 
+            getUserData, setUserOnline, isAdmin 
+        } from './firebase-config.js';
+        import { redirectIfLoggedIn, setButtonLoading, initTheme } from './app.js';
 
         initTheme();
         redirectIfLoggedIn();
 
-        const form = document.getElementById('loginForm');
-        const errBox = document.getElementById('errorBox');
+        const loginForm = document.getElementById('loginForm');
+        const loginError = document.getElementById('loginError');
+        const submitBtn = document.getElementById('submitBtn');
+        const passwordInput = document.getElementById('password');
+        const togglePass = document.getElementById('togglePass');
 
-        form.onsubmit = async (e) => {
+        togglePass.onclick = () => {
+            const isPass = passwordInput.type === 'password';
+            passwordInput.type = isPass ? 'text' : 'password';
+            togglePass.querySelector('i').className = isPass ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+        };
+
+        loginForm.onsubmit = async (e) => {
             e.preventDefault();
-            errBox.style.display = 'none';
-            showLoader();
+            setButtonLoading(submitBtn, true, 'Verifying...');
+            loginError.style.display = 'none';
 
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
+            const email = document.getElementById('email').value.trim();
+            const password = passwordInput.value;
 
             try {
-                const cred = await signInWithEmailAndPassword(auth, email, password);
-                const userData = await getUserData(cred.user.uid);
-
-                if(userData.accountStatus === 'suspended') {
-                    await auth.signOut();
-                    throw { code: 'auth/user-disabled' };
-                }
-
-                await setUserOnline(cred.user.uid, true);
+                const userCred = await signInWithEmailAndPassword(auth, email, password);
+                const uid = userCred.user.uid;
                 
-                if(userData.role === 'admin') {
-                    window.location.href = 'admin-portal.html';
-                } else {
-                    window.location.href = 'dashboard.html';
-                }
+                await setUserOnline(uid, true);
+                const userData = await getUserData(uid);
+                
+                if (userData.role === 'admin') window.location.href = 'admin-portal.html';
+                else window.location.href = 'dashboard.html';
 
             } catch (error) {
-                hideLoader();
-                errBox.style.display = 'block';
-                switch(error.code) {
-                    case 'auth/user-not-found': errBox.innerText = "No account found with this email."; break;
-                    case 'auth/wrong-password': errBox.innerText = "Incorrect password."; break;
-                    case 'auth/user-disabled': errBox.innerText = "This account has been suspended."; break;
-                    case 'auth/too-many-requests': errBox.innerText = "Too many attempts. Try again later."; break;
-                    default: errBox.innerText = "Authentication failed. Please check your credentials.";
-                }
+                setButtonLoading(submitBtn, false);
+                loginError.style.display = 'flex';
+                
+                const messages = {
+                    'auth/user-not-found': 'No account exists with this email.',
+                    'auth/wrong-password': 'The password you entered is incorrect.',
+                    'auth/invalid-email': 'Please enter a valid email address.',
+                    'auth/too-many-requests': 'Account locked due to many failed attempts. Try again later.'
+                };
+                loginError.textContent = messages[error.code] || 'Failed to sign in. Please check your credentials.';
             }
         };
     </script>
