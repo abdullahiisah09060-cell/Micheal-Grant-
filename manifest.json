@@ -1,25 +1,15 @@
 {
-    "name": "U.S. SBA Grant Portal",
+    "name": "SBA Grant Portal",
     "short_name": "SBA Grants",
-    "description": "Official U.S. Small Business Administration Grant Application and Management Portal",
+    "description": "U.S. Small Business Administration Official Grant Portal",
     "start_url": "/index.html",
     "display": "standalone",
     "background_color": "#003087",
     "theme_color": "#003087",
     "orientation": "portrait-primary",
     "icons": [
-        {
-            "src": "https://www.sba.gov/themes/custom/sba/logo.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "any maskable"
-        },
-        {
-            "src": "https://www.sba.gov/themes/custom/sba/logo.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "any maskable"
-        }
+        { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+        { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
     ],
     "categories": ["finance", "government", "business"]
 }
