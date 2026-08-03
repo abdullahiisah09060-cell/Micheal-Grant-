@@ -1,212 +1,223 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | SBA Grant Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
-    <style>
-        .layout { display: flex; min-height: 100vh; }
-        
-        /* Sidebar */
-        .sidebar { width: 260px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 1000; transition: transform 0.3s ease; }
-        .sidebar__logo { padding: 24px; border-bottom: 1px solid var(--border-light); }
-        .sidebar__nav { padding: 20px 12px; flex: 1; overflow-y: auto; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 8px; color: var(--text-secondary); text-decoration: none; font-weight: 500; margin-bottom: 4px; transition: 0.2s; }
-        .nav-item:hover { background: var(--navy-light); color: var(--navy); }
-        .nav-item.active { background: var(--navy); color: white; }
-        .sidebar__footer { padding: 20px; border-top: 1px solid var(--border-light); }
-
-        /* Main Content */
-        .main { flex: 1; margin-left: 260px; padding: 40px 5%; background: var(--bg); }
-        
-        /* Mobile Elements */
-        .mobile-header { display: none; position: sticky; top: 0; background: var(--surface); padding: 12px 20px; border-bottom: 1px solid var(--border); z-index: 900; justify-content: space-between; align-items: center; }
-        .mobile-dock { display: none; position: fixed; bottom: 0; width: 100%; background: var(--surface); border-top: 1px solid var(--border); padding: 10px 0; z-index: 900; justify-content: space-around; }
-        
-        /* Dashboard Cards */
-        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 32px; }
-        .stat-card { background: var(--surface); padding: 24px; border-radius: 12px; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
-        .stat-card__val { font-size: 1.8rem; font-weight: 800; color: var(--navy); margin: 8px 0; }
-        
-        .pipeline { background: var(--surface); padding: 32px; border-radius: 12px; margin-bottom: 32px; border: 1px solid var(--border); }
-        .pipeline__track { display: flex; justify-content: space-between; position: relative; margin-top: 20px; }
-        .pipeline__track::before { content: ''; position: absolute; top: 15px; left: 0; right: 0; height: 2px; background: var(--border); z-index: 1; }
-        .step { position: relative; z-index: 2; text-align: center; width: 100px; }
-        .step__dot { width: 32px; height: 32px; background: var(--surface); border: 2px solid var(--border); border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; transition: 0.3s; }
-        .step.completed .step__dot { background: var(--success); border-color: var(--success); color: white; }
-        .step.pending .step__dot { background: var(--warning); border-color: var(--warning); color: white; }
-        .step.current .step__dot { border-color: var(--navy); box-shadow: 0 0 0 4px var(--navy-light); }
-        .step__label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
-
-        @media (max-width: 1024px) {
-            .sidebar { transform: translateX(-100%); }
-            .sidebar.active { transform: translateX(0); }
-            .main { margin-left: 0; padding: 24px 20px 100px; }
-            .mobile-header { display: flex; }
-            .mobile-dock { display: flex; }
-            .stats-grid { grid-template-columns: 1fr; }
-            .pipeline__track { flex-direction: column; gap: 20px; padding-left: 20px; }
-            .pipeline__track::before { left: 35px; top: 0; bottom: 0; width: 2px; height: 100%; }
-            .step { flex-direction: row; text-align: left; width: 100%; display: flex; align-items: center; gap: 15px; }
-            .step__dot { margin: 0; }
-        }
-    </style>
 </head>
 <body>
-    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
+    <div id="pageLoader" class="page-loader active">
+        <div class="spinner"></div>
+    </div>
 
-    <div class="layout">
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar__logo">
-                <div class="sba-logo">
-                    <svg class="sba-logo__mark" viewBox="0 0 60 60" width="32"><path d="M8 8 H24 V14 H14 V24 H8 Z" fill="#003087"/></svg>
-                    <span style="font-weight: 800; color: var(--navy);">SBA Portal</span>
-                </div>
-            </div>
-            <nav class="sidebar__nav">
-                <a href="dashboard.html" class="nav-item active">🏠 Dashboard</a>
-                <a href="apply.html" class="nav-item">📝 Apply for Grant</a>
-                <a href="kyc.html" class="nav-item">🪪 Identity (KYC)</a>
-                <a href="deposit.html" class="nav-item">💰 Deposit Funds</a>
-                <a href="tax.html" class="nav-item">🧾 Tax Clearance</a>
-                <a href="withdraw.html" class="nav-item">💸 Withdraw</a>
-                <a href="ledger.html" class="nav-item">📊 Transaction History</a>
-                <a href="support.html" class="nav-item">💬 Support Chat</a>
-                <a href="notifications.html" class="nav-item">🔔 Notifications <span class="notif-badge badge--error" style="display:none; font-size:10px; margin-left:auto;">0</span></a>
-                <a href="settings.html" class="nav-item">⚙️ Settings</a>
-            </nav>
-            <div class="sidebar__footer">
-                <button class="btn btn--ghost btn--full" id="signOutBtn">🚪 Sign Out</button>
-            </div>
-        </aside>
+    <div class="app-layout">
+        <aside class="app-sidebar" id="appSidebar"></aside>
+        <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
 
-        <main class="main">
-            <header class="mobile-header">
-                <button id="menuBtn" style="background:none; border:none; font-size:1.5rem;">☰</button>
-                <div class="sba-logo">
-                    <span style="font-weight: 800; color: var(--navy);">SBA</span>
+        <main class="app-main">
+            <header class="mobile-topbar">
+                <button class="hamburger" id="hamburgerBtn"><i class="fa-solid fa-bars"></i></button>
+                <div class="sba-logo sba-logo--sm">
+                    <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
                 </div>
-                <a href="notifications.html" style="position:relative; text-decoration:none;">🔔<span class="notif-badge" style="position:absolute; top:-5px; right:-5px; width:15px; height:15px; background:var(--red); border-radius:50%; font-size:9px; color:white; display:none; align-items:center; justify-content:center;">0</span></a>
+                <div class="mobile-topbar__right">
+                    <a href="notifications.html" style="position:relative; color:var(--text-secondary);"><i class="fa-solid fa-bell"></i><span class="notif-badge"></span></a>
+                </div>
             </header>
 
-            <div id="welcomeSection" style="margin-bottom: 32px;">
-                <h1 style="font-size: 1.75rem; margin-bottom: 4px;">Good day, <span id="userName">...</span></h1>
-                <p style="color: var(--text-secondary);">Welcome to your federal grant management dashboard.</p>
-            </div>
+            <div class="app-main__content">
+                <div id="announcementBox"></div>
 
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <small class="step__label">Available Balance</small>
-                    <div class="stat-card__val" id="userBalance">$0.00</div>
-                    <span class="badge badge--approved">Active Wallet</span>
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 id="greeting" style="font-weight:800; font-size:1.6rem; color:var(--navy);">...</h1>
+                        <p id="currentDate" style="color:var(--text-muted); font-size:0.85rem; font-weight:500;"></p>
+                    </div>
+                    <div id="accountStatusBadge"></div>
                 </div>
-                <div class="stat-card">
-                    <small class="step__label">Requested Amount</small>
-                    <div class="stat-card__val" id="requestedAmount">$0.00</div>
-                    <span class="badge badge--pending">Under Review</span>
-                </div>
-                <div class="stat-card">
-                    <small class="step__label">Allocated Program</small>
-                    <div class="stat-card__val" style="font-size: 1.1rem; padding: 12px 0;" id="progName">SBA Grant Program</div>
-                    <span class="badge badge--approved">Verified</span>
-                </div>
-            </div>
 
-            <div class="pipeline">
-                <h3 style="margin-bottom: 20px;">Application Pipeline</h3>
-                <div class="pipeline__track" id="pipelineTrack">
-                    <!-- Dynamic Steps -->
-                    <div class="step" id="step-kyc">
-                        <div class="step__dot">1</div>
-                        <div class="step__label">Identity</div>
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card__label">Available Balance</div>
+                        <div class="stat-card__value" id="statBalance">$0.00</div>
+                        <div class="stat-card__sub">Allocated for disbursement</div>
                     </div>
-                    <div class="step" id="step-apply">
-                        <div class="step__dot">2</div>
-                        <div class="step__label">Application</div>
+                    <div class="stat-card">
+                        <div class="stat-card__label">Requested Grant</div>
+                        <div class="stat-card__value" id="statRequested">$0.00</div>
+                        <div class="stat-card__sub">Based on application</div>
                     </div>
-                    <div class="step" id="step-deposit">
-                        <div class="step__dot">3</div>
-                        <div class="step__label">Funding</div>
-                    </div>
-                    <div class="step" id="step-tax">
-                        <div class="step__dot">4</div>
-                        <div class="step__label">Tax Clear</div>
-                    </div>
-                    <div class="step" id="step-award">
-                        <div class="step__dot">5</div>
-                        <div class="step__label">Award</div>
-                    </div>
-                    <div class="step" id="step-withdraw">
-                        <div class="step__dot">6</div>
-                        <div class="step__label">Disburse</div>
+                    <div class="stat-card">
+                        <div class="stat-card__label">Total Award</div>
+                        <div class="stat-card__value" id="statAward">$0.00</div>
+                        <div class="stat-card__sub">Final approved amount</div>
                     </div>
                 </div>
-            </div>
 
-            <div class="card">
-                <h3>Quick Actions</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-top: 20px;">
-                    <a href="kyc.html" class="btn btn--outline" style="flex-direction: column; padding: 20px;">🪪 <span>KYC</span></a>
-                    <a href="apply.html" class="btn btn--outline" style="flex-direction: column; padding: 20px;">📝 <span>Apply</span></a>
-                    <a href="deposit.html" class="btn btn--outline" style="flex-direction: column; padding: 20px;">💰 <span>Deposit</span></a>
-                    <a href="withdraw.html" class="btn btn--outline" style="flex-direction: column; padding: 20px;">💸 <span>Withdraw</span></a>
+                <!-- Horizontal Pipeline -->
+                <div class="pipeline mb-8">
+                    <div class="pipeline__title"><i class="fa-solid fa-bars-progress text-navy"></i> Application Progress</div>
+                    <div class="pipeline__track" id="pipelineTrack">
+                        <div class="pipeline__step" id="step-kyc"><div class="pipeline__dot"><i class="fa-solid fa-id-card"></i></div><div class="pipeline__step-label">Identity</div></div>
+                        <div class="pipeline__step" id="step-apply"><div class="pipeline__dot"><i class="fa-solid fa-file-pen"></i></div><div class="pipeline__step-label">Application</div></div>
+                        <div class="pipeline__step" id="step-deposit"><div class="pipeline__dot"><i class="fa-solid fa-coins"></i></div><div class="pipeline__step-label">Deposit</div></div>
+                        <div class="pipeline__step" id="step-tax"><div class="pipeline__dot"><i class="fa-solid fa-receipt"></i></div><div class="pipeline__step-label">Tax</div></div>
+                        <div class="pipeline__step" id="step-award"><div class="pipeline__dot"><i class="fa-solid fa-trophy"></i></div><div class="pipeline__step-label">Award</div></div>
+                        <div class="pipeline__step" id="step-withdraw"><div class="pipeline__dot"><i class="fa-solid fa-bank"></i></div><div class="pipeline__step-label">Disbursement</div></div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Grid -->
+                <div class="actions-grid">
+                    <a href="kyc.html" class="action-tile"><div class="action-tile__icon" style="background:#eff6ff; color:#1d4ed8;"><i class="fa-solid fa-id-card"></i></div><div class="action-tile__label">Identity</div></a>
+                    <a href="apply.html" class="action-tile"><div class="action-tile__icon" style="background:#eaf0fb; color:#003087;"><i class="fa-solid fa-file-signature"></i></div><div class="action-tile__label">Apply</div></a>
+                    <a href="deposit.html" class="action-tile"><div class="action-tile__icon" style="background:#f0fdf4; color:#15803d;"><i class="fa-solid fa-wallet"></i></div><div class="action-tile__label">Deposit</div></a>
+                    <a href="withdraw.html" class="action-tile"><div class="action-tile__icon" style="background:#faf5ff; color:#7e22ce;"><i class="fa-solid fa-money-bill-transfer"></i></div><div class="action-tile__label">Withdraw</div></a>
+                    <a href="tax.html" class="action-tile"><div class="action-tile__icon" style="background:#fff7ed; color:#c2410c;"><i class="fa-solid fa-file-invoice-dollar"></i></div><div class="action-tile__label">Tax Fee</div></a>
+                    <a href="award.html" class="action-tile"><div class="action-tile__icon" style="background:#fefce8; color:#a16207;"><i class="fa-solid fa-trophy"></i></div><div class="action-tile__label">Certificate</div></a>
+                    <a href="ledger.html" class="action-tile"><div class="action-tile__icon" style="background:#f8fafc; color:#475569;"><i class="fa-solid fa-chart-line"></i></div><div class="action-tile__label">Ledger</div></a>
+                    <a href="settings.html" class="action-tile"><div class="action-tile__icon" style="background:#f1f5f9; color:#64748b;"><i class="fa-solid fa-gear"></i></div><div class="action-tile__label">Settings</div></a>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap:24px;">
+                    <div class="card">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 style="font-weight:800; font-size:1rem; color:var(--navy);">Recent Transactions</h3>
+                            <a href="ledger.html" style="font-size:0.75rem; font-weight:700; color:var(--navy); text-decoration:none;">View All</a>
+                        </div>
+                        <div id="recentTransactions">
+                            <div class="skel skel-text"></div><div class="skel skel-text"></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3 style="font-weight:800; font-size:1rem; color:var(--navy); margin-bottom:16px;">Assigned Officer</h3>
+                        <div id="agentCard" style="text-align:center; padding:10px 0;">
+                            <div id="agentAvatar" style="width:64px; height:64px; border-radius:50%; background:var(--navy); color:white; display:flex; align-items:center; justify-content:center; margin:0 auto 12px; font-size:1.5rem; font-weight:800;">?</div>
+                            <div id="agentName" style="font-weight:700; color:var(--text-primary);">...</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Case Review Officer</div>
+                            <a href="support.html" class="btn btn--secondary btn--sm btn--full"><i class="fa-solid fa-comments"></i> Start Chat</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
 
-        <nav class="mobile-dock">
-            <a href="dashboard.html" style="text-decoration:none; color:var(--navy); font-size:0.7rem; display:flex; flex-direction:column; align-items:center;">🏠<span>Home</span></a>
-            <a href="apply.html" style="text-decoration:none; color:var(--text-muted); font-size:0.7rem; display:flex; flex-direction:column; align-items:center;">📝<span>Apply</span></a>
-            <a href="deposit.html" style="text-decoration:none; color:var(--text-muted); font-size:0.7rem; display:flex; flex-direction:column; align-items:center;">💰<span>Deposit</span></a>
-            <a href="support.html" style="text-decoration:none; color:var(--text-muted); font-size:0.7rem; display:flex; flex-direction:column; align-items:center;">💬<span>Support</span></a>
-        </nav>
+        <nav class="mobile-dock" id="mobileDock"></nav>
+        <a href="support.html" class="float-support"><i class="fa-solid fa-headset"></i></a>
     </div>
 
     <script type="module">
-        import { auth, signOut, setUserOnline } from './firebase-config.js';
-        import { requireAuth, initTheme, initNotificationBadge, formatCurrency } from './app.js';
-
-        initTheme();
+        import { 
+            db, collection, query, where, orderBy, limit, onSnapshot, getDoc, doc 
+        } from './firebase-config.js';
+        import { 
+            requireAuth, buildSidebar, buildDock, initTheme, formatCurrency, 
+            initNotificationBadge, renderStatusBadge, requestNotificationPermission
+        } from './app.js';
 
         requireAuth((user, userData) => {
-            document.getElementById('userName').innerText = userData.fullName.split(' ')[0];
-            document.getElementById('userBalance').innerText = formatCurrency(userData.balance);
-            document.getElementById('requestedAmount').innerText = formatCurrency(userData.requestedAmount);
-            document.getElementById('progName').innerText = userData.allocatedProgram;
-            
+            initTheme();
+            buildSidebar({ activeId: 'dashboard', userData });
+            buildDock({ activeId: 'home' });
             initNotificationBadge(user.uid);
-            renderPipeline(userData);
-        });
+            requestNotificationPermission(user.uid);
 
-        function renderPipeline(data) {
-            const steps = [
-                { id: 'kyc', status: data.kycStatus },
-                { id: 'apply', status: data.applyStatus },
-                { id: 'deposit', status: data.depositStatus },
-                { id: 'tax', status: data.taxStatus },
-                { id: 'award', status: data.awardStatus },
-                { id: 'withdraw', status: data.withdrawStatus }
-            ];
+            // Greeting
+            const hr = new Date().getHours();
+            const greet = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
+            document.getElementById('greeting').innerText = `${greet}, ${userData.fullName.split(' ')[0]}`;
+            document.getElementById('currentDate').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            
+            // Stats
+            document.getElementById('statBalance').innerText = formatCurrency(userData.balance || 0);
+            document.getElementById('statRequested').innerText = formatCurrency(userData.requestedAmount || 0);
+            document.getElementById('statAward').innerText = formatCurrency(userData.totalAward || 0);
+            document.getElementById('accountStatusBadge').innerHTML = userData.accountStatus === 'active' 
+                ? '<span class="badge badge--approved"><i class="fa-solid fa-circle-check"></i> Active</span>' 
+                : '<span class="badge badge--rejected"><i class="fa-solid fa-ban"></i> Suspended</span>';
 
+            // Officer
+            const agentInitials = userData.assignedAgent.split(' ').map(n => n[0]).join('');
+            document.getElementById('agentAvatar').innerText = agentInitials;
+            document.getElementById('agentName').innerText = userData.assignedAgent;
+
+            // Pipeline Mapping
+            const statusMap = {
+                'IDLE': 'idle',
+                'PENDING': 'pending',
+                'UNDER_REVIEW': 'review',
+                'APPROVED': 'approved',
+                'REJECTED': 'rejected',
+                'CONFIRMED': 'approved'
+            };
+
+            const steps = ['kyc', 'apply', 'deposit', 'tax', 'award', 'withdraw'];
             steps.forEach(s => {
-                const el = document.getElementById(`step-${s.id}`);
-                el.className = 'step';
-                if(s.status === 'APPROVED' || s.status === 'CONFIRMED') el.classList.add('completed');
-                else if(s.status === 'PENDING' || s.status === 'UNDER_REVIEW') el.classList.add('pending');
-                else if(s.status === 'REJECTED' || s.status === 'DECLINED') el.style.color = 'var(--error)';
+                const status = userData[`${s}Status`];
+                const el = document.getElementById(`step-${s}`);
+                if(el) el.className = `pipeline__step ${statusMap[status] || 'idle'}`;
             });
-        }
 
-        document.getElementById('signOutBtn').onclick = async () => {
-            await setUserOnline(auth.currentUser.uid, false);
-            await signOut(auth);
-            window.location.href = 'login.html';
-        };
+            // Recent Transactions
+            const txQuery = query(collection(db, "users", user.uid, "ledger"), orderBy("createdAt", "desc"), limit(4));
+            onSnapshot(txQuery, (snap) => {
+                const txDiv = document.getElementById('recentTransactions');
+                if (snap.empty) {
+                    txDiv.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:0.85rem; padding:20px;">No transactions yet.</p>';
+                    return;
+                }
+                txDiv.innerHTML = snap.docs.map(doc => {
+                    const data = doc.data();
+                    const isCredit = ['credit', 'deposit', 'award', 'refund'].includes(data.type);
+                    return `
+                        <div style="display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border-light);">
+                            <div style="width:36px; height:36px; border-radius:50%; background:var(--surface-2); display:flex; align-items:center; justify-content:center; color:${isCredit ? 'var(--success)' : 'var(--red)'};">
+                                <i class="fa-solid ${isCredit ? 'fa-arrow-down-left' : 'fa-arrow-up-right'}"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-size:0.85rem; font-weight:700;">${data.description}</div>
+                                <div style="font-size:0.7rem; color:var(--text-muted);">${new Date(data.createdAt?.seconds * 1000).toLocaleDateString()}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:0.85rem; font-weight:800; color:${isCredit ? 'var(--success)' : 'var(--text-primary)'};">
+                                    ${isCredit ? '+' : '-'}${formatCurrency(data.amount)}
+                                </div>
+                                <div style="font-size:0.65rem; text-transform:uppercase; font-weight:700; color:var(--text-muted);">${data.status}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            });
 
-        const menuBtn = document.getElementById('menuBtn');
-        const sidebar = document.getElementById('sidebar');
-        menuBtn.onclick = () => sidebar.classList.toggle('active');
+            // Platform Config (Announcement)
+            onSnapshot(doc(db, "config", "platform"), (snap) => {
+                const box = document.getElementById('announcementBox');
+                if (snap.exists() && snap.data().announcementBanner) {
+                    box.innerHTML = `
+                        <div class="alert alert--info mb-6" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <i class="fa-solid fa-bullhorn"></i>
+                                <span>${snap.data().announcementBanner}</span>
+                            </div>
+                            <button onclick="this.parentElement.remove()" style="background:none; border:none; color:inherit; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    `;
+                } else {
+                    box.innerHTML = '';
+                }
+            });
+
+            // Mobile Hamburger
+            document.getElementById('hamburgerBtn').onclick = () => {
+                document.getElementById('appSidebar').classList.add('open');
+                document.getElementById('sidebarOverlay').classList.add('show');
+            };
+        });
     </script>
 </body>
 </html>
