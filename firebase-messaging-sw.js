@@ -12,14 +12,16 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-    console.log('[SBA] Background message received', payload);
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
+    self.registration.showNotification(payload.notification.title, {
         body: payload.notification.body,
-        icon: '/icons/sba-icon-192.png',
-        badge: '/icons/sba-badge.png',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
         data: payload.data
-    };
+    });
+});
 
-    self.registration.showNotification(notificationTitle, notificationOptions);
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const link = event.notification.data?.link || '/';
+    event.waitUntil(clients.openWindow(link));
 });
