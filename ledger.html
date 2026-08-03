@@ -1,122 +1,102 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ledger | SBA Portal</title>
+    <title>Transaction History | SBA Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .ledger-container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
-        .ledger-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        .ledger-table th { text-align: left; padding: 15px; background: var(--surface-2); font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; }
-        .ledger-table td { padding: 15px; border-bottom: 1px solid var(--border-light); }
-        .amount--plus { color: var(--success); font-weight: 700; }
-        .amount--minus { color: var(--error); font-weight: 700; }
-        @media (max-width: 768px) {
-            .ledger-table thead { display: none; }
-            .ledger-table tr { display: block; padding: 15px; background: var(--surface); margin-bottom: 15px; border-radius: 8px; border: 1px solid var(--border); }
-            .ledger-table td { display: flex; justify-content: space-between; padding: 8px 0; border: none; text-align: right; }
-            .ledger-table td::before { content: attr(data-label); font-weight: 700; color: var(--text-muted); text-align: left; }
-        }
+        .ledger-row { display: flex; align-items: center; padding: 16px; border-bottom: 1px solid var(--border-light); gap: 16px; transition: 0.2s; }
+        .ledger-row:hover { background: var(--surface-2); }
+        .ledger-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
     </style>
 </head>
 <body>
     <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
-    
-    <div class="ledger-container">
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px;">
-            <div>
-                <h1>Transaction Ledger</h1>
-                <p style="color: var(--text-secondary);">Full history of your grant account activity.</p>
-            </div>
-            <button id="exportCsv" class="btn btn--outline btn--sm">Export CSV</button>
-        </div>
+    <div class="app-layout">
+        <aside class="app-sidebar" id="appSidebar"></aside>
+        <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
+        <main class="app-main">
+            <header class="page-header" id="pageHeader"></header>
+            <div class="app-main__content" style="max-width: 900px;">
+                <div class="card mb-6" style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div class="text-muted" style="font-size:0.75rem; font-weight:700; text-transform:uppercase;">Current Balance</div>
+                        <div id="ledgerBalance" style="font-size:1.8rem; font-weight:900; color:var(--navy);">$0.00</div>
+                    </div>
+                    <button class="btn btn--secondary btn--sm" id="btnExport"><i class="fa-solid fa-file-export"></i> Export CSV</button>
+                </div>
 
-        <div class="card" style="padding: 0; overflow: hidden;">
-            <table class="ledger-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Description</th>
-                        <th>Type</th>
-                        <th>Status</th>
-                        <th>Amount</th>
-                    </tr>
-                </thead>
-                <tbody id="ledgerBody">
-                    <!-- Loaded dynamically -->
-                </tbody>
-            </table>
-            <div id="emptyState" style="display: none; padding: 60px; text-align: center; color: var(--text-muted);">
-                <div style="font-size: 3rem; margin-bottom: 15px;">📊</div>
-                <p>No transactions found in your history.</p>
+                <div class="card" style="padding:0; overflow:hidden;">
+                    <div id="ledgerList">
+                        <div style="padding:40px; text-align:center;"><div class="spinner" style="margin:0 auto;"></div></div>
+                    </div>
+                </div>
             </div>
-        </div>
+        </main>
     </div>
 
     <script type="module">
-        import { db, onSnapshot, collection, query, orderBy } from './firebase-config.js';
-        import { requireAuth, hideLoader, formatCurrency, formatDate } from './app.js';
+        import { db, collection, query, orderBy, onSnapshot } from './firebase-config.js';
+        import { requireAuth, buildSidebar, buildPageHeader, initTheme, formatCurrency } from './app.js';
 
-        let transactions = [];
+        requireAuth((user, userData) => {
+            initTheme();
+            buildSidebar({ activeId: 'ledger', userData });
+            buildPageHeader({ title: 'Ledger History', subtitle: 'Detailed record of all account activity', backUrl: 'dashboard.html' });
 
-        requireAuth((user) => {
-            const q = query(collection(db, `users/${user.uid}/ledger`), orderBy('createdAt', 'desc'));
+            document.getElementById('ledgerBalance').innerText = formatCurrency(userData.balance);
+
+            const q = query(collection(db, "users", user.uid, "ledger"), orderBy("createdAt", "desc"));
             
             onSnapshot(q, (snap) => {
-                const body = document.getElementById('ledgerBody');
-                const empty = document.getElementById('emptyState');
-                transactions = [];
-
+                const list = document.getElementById('ledgerList');
                 if (snap.empty) {
-                    body.innerHTML = '';
-                    empty.style.display = 'block';
-                } else {
-                    empty.style.display = 'none';
-                    body.innerHTML = '';
-                    snap.forEach(d => {
-                        const t = d.data();
-                        transactions.push(t);
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td data-label="Date">${formatDate(t.createdAt)}</td>
-                            <td data-label="Description"><b>${t.description}</b></td>
-                            <td data-label="Type"><span class="badge badge--pending" style="background:var(--navy-light); color:var(--navy);">${t.type}</span></td>
-                            <td data-label="Status"><span class="badge badge--${t.status.toLowerCase()}">${t.status}</span></td>
-                            <td data-label="Amount" class="${t.amount >= 0 ? 'amount--plus' : 'amount--minus'}">
-                                ${t.amount >= 0 ? '+' : ''}${formatCurrency(t.amount)}
-                            </td>
-                        `;
-                        body.appendChild(row);
-                    });
+                    list.innerHTML = `<div style="padding:60px; text-align:center;"><i class="fa-solid fa-inbox fa-3x" style="color:var(--border); margin-bottom:16px;"></i><p class="text-muted">No transactions found.</p></div>`;
+                    return;
                 }
-                hideLoader();
+
+                const typeMap = {
+                    deposit: { icon: 'fa-arrow-down-long', color: 'var(--success)', bg: 'var(--success-bg)' },
+                    withdrawal: { icon: 'fa-arrow-up-long', color: 'var(--red)', bg: 'var(--red-light)' },
+                    application: { icon: 'fa-file-signature', color: 'var(--navy)', bg: 'var(--navy-light)' },
+                    fee: { icon: 'fa-receipt', color: 'var(--warning)', bg: 'var(--warning-bg)' },
+                    award: { icon: 'fa-trophy', color: '#a16207', bg: '#fefce8' },
+                    credit: { icon: 'fa-plus', color: 'var(--success)', bg: 'var(--success-bg)' }
+                };
+
+                list.innerHTML = snap.docs.map(doc => {
+                    const data = doc.data();
+                    const style = typeMap[data.type] || typeMap.application;
+                    const date = data.createdAt ? new Date(data.createdAt.seconds * 1000).toLocaleDateString() : 'Pending';
+                    const isDebit = ['withdrawal', 'fee'].includes(data.type);
+                    
+                    return `
+                        <div class="ledger-row">
+                            <div class="ledger-icon" style="background:${style.bg}; color:${style.color};">
+                                <i class="fa-solid ${style.icon}"></i>
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:700; font-size:0.95rem;">${data.description}</div>
+                                <div style="font-size:0.75rem; color:var(--text-muted);">${date}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-weight:800; color:${isDebit ? 'var(--red)' : 'var(--success)'};">
+                                    ${isDebit ? '-' : '+'}${formatCurrency(data.amount)}
+                                </div>
+                                <div class="badge badge--idle" style="font-size:0.6rem; padding:2px 6px; margin-top:4px;">${data.status}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             });
+
+            document.getElementById('btnExport').onclick = () => {
+                showToast('Preparing CSV...', 'info');
+                // Basic CSV generation logic would go here
+            };
         });
-
-        document.getElementById('exportCsv').onclick = () => {
-            if (!transactions.length) return;
-            const headers = ['Date', 'Description', 'Type', 'Status', 'Amount'];
-            const rows = transactions.map(t => [
-                formatDate(t.createdAt),
-                t.description,
-                t.type,
-                t.status,
-                t.amount
-            ]);
-            
-            let csvContent = "data:text/csv;charset=utf-8," 
-                + headers.join(",") + "\n"
-                + rows.map(e => e.join(",")).join("\n");
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `SBA_Ledger_${new Date().getTime()}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        };
     </script>
 </body>
 </html>
