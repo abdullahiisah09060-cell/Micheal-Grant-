@@ -6,178 +6,61 @@
     <title>Deposit Funds | SBA Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
+    <style>
+        .payment-card { border: 2px solid var(--border); border-radius: 12px; padding: 20px; cursor: pointer; transition: var(--transition); display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .payment-card:hover { border-color: var(--sba-navy); background: var(--sba-blue-light); }
+        .payment-card.active { border-color: var(--sba-navy); background: var(--sba-blue-light); box-shadow: var(--shadow); }
+        .payment-card i { font-size: 1.5rem; width: 40px; text-align: center; }
+        .address-box { background: #1e293b; color: #60a5fa; padding: 15px; border-radius: 8px; font-family: monospace; display: flex; justify-content: space-between; align-items: center; margin: 20px 0; font-size: 13px; }
+    </style>
 </head>
-<body>
-    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
+<body style="background: #f1f5f9;">
+    <div class="container" style="max-width: 600px;">
+        <h2 style="color: var(--sba-navy); margin-bottom: 10px;">Fund Your Account</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 30px;">Select your preferred deposit method to continue.</p>
 
-    <div class="app-layout">
-        <aside class="app-sidebar" id="appSidebar"></aside>
-        <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
-
-        <main class="app-main">
-            <header class="page-header" id="pageHeader"></header>
-
-            <div class="app-main__content" style="max-width: 600px;">
-                <div id="depositTarget"></div>
+        <div class="card">
+            <div class="payment-card active" onclick="selectMethod('crypto')">
+                <i class="fa-brands fa-bitcoin" style="color: #f59e0b;"></i>
+                <div>
+                    <h5 style="margin-bottom: 0;">Cryptocurrency</h5>
+                    <small>Bitcoin, Ethereum, USDT</small>
+                </div>
             </div>
-        </main>
-    </div>
 
-    <script type="module">
-        import { db, serverTimestamp, updateUserData, addLedgerEntry, compressToBase64, notify, notifyAdmins } from './firebase-config.js';
-        import { requireAuth, buildSidebar, buildPageHeader, initTheme, initNotificationBadge, setButtonLoading, showToast } from './app.js';
-
-        const WALLETS = {
-            BTC: { name: 'Bitcoin', icon: 'fa-bitcoin-sign', color: '#f7931a', addr: 'bc1qrrc86d42pzejhwxxsjfctmjkj7dl52q0j0qy9k' },
-            ETH: { name: 'Ethereum (ERC20)', icon: 'fa-ethereum', color: '#627eea', addr: '0x3b424b2999dEF4894f21f1a5bFe89e97Bc21DE1E' },
-            USDT: { name: 'USDT (TRC20)', icon: 'fa-dollar-sign', color: '#26a17b', addr: 'TKZcchSTjdJXEoVZmErwfiSUmZFnh6Tjwx' }
-        };
-
-        requireAuth((user, userData) => {
-            initTheme();
-            buildSidebar({ activeId: 'deposit', userData });
-            buildPageHeader({ title: 'Fund Account', subtitle: 'Secure Payment Submission', backUrl: 'dashboard.html' });
-            initNotificationBadge(user.uid);
-
-            const target = document.getElementById('depositTarget');
-
-            if (userData.depositStatus === 'PENDING') {
-                target.innerHTML = `
-                    <div class="status-screen card">
-                        <div class="status-screen__icon status-screen__icon--pending"><i class="fa-solid fa-hourglass-half"></i></div>
-                        <h2 class="status-screen__title">Payment Under Review</h2>
-                        <p class="status-screen__message">We are verifying your transaction receipt. This usually takes 1-4 hours during business hours.</p>
-                        <a href="dashboard.html" class="btn btn--secondary">Go to Dashboard</a>
-                    </div>
-                `;
-            } else {
-                renderStep1(user, userData, target);
-            }
-        });
-
-        function renderStep1(user, userData, target) {
-            target.innerHTML = `
-                <div class="card">
-                    <h3 style="font-weight:800; color:var(--navy); margin-bottom:24px;">Select Method</h3>
-                    <div class="method-selector">
-                        <div class="method-card" data-method="crypto">
-                            <i class="fa-solid fa-bitcoin-sign method-card__icon" style="color:#f7931a"></i>
-                            <div class="method-card__name">Crypto</div>
-                        </div>
-                        <div class="method-card" data-method="bank">
-                            <i class="fa-solid fa-building-columns method-card__icon" style="color:var(--navy)"></i>
-                            <div class="method-card__name">Bank Wire</div>
-                        </div>
-                        <div class="method-card" data-method="zelle">
-                            <i class="fa-solid fa-envelope method-card__icon" style="color:#6d28d9"></i>
-                            <div class="method-card__name">Zelle</div>
-                        </div>
-                    </div>
-                    <div id="methodDetails"></div>
+            <div class="payment-card" onclick="selectMethod('bank')">
+                <i class="fa-solid fa-building-columns" style="color: var(--sba-navy);"></i>
+                <div>
+                    <h5 style="margin-bottom: 0;">Bank Wire Transfer</h5>
+                    <small>1-3 Business Days</small>
                 </div>
-            `;
+            </div>
 
-            document.querySelectorAll('.method-card').forEach(card => {
-                card.onclick = () => {
-                    document.querySelectorAll('.method-card').forEach(c => c.classList.remove('selected'));
-                    card.classList.add('selected');
-                    const method = card.dataset.method;
-                    if (method === 'crypto') renderCrypto(user, target);
-                    else renderBankZelle(user, target, method);
-                };
-            });
-        }
-
-        function renderCrypto(user, target) {
-            const div = document.getElementById('methodDetails');
-            div.innerHTML = `
-                <div class="coin-grid mt-4">
-                    ${Object.keys(WALLETS).map(key => `
-                        <div class="coin-btn" data-coin="${key}">
-                            <i class="fa-solid ${WALLETS[key].icon}" style="color:${WALLETS[key].color}"></i>
-                            <span class="coin-btn__name">${key}</span>
-                        </div>
-                    `).join('')}
-                </div>
-                <div id="cryptoPayment" style="display:none;">
-                    <div class="address-display">
-                        <div class="address-display__label">Send payment to this address:</div>
-                        <div class="address-display__value" id="walletAddr"></div>
-                        <button class="btn btn--secondary btn--sm" id="btnCopyAddr">Copy Address</button>
-                    </div>
-                    <div class="form-group mt-6">
-                        <label class="form-label">Amount Transferred (USD)</label>
-                        <input type="number" id="dep-amount" class="form-input" placeholder="0.00">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Upload Receipt</label>
-                        <input type="file" id="dep-receipt" class="form-input" accept="image/*">
-                    </div>
-                    <button class="btn btn--primary btn--full mt-4" id="btnSubmitDep">Submit Payment Proof</button>
-                </div>
-            `;
-
-            document.querySelectorAll('.coin-btn').forEach(btn => {
-                btn.onclick = () => {
-                    document.querySelectorAll('.coin-btn').forEach(b => b.classList.remove('selected'));
-                    btn.classList.add('selected');
-                    const coin = btn.dataset.coin;
-                    document.getElementById('walletAddr').innerText = WALLETS[coin].addr;
-                    document.getElementById('cryptoPayment').style.display = 'block';
-                    
-                    document.getElementById('btnSubmitDep').onclick = () => submitDeposit(user, 'Crypto', coin);
-                };
-            });
-
-            document.getElementById('btnCopyAddr').onclick = () => {
-                navigator.clipboard.writeText(document.getElementById('walletAddr').innerText);
-                showToast('Address copied!', 'success');
-            };
-        }
-
-        async function submitDeposit(user, method, sub) {
-            const amount = document.getElementById('dep-amount').value;
-            const file = document.getElementById('dep-receipt').files[0];
-            if (!amount || !file) return showToast('Amount and receipt required', 'warning');
-
-            const btn = document.getElementById('btnSubmitDep');
-            setButtonLoading(btn, true);
-
-            try {
-                const b64 = await compressToBase64(file);
-                await updateUserData(user.uid, {
-                    depositStatus: 'PENDING',
-                    deposit: { method, coin: sub || '', amount: parseFloat(amount), receiptBase64: b64, submittedAt: serverTimestamp() }
-                });
-                await addLedgerEntry(user.uid, { type: 'deposit', amount: parseFloat(amount), description: `Deposit via ${method}`, status: 'PENDING' });
-                showToast('Deposit submitted', 'success');
-                window.location.reload();
-            } catch (e) {
-                setButtonLoading(btn, false);
-                showToast('Submission error', 'error');
-            }
-        }
-
-        function renderBankZelle(user, target, method) {
-            const div = document.getElementById('methodDetails');
-            const isBank = method === 'bank';
-            div.innerHTML = `
-                <div class="alert alert--warning mt-4">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span>Please contact live support to receive the current ${isBank ? 'Bank Wire' : 'Zelle'} details for your region.</span>
-                </div>
-                <div class="form-group mt-4">
-                    <label class="form-label">Amount Sent (USD)</label>
-                    <input type="number" id="dep-amount" class="form-input" placeholder="0.00">
+            <div id="cryptoDetails">
+                <p style="font-size: 13px; margin-top: 25px; font-weight: 600;">Transfer USDT (TRC20) to this address:</p>
+                <div class="address-box">
+                    <span id="walletAddress">TX7vS2yW...L8n2P9q1</span>
+                    <i class="fa-solid fa-copy" style="cursor: pointer;" onclick="copyAddress()"></i>
                 </div>
                 <div class="form-group">
-                    <label class="form-label">Upload Receipt/Screenshot</label>
-                    <input type="file" id="dep-receipt" class="form-input" accept="image/*">
+                    <label class="form-label">Upload Transfer Receipt</label>
+                    <input type="file" class="form-input" id="receipt">
                 </div>
-                <button class="btn btn--primary btn--full" id="btnSubmitDep">Submit Proof</button>
-                <a href="support.html" class="btn btn--ghost btn--full mt-2">Chat with Agent</a>
-            `;
-            document.getElementById('btnSubmitDep').onclick = () => submitDeposit(user, method.toUpperCase());
+            </div>
+
+            <button class="btn btn-primary btn-full" style="margin-top: 10px;">Confirm Deposit</button>
+        </div>
+    </div>
+
+    <script>
+        function selectMethod(method) {
+            document.querySelectorAll('.payment-card').forEach(c => c.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+        function copyAddress() {
+            const addr = document.getElementById('walletAddress').innerText;
+            navigator.clipboard.writeText(addr);
+            alert('Address copied to clipboard'); // Replace with showToast later
         }
     </script>
 </body>
