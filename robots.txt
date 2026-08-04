@@ -1,21 +1,6 @@
 User-agent: *
+Allow: /
 Disallow: /admin-portal.html
 Disallow: /dashboard.html
-Disallow: /apply.html
 Disallow: /kyc.html
-Disallow: /deposit.html
 Disallow: /withdraw.html
-Disallow: /settings.html
-Disallow: /support.html
-Disallow: /notifications.html
-Disallow: /ledger.html
-Disallow: /vault.html
-Disallow: /award.html
-Disallow: /tax.html
-
-Allow: /index.html
-Allow: /login.html
-Allow: /register.html
-Allow: /terms.html
-
-Sitemap: https://sbagrant-b7e5d.netlify.app/sitemap.xml
