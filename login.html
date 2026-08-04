@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,57 +7,144 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
 </head>
-<body style="display: flex; flex-direction: column; min-height: 100vh;">
+<body style="min-height:100vh; display:flex; flex-direction:column; background:var(--bg);">
 
-    <div class="gov-banner">
-        <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="USA Flag">
-        <span>A secure federal portal system</span>
-    </div>
+<div id="pageLoader" class="page-loader">
+    <div class="spinner"></div>
+</div>
 
-    <div class="container" style="flex: 1; display: flex; align-items: center; justify-content: center;">
-        <div class="card" style="max-width: 450px; width: 100%;">
-            <div style="text-align: center; margin-bottom: 30px;">
-                <img src="sba-logo.png" alt="SBA Logo" style="height: 60px; margin-bottom: 15px;">
-                <h2 style="color: var(--sba-navy);">Portal Login</h2>
-                <p style="color: var(--text-secondary); font-size: 14px;">Access your grant application dashboard</p>
+<div class="gov-banner">
+    <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="US Flag">
+    <span>An official website of the United States government</span>
+</div>
+
+<div style="flex:1; display:flex; align-items:center; justify-content:center; padding:20px;">
+    <div style="width:100%; max-width:440px;">
+        <div style="text-align:center; margin-bottom:32px;">
+            <div class="sba-logo" style="justify-content:center; margin-bottom:24px;">
+                <svg class="sba-logo__mark" viewBox="0 0 80 80" width="60" height="60">
+                    <path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/>
+                    <path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/>
+                    <text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text>
+                    <text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text>
+                    <text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text>
+                </svg>
+                <div class="sba-logo__text" style="text-align:left;">
+                    <span class="sba-logo__name">U.S. Small Business</span>
+                    <span class="sba-logo__sub">Administration</span>
+                </div>
             </div>
+            <h1 style="font-size:1.5rem; font-weight:800; color:var(--text-primary);">Welcome back</h1>
+            <p style="color:var(--text-secondary); margin-top:8px;">Sign in to your secure federal portal account</p>
+        </div>
 
+        <div class="card card--shadow">
+            <div id="authError" class="alert alert--error mb-6" style="display:none;"></div>
+            
             <form id="loginForm">
                 <div class="form-group">
                     <label class="form-label">Email Address</label>
-                    <input type="email" id="email" class="form-input" required>
+                    <div style="position:relative;">
+                        <i class="fa-solid fa-envelope" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                        <input type="email" id="email" class="form-input" placeholder="name@example.com" required style="padding-left:40px;">
+                    </div>
                 </div>
 
                 <div class="form-group">
-                    <div style="display: flex; justify-content: space-between;">
-                        <label class="form-label">Password</label>
-                        <a href="forgot-password.html" style="font-size: 12px; color: var(--sba-navy); font-weight: 600;">Forgot?</a>
+                    <div style="display:flex; justify-content:between; align-items:center; margin-bottom:8px;">
+                        <label class="form-label" style="margin-bottom:0;">Password</label>
+                        <a href="forgot-password.html" style="font-size:0.8rem; font-weight:600; color:var(--navy); text-decoration:none;">Forgot?</a>
                     </div>
-                    <div style="position: relative;">
-                        <input type="password" id="password" class="form-input" required>
-                        <i class="fa-solid fa-eye" id="togglePassword" style="position: absolute; right: 15px; top: 13px; color: var(--text-muted); cursor: pointer;"></i>
+                    <div style="position:relative;">
+                        <i class="fa-solid fa-lock" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-muted);"></i>
+                        <input type="password" id="password" class="form-input" placeholder="••••••••" required style="padding-left:40px; padding-right:40px;">
+                        <button type="button" id="togglePass" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer;">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-full" id="loginBtn">Sign In</button>
+                <label style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-bottom:24px;">
+                    <input type="checkbox" style="width:16px; height:16px; accent-color:var(--navy);">
+                    <span style="font-size:0.875rem; color:var(--text-secondary);">Remember me for 30 days</span>
+                </label>
+
+                <button type="submit" class="btn btn--primary btn--full" id="submitBtn">Sign In</button>
             </form>
 
-            <div style="text-align: center; margin-top: 25px; border-top: 1px solid var(--border); padding-top: 20px;">
-                <p style="font-size: 14px; color: var(--text-secondary);">New applicant?</p>
-                <a href="register.html" style="color: var(--sba-navy); font-weight: 700; text-decoration: none;">Create an Account &rarr;</a>
+            <div style="margin:24px 0; display:flex; align-items:center; gap:12px;">
+                <div style="flex:1; height:1px; background:var(--border-light);"></div>
+                <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; font-weight:700;">Secure Portal</span>
+                <div style="flex:1; height:1px; background:var(--border-light);"></div>
             </div>
-        </div>
-    </div>
 
-    <script type="module">
-        // UI Logic for Password Toggle
-        const toggle = document.getElementById('togglePassword');
-        const pass = document.getElementById('password');
-        toggle.addEventListener('click', () => {
-            const type = pass.getAttribute('type') === 'password' ? 'text' : 'password';
-            pass.setAttribute('type', type);
-            toggle.classList.toggle('fa-eye-slash');
-        });
-    </script>
+            <p style="text-align:center; font-size:0.9rem; color:var(--text-secondary);">
+                Don't have an account? <a href="register.html" style="color:var(--navy); font-weight:700; text-decoration:none;">Apply Now <i class="fa-solid fa-arrow-right"></i></a>
+            </p>
+        </div>
+        
+        <p style="text-align:center; margin-top:32px; font-size:0.75rem; color:var(--text-muted); line-height:1.5;">
+            Unauthorized access to this United States Government Computer System is prohibited by Public Law 99-474 (The Computer Fraud and Abuse Act of 1986).
+        </p>
+    </div>
+</div>
+
+<script type="module">
+    import * as app from './app.js';
+    import * as fb from './firebase-config.js';
+
+    app.initTheme();
+    app.redirectIfLoggedIn();
+
+    const loginForm = document.getElementById('loginForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const errorBox = document.getElementById('authError');
+    const passInput = document.getElementById('password');
+    const togglePass = document.getElementById('togglePass');
+
+    togglePass.onclick = () => {
+        const type = passInput.type === 'password' ? 'text' : 'password';
+        passInput.type = type;
+        togglePass.innerHTML = `<i class="fa-solid fa-eye${type === 'password' ? '' : '-slash'}"></i>`;
+    };
+
+    loginForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = passInput.value;
+
+        app.setButtonLoading(submitBtn, true, 'Verifying...');
+        errorBox.style.display = 'none';
+
+        try {
+            const userCred = await fb.signInWithEmailAndPassword(fb.auth, email, password);
+            const userData = await fb.getUserData(userCred.user.uid);
+            
+            if (!userData) {
+                throw new Error("Account data not found. Please contact support.");
+            }
+
+            await fb.setUserOnline(userCred.user.uid, true);
+            
+            app.showToast(`Welcome back, ${userData.fullName}!`, 'success');
+            
+            setTimeout(() => {
+                window.location.href = userData.role === 'admin' ? 'admin-portal.html' : 'dashboard.html';
+            }, 800);
+
+        } catch (error) {
+            console.error(error);
+            app.setButtonLoading(submitBtn, false);
+            
+            let msg = "Invalid email or password.";
+            if (error.code === 'auth/user-disabled') msg = "This account has been disabled.";
+            if (error.code === 'auth/too-many-requests') msg = "Too many failed attempts. Try again later.";
+            
+            errorBox.textContent = msg;
+            errorBox.style.display = 'flex';
+            app.showToast(msg, 'error');
+        }
+    };
+</script>
 </body>
 </html>
