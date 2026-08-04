@@ -1,61 +1,48 @@
-import { auth, db, isAdmin } from './firebase-config.js';
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+/* --- ADD THIS TO YOUR EXISTING app.js --- */
 
 /**
- * AUTH GUARD: Ensures only logged-in users see protected pages.
- * @param {Function} callback - Code to run if authenticated.
+ * FORM VALIDATOR: Regex patterns for Federal compliance
  */
-export const requireAuth = (callback) => {
-    onAuthStateChanged(auth, async (user) => {
-        if (!user) {
-            window.location.href = 'login.html';
-        } else {
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDoc.exists()) {
-                callback(user, userDoc.data());
-            } else {
-                console.error("User document not found in Firestore.");
-            }
-        }
-    });
+export const validators = {
+    ssn: (val) => /^\d{4}$/.test(val), // Last 4 only
+    ein: (val) => /^\d{2}-\d{7}$/.test(val), // XX-XXXXXXX
+    routing: (val) => /^\d{9}$/.test(val), // 9 digits
+    phone: (val) => /^\+?1?\d{9,15}$/.test(val),
+    amount: (val, min = 1000) => parseFloat(val) >= min
 };
 
 /**
- * ADMIN GUARD: Ensures only admins see the control panel.
+ * UI FEEDBACK: Visual validation cues
  */
-export const requireAdmin = (callback) => {
-    onAuthStateChanged(auth, async (user) => {
-        if (user && isAdmin(user.email)) {
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            callback(user, userDoc.data());
-        } else {
-            window.location.href = 'dashboard.html';
-        }
-    });
+export const markField = (element, isValid, message = "") => {
+    const parent = element.closest('.form-group');
+    if (!parent) return;
+
+    // Remove existing errors
+    const existing = parent.querySelector('.error-msg');
+    if (existing) existing.remove();
+
+    if (isValid) {
+        element.style.borderColor = 'var(--success)';
+        element.style.boxShadow = '0 0 0 3px rgba(21, 128, 61, 0.1)';
+    } else {
+        element.style.borderColor = 'var(--sba-red)';
+        element.style.boxShadow = '0 0 0 3px rgba(200, 16, 46, 0.1)';
+        
+        const err = document.createElement('small');
+        err.className = 'error-msg';
+        err.style.cssText = 'color: var(--sba-red); font-size: 11px; font-weight: 700; margin-top: 5px; display: block;';
+        err.innerText = message;
+        parent.appendChild(err);
+    }
 };
 
 /**
- * TOAST NOTIFICATION: Professional non-blocking alerts.
+ * SUBMIT PROTECTION: Prevents double-clicks
  */
-export const showToast = (message, type = 'success') => {
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.style.cssText = `
-        position: fixed; bottom: 20px; right: 20px; 
-        padding: 15px 25px; border-radius: 8px; 
-        background: ${type === 'success' ? '#15803d' : '#b91c1c'};
-        color: white; font-weight: 600; box-shadow: 0 10px 15px rgba(0,0,0,0.2);
-        z-index: 10000; animation: slideIn 0.3s ease;
-    `;
-    toast.innerText = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
+export const toggleSubmit = (btn, isProcessing) => {
+    btn.disabled = isProcessing;
+    btn.style.opacity = isProcessing ? '0.6' : '1';
+    btn.style.cursor = isProcessing ? 'not-allowed' : 'pointer';
+    btn.innerHTML = isProcessing ? '<i class="fa-solid fa-circle-notch fa-spin"></i> Processing...' : btn.dataset.originalText;
 };
-
-// Global Initialization
-document.addEventListener('DOMContentLoaded', () => {
-    // Shared Theme Toggle Logic
-    const theme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', theme);
-});
