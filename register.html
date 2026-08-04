@@ -3,267 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Apply for Funding | SBA Grant Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <title>Register | SBA Grant Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .reg-container { max-width: 520px; width: 100%; margin: 40px auto; padding: 0 20px; }
-        .reg-step { display: none; animation: fadeSlide 0.4s ease; }
-        .reg-step.active { display: block; }
-        .form-error { color: var(--red); font-size: 0.75rem; margin-top: 4px; font-weight: 600; display: none; }
-        .form-error.show { display: block; }
+        .reg-step { display: none; }
+        .reg-step.active { display: block; animation: modalIn 0.3s ease; }
+        .strength-meter { height: 4px; background: var(--border-light); margin-top: 8px; border-radius: 2px; overflow: hidden; }
+        .strength-bar { height: 100%; width: 0%; transition: 0.3s; }
     </style>
 </head>
-<body style="background: var(--bg); min-height: 100vh;">
-
-    <div class="gov-banner">
-        <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="USA Flag">
-        <span>An official website of the United States government</span>
-    </div>
-
-    <div class="reg-container">
+<body style="background: var(--bg); min-height: 100vh; padding: 20px;">
+    <div style="max-width: 500px; margin: 40px auto;">
         <div style="text-align: center; margin-bottom: 32px;">
-            <div class="sba-logo" style="justify-content: center; margin-bottom: 24px;">
-                <svg class="sba-logo__mark" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/>
-                    <path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/>
+            <div class="sba-logo" style="justify-content:center; margin-bottom:12px;">
+                <svg style="width:50px; height:50px;" viewBox="0 0 80 80">
+                    <path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/>
                     <text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text>
                     <text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text>
                     <text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text>
                 </svg>
             </div>
-            <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--navy);">Grant Program Enrollment</h1>
+            <h1 style="font-weight:800; color:var(--navy); font-size:1.4rem;">Grant Enrollment</h1>
         </div>
 
-        <!-- Step Indicator -->
-        <div class="step-indicator">
-            <div class="step-indicator__item">
-                <div class="step-indicator__dot active" id="dot1">1</div>
-                <div class="step-indicator__label active">Account</div>
-                <div class="step-indicator__connector" id="conn1"></div>
-            </div>
-            <div class="step-indicator__item">
-                <div class="step-indicator__dot" id="dot2">2</div>
-                <div class="step-indicator__label">Personal</div>
-                <div class="step-indicator__connector" id="conn2"></div>
-            </div>
-            <div class="step-indicator__item">
-                <div class="step-indicator__dot" id="dot3">3</div>
-                <div class="step-indicator__label">Program</div>
-            </div>
+        <div class="pipeline" style="margin-bottom: 40px;">
+            <div class="pipeline__step" id="dot1"><div class="pipeline__dot">1</div></div>
+            <div class="pipeline__step" id="dot2"><div class="pipeline__dot">2</div></div>
+            <div class="pipeline__step" id="dot3"><div class="pipeline__dot">3</div></div>
         </div>
 
         <div class="card">
-            <!-- Step 1: Account -->
-            <section id="step1" class="reg-step active">
-                <div class="form-group">
-                    <label class="form-label form-label--required">Full Legal Name</label>
-                    <input type="text" id="fullName" class="form-input" placeholder="As shown on ID">
-                    <span class="form-error" id="err-fullName">Please enter your full legal name.</span>
-                </div>
-                <div class="form-group">
-                    <label class="form-label form-label--required">Email Address</label>
-                    <input type="email" id="email" class="form-input" placeholder="email@example.com">
-                    <span class="form-error" id="err-email">Valid email is required.</span>
-                </div>
-                <div class="form-group">
-                    <label class="form-label form-label--required">Password</label>
-                    <input type="password" id="password" class="form-input" placeholder="Min 8 characters">
-                    <div class="strength-meter"><div id="strengthBar" class="strength-bar"></div></div>
-                    <div id="strengthLabel" class="strength-label">Security: Weak</div>
-                    <span class="form-error" id="err-password">Password must be at least 8 characters.</span>
-                </div>
-                <div class="form-group">
-                    <label class="form-label form-label--required">Confirm Password</label>
-                    <input type="password" id="confirmPassword" class="form-input">
-                    <span class="form-error" id="err-confirmPassword">Passwords do not match.</span>
-                </div>
-                <button type="button" class="btn btn--primary btn--full btn--lg" id="btnNext1">Continue <i class="fa-solid fa-arrow-right"></i></button>
-            </section>
-
-            <!-- Step 2: Personal -->
-            <section id="step2" class="reg-step">
-                <div class="form-group">
-                    <label class="form-label form-label--required">Phone Number</label>
-                    <input type="tel" id="phoneNumber" class="form-input" placeholder="+1 (555) 000-0000">
-                    <span class="form-error" id="err-phoneNumber">Phone number is required.</span>
-                </div>
-                <div class="form-row">
+            <form id="regForm">
+                <!-- Step 1 -->
+                <div class="reg-step active" id="step1">
+                    <div class="form-group"><label class="form-label">Full Legal Name</label><input type="text" id="fullName" class="form-input" required></div>
+                    <div class="form-group"><label class="form-label">Email Address</label><input type="email" id="email" class="form-input" required></div>
                     <div class="form-group">
-                        <label class="form-label form-label--required">Country</label>
-                        <select id="country" class="form-select">
-                            <option value="United States">United States</option>
-                            <option value="Canada">Canada</option>
-                            <option value="United Kingdom">United Kingdom</option>
-                            <option value="Australia">Australia</option>
-                        </select>
+                        <label class="form-label">Create Password</label>
+                        <input type="password" id="password" class="form-input" required>
+                        <div class="strength-meter"><div id="strengthBar" class="strength-bar"></div></div>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label form-label--required">Gender</label>
-                        <select id="gender" class="form-select">
-                            <option value="">Select</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
+                    <button type="button" class="btn btn--primary btn--full" onclick="nextStep(2)">Continue &rarr;</button>
                 </div>
-                <div class="form-group">
-                    <label class="form-label form-label--required">Date of Birth</label>
-                    <input type="date" id="dob" class="form-input">
-                    <span class="form-error" id="err-dob">You must be 18 or older.</span>
-                </div>
-                <div style="display:flex; gap:12px;">
-                    <button type="button" class="btn btn--ghost btn--full" id="btnBack1">Back</button>
-                    <button type="button" class="btn btn--primary btn--full" id="btnNext2">Continue</button>
-                </div>
-            </section>
 
-            <!-- Step 3: Program -->
-            <section id="step3" class="reg-step">
-                <div class="card card--success mb-6" style="border-style: dashed;">
-                    <div style="display:flex; gap:12px; align-items:center;">
-                        <i class="fa-solid fa-circle-check fa-2x" style="color:var(--success)"></i>
-                        <div>
-                            <div style="font-weight:800; color:var(--navy);">Program Allocated</div>
-                            <div style="font-size:0.8rem; color:var(--text-secondary);">SBA Grant Program 2025</div>
-                        </div>
+                <!-- Step 2 -->
+                <div class="reg-step" id="step2">
+                    <div class="form-group"><label class="form-label">Username</label><input type="text" id="username" class="form-input" placeholder="Letters/numbers only"></div>
+                    <div class="form-group"><label class="form-label">Phone Number</label><input type="tel" id="phoneNumber" class="form-input"></div>
+                    <div class="form-group">
+                        <label class="form-label">Country</label>
+                        <select id="country" class="form-select"><option value="United States">United States</option><option value="Canada">Canada</option></select>
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <button type="button" class="btn btn--ghost" onclick="nextStep(1)">Back</button>
+                        <button type="button" class="btn btn--primary flex-1" onclick="nextStep(3)">Continue &rarr;</button>
                     </div>
                 </div>
-                <div class="form-group">
-                    <p style="font-size:0.85rem; color:var(--text-secondary); line-height:1.6; margin-bottom:20px;">
-                        By creating an account, you agree to our Terms of Service and Privacy Policy. Your data is encrypted and handled according to Federal cybersecurity standards.
-                    </p>
+
+                <!-- Step 3 -->
+                <div class="reg-step" id="step3">
+                    <div class="form-group"><label class="form-label">Gender</label><select id="gender" class="form-select"><option>Male</option><option>Female</option><option>Other</option></select></div>
+                    <div class="form-group"><label class="form-label">Date of Birth</label><input type="date" id="dob" class="form-input"></div>
+                    <div class="form-group"><label class="form-label">Referral Code (Optional)</label><input type="text" id="referredBy" class="form-input"></div>
+                    <div style="display:flex; gap:12px;">
+                        <button type="button" class="btn btn--ghost" onclick="nextStep(2)">Back</button>
+                        <button type="submit" class="btn btn--primary flex-1" id="submitBtn">Create Account</button>
+                    </div>
                 </div>
-                <div style="display:flex; gap:12px;">
-                    <button type="button" class="btn btn--ghost btn--full" id="btnBack2">Back</button>
-                    <button type="button" class="btn btn--primary btn--full btn--lg" id="btnSubmit">Create Account</button>
-                </div>
-            </section>
+            </form>
         </div>
-        <div style="text-align:center; margin-top:24px;">
-            <p style="font-size:0.9rem; color:var(--text-muted);">Already have an account? <a href="login.html" style="color:var(--navy); font-weight:700; text-decoration:none;">Sign In</a></p>
-        </div>
+        <p style="text-align:center; margin-top:24px; font-size:0.9rem; color:var(--text-secondary);">Already have an account? <a href="login.html" style="color:var(--navy); font-weight:700;">Sign In</a></p>
     </div>
 
     <script type="module">
-        import { 
-            auth, db, createUserWithEmailAndPassword, updateProfile, 
-            sendEmailVerification, setDoc, doc, 
-            buildNewUserPayload, saveRegStep, getRegData, clearRegData, notifyAdmins
-        } from './firebase-config.js';
-        import { setButtonLoading, showToast, initTheme, redirectIfLoggedIn } from './app.js';
-
+        import { auth, db, createUserWithEmailAndPassword, sendEmailVerification, setDoc, doc, buildNewUserPayload, notifyAdmins } from './firebase-config.js';
+        import { setButtonLoading, showToast, initTheme } from './app.js';
         initTheme();
-        redirectIfLoggedIn();
 
-        let currentStep = 1;
-        const steps = [null, document.getElementById('step1'), document.getElementById('step2'), document.getElementById('step3')];
-        
-        // Form Elements
-        const inputs = ['fullName', 'email', 'password', 'confirmPassword', 'phoneNumber', 'country', 'gender', 'dob'];
-        const elements = {};
-        inputs.forEach(id => elements[id] = document.getElementById(id));
+        window.nextStep = (n) => {
+            document.querySelectorAll('.reg-step').forEach(s => s.classList.remove('active'));
+            document.getElementById(`step${n}`).classList.add('active');
+            document.querySelectorAll('.pipeline__step').forEach((s, idx) => {
+                s.classList.toggle('approved', idx < n - 1);
+                s.classList.toggle('review', idx === n - 1);
+            });
+        };
+        nextStep(1);
 
-        // Password Strength Logic
-        elements.password.oninput = (e) => {
+        document.getElementById('password').oninput = (e) => {
             const val = e.target.value;
             const bar = document.getElementById('strengthBar');
-            const label = document.getElementById('strengthLabel');
-            let score = 0;
-            if (val.length >= 8) score += 25;
-            if (/[A-Z]/.test(val)) score += 25;
-            if (/[0-9]/.test(val)) score += 25;
-            if (/[^A-Za-z0-9]/.test(val)) score += 25;
-
+            let score = val.length > 6 ? 33 : 10;
+            if (/[A-Z]/.test(val)) score += 33;
+            if (/[0-9]/.test(val)) score += 34;
             bar.style.width = score + '%';
-            if (score <= 25) { bar.style.background = 'var(--error)'; label.innerText = 'Security: Weak'; }
-            else if (score <= 50) { bar.style.background = '#f59e0b'; label.innerText = 'Security: Fair'; }
-            else if (score <= 75) { bar.style.background = '#3b82f6'; label.innerText = 'Security: Good'; }
-            else { bar.style.background = 'var(--success)'; label.innerText = 'Security: Strong'; }
+            bar.style.background = score < 40 ? 'var(--red)' : score < 80 ? 'var(--warning)' : 'var(--success)';
         };
 
-        const validateStep = (step) => {
-            let valid = true;
-            document.querySelectorAll('.form-error').forEach(e => e.classList.remove('show'));
+        document.getElementById('regForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            setButtonLoading(btn, true, 'Creating profile...');
 
-            if (step === 1) {
-                if (elements.fullName.value.trim().split(' ').length < 2) { document.getElementById('err-fullName').classList.add('show'); valid = false; }
-                if (!elements.email.value.includes('@')) { document.getElementById('err-email').classList.add('show'); valid = false; }
-                if (elements.password.value.length < 8) { document.getElementById('err-password').classList.add('show'); valid = false; }
-                if (elements.password.value !== elements.confirmPassword.value) { document.getElementById('err-confirmPassword').classList.add('show'); valid = false; }
-            } else if (step === 2) {
-                if (elements.phoneNumber.value.length < 5) { document.getElementById('err-phoneNumber').classList.add('show'); valid = false; }
-                if (!elements.dob.value) { document.getElementById('err-dob').classList.add('show'); valid = false; }
-            }
-            return valid;
-        };
+            const data = {
+                fullName: document.getElementById('fullName').value,
+                email: document.getElementById('email').value,
+                username: document.getElementById('username').value,
+                phoneNumber: document.getElementById('phoneNumber').value,
+                country: document.getElementById('country').value,
+                gender: document.getElementById('gender').value,
+                dob: document.getElementById('dob').value,
+                referredBy: document.getElementById('referredBy').value
+            };
 
-        const goToStep = (n) => {
-            steps[currentStep].classList.remove('active');
-            steps[n].classList.add('active');
-            
-            // Update UI Dots
-            if (n > currentStep) {
-                document.getElementById(`dot${currentStep}`).classList.add('done');
-                document.getElementById(`dot${currentStep}`).innerHTML = '<i class="fa-solid fa-check"></i>';
-                document.getElementById(`conn${currentStep}`)?.classList.add('done');
-            }
-            
-            currentStep = n;
-            document.getElementById(`dot${n}`).classList.add('active');
-            document.querySelectorAll('.step-indicator__label')[n-1].classList.add('active');
-            
-            const data = {};
-            inputs.forEach(id => data[id] = elements[id].value);
-            saveRegStep(data);
-        };
-
-        document.getElementById('btnNext1').onclick = () => { if (validateStep(1)) goToStep(2); };
-        document.getElementById('btnNext2').onclick = () => { if (validateStep(2)) goToStep(3); };
-        document.getElementById('btnBack1').onclick = () => goToStep(1);
-        document.getElementById('btnBack2').onclick = () => goToStep(2);
-
-        document.getElementById('btnSubmit').onclick = async () => {
-            const btn = document.getElementById('btnSubmit');
-            setButtonLoading(btn, true, 'Creating Account...');
-            
-            const data = getRegData();
-            
             try {
-                const userCred = await createUserWithEmailAndPassword(auth, data.email, data.password);
-                const user = userCred.user;
-                
-                await updateProfile(user, { displayName: data.fullName });
-                
-                const payload = buildNewUserPayload({
-                    uid: user.uid,
-                    ...data
-                });
-                
-                await setDoc(doc(db, "users", user.uid), payload);
-                await sendEmailVerification(user);
-                
-                await notifyAdmins({
-                    title: 'New User Registered',
-                    message: `${data.fullName} has joined the portal.`,
-                    type: 'info'
-                });
-
-                clearRegData();
+                const cred = await createUserWithEmailAndPassword(auth, data.email, document.getElementById('password').value);
+                const payload = buildNewUserPayload({ uid: cred.user.uid, ...data });
+                await setDoc(doc(db, "users", cred.user.uid), payload);
+                await sendEmailVerification(cred.user);
+                await notifyAdmins({ title: 'New User Registered', message: `${data.fullName} joined the portal.`, type: 'info' });
                 window.location.href = 'verify.html';
-                
             } catch (err) {
                 setButtonLoading(btn, false);
                 showToast(err.message, 'error');
             }
         };
-
-        // Restore session if exists
-        const saved = getRegData();
-        if (saved) inputs.forEach(id => { if(saved[id]) elements[id].value = saved[id]; });
-
     </script>
 </body>
 </html>
