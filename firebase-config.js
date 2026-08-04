@@ -29,23 +29,13 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 let messaging = null;
 
-// Initialize Messaging only if supported
-try {
-    messaging = getMessaging(app);
-} catch (e) {
-    console.warn("Firebase Messaging not supported in this browser.");
-}
+try { messaging = getMessaging(app); } catch (e) { console.warn("Messaging not supported"); }
 
 setPersistence(auth, browserLocalPersistence);
 
 export const ADMIN_EMAILS = ['sba.suppor@gmail.com', 'liger4683@gmail.com'];
 export const AGENTS = ['Sarah Mitchell', 'James Caldwell', 'Diana Torres', 'Robert Hughes', 'Patricia Wells', 'Michael Chen', 'Angela Davis', 'Thomas Brown'];
 
-/**
- * NOTIFICATION SETUP INSTRUCTIONS:
- * 1. BROWSER PUSH: Replace FCM_VAPID_KEY with your Firebase Web Push Key.
- * 2. EMAIL: Replace EMAILJS keys with your EmailJS service credentials.
- */
 export const EMAILJS_PUBLIC_KEY = 'REPLACE_WITH_YOUR_KEY'; 
 export const EMAILJS_SERVICE_ID = 'service_sba';          
 export const EMAILJS_TEMPLATE_ID = 'template_notification'; 
@@ -63,54 +53,29 @@ export const compressToBase64 = (file, maxWidth = 800, quality = 0.78) => {
             img.src = event.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                if (width > maxWidth) {
-                    height = (maxWidth / width) * height;
-                    width = maxWidth;
-                }
-                canvas.width = width;
-                canvas.height = height;
+                let width = img.width, height = img.height;
+                if (width > maxWidth) { height = (maxWidth / width) * height; width = maxWidth; }
+                canvas.width = width; canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
                 resolve(canvas.toDataURL('image/jpeg', quality));
             };
         };
-        reader.onerror = error => reject(error);
+        reader.onerror = e => reject(e);
     });
 };
 
 export const buildNewUserPayload = (data) => ({
-    uid: data.uid,
-    fullName: data.fullName,
-    email: data.email,
-    username: data.username,
-    phoneNumber: data.phoneNumber || '',
-    country: data.country || 'United States',
-    gender: data.gender || '',
-    dob: data.dob || '',
-    avatarBase64: '',
+    uid: data.uid, fullName: data.fullName, email: data.email, username: data.username,
+    phoneNumber: data.phoneNumber || '', country: data.country || 'United States',
+    gender: data.gender || '', dob: data.dob || '', avatarBase64: '',
     role: isAdmin(data.email) ? 'admin' : 'user',
-    referredBy: data.referredBy || '',
-    allocatedProgram: "SBA Grant Program",
-    assignedAgent: getRandomAgent(),
-    kycStatus: "IDLE",
-    applyStatus: "IDLE",
-    depositStatus: "IDLE",
-    taxStatus: "IDLE",
-    withdrawStatus: "IDLE",
-    awardStatus: "IDLE",
-    balance: 0,
-    requestedAmount: 0,
-    totalAward: 0,
-    taxFeeRequired: 0,
-    accountStatus: "active",
-    emailNotifications: true,
-    pushNotifications: false,
-    isOnline: true,
-    lastSeen: serverTimestamp(),
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
+    referredBy: data.referredBy || '', allocatedProgram: "SBA Grant Program",
+    assignedAgent: getRandomAgent(), kycStatus: "IDLE", applyStatus: "IDLE",
+    depositStatus: "IDLE", taxStatus: "IDLE", withdrawStatus: "IDLE", awardStatus: "IDLE",
+    balance: 0, requestedAmount: 0, totalAward: 0, taxFeeRequired: 0,
+    accountStatus: "active", emailNotifications: true, pushNotifications: false,
+    isOnline: true, lastSeen: serverTimestamp(), createdAt: serverTimestamp(), updatedAt: serverTimestamp()
 });
 
 export const getUserData = async (uid) => {
@@ -146,13 +111,10 @@ export const notify = async (uid, { title, message, type = 'info', link = '', se
     });
     if (sendEmail) {
         const user = await getUserData(uid);
-        if (user && user.email) {
+        if (user?.email) {
             sendEmailNotification({
-                toEmail: user.email,
-                toName: user.fullName,
-                subject: title,
-                message: message,
-                actionUrl: window.location.origin + '/' + link
+                toEmail: user.email, toName: user.fullName,
+                subject: title, message: message, actionUrl: window.location.origin + '/' + link
             });
         }
     }
@@ -160,13 +122,11 @@ export const notify = async (uid, { title, message, type = 'info', link = '', se
 
 export const notifyAdmins = async ({ title, message, type = 'info', link = '' }) => {
     const q = query(collection(db, 'users'), where('role', '==', 'admin'));
-    const adminSnaps = await getDocs(q);
-    adminSnaps.forEach(adminDoc => {
-        notify(adminDoc.id, { title, message, type, link });
-    });
+    const snaps = await getDocs(q);
+    snaps.forEach(d => notify(d.id, { title, message, type, link }));
 };
 
-export const markNotificationRead = async (notifId) => await updateDoc(doc(db, 'notifications', notifId), { read: true });
+export const markNotificationRead = async (id) => await updateDoc(doc(db, 'notifications', id), { read: true });
 
 export const markAllRead = async (uid) => {
     const q = query(collection(db, 'notifications'), where('uid', '==', uid), where('read', '==', false));
@@ -179,36 +139,31 @@ export const markAllRead = async (uid) => {
 export const requestNotificationPermission = async (uid) => {
     if (!messaging) return;
     try {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
+        const perm = await Notification.requestPermission();
+        if (perm === 'granted') {
             const token = await getToken(messaging, { vapidKey: FCM_VAPID_KEY });
             if (token) await updateUserData(uid, { fcmToken: token, pushNotifications: true });
         }
-    } catch (err) { console.error("Push Error:", err); }
+    } catch (e) { console.error(e); }
 };
 
-export const initForegroundMessages = (onReceive) => {
-    if (messaging) onMessage(messaging, (payload) => onReceive(payload));
-};
+export const initForegroundMessages = (onReceive) => { if (messaging) onMessage(messaging, onReceive); };
 
-export const saveRegData = (data) => sessionStorage.setItem('SBA_REG', JSON.stringify({ ...getRegData(), ...data }));
+export const saveRegStep = (data) => sessionStorage.setItem('SBA_REG', JSON.stringify({ ...getRegData(), ...data }));
 export const getRegData = () => JSON.parse(sessionStorage.getItem('SBA_REG') || '{}');
 export const clearRegData = () => sessionStorage.removeItem('SBA_REG');
 
 export const sendEmailNotification = ({ toEmail, toName, subject, message, actionUrl }) => {
     if (typeof emailjs === 'undefined') return;
     emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-        to_email: toEmail,
-        to_name: toName,
-        subject: subject,
-        message: message,
-        action_url: actionUrl
-    }, EMAILJS_PUBLIC_KEY).catch(e => console.error("EmailJS Error:", e));
+        to_email: toEmail, to_name: toName, subject, message, action_url: actionUrl
+    }, EMAILJS_PUBLIC_KEY).catch(console.error);
 };
 
 export { 
-    auth, db, messaging, 
-    onAuthStateChanged, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    sendEmailVerification, sendPasswordResetEmail, updatePassword, reauthenticateWithCredential,
-    EmailAuthProvider, updateProfile, serverTimestamp, increment, arrayUnion, collection, query, where, orderBy, limit, onSnapshot, getDocs, addDoc
+    auth, db, messaging, onAuthStateChanged, signOut, createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, 
+    updatePassword, reauthenticateWithCredential, EmailAuthProvider, updateProfile, 
+    doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc, collection, query, where, 
+    orderBy, limit, onSnapshot, serverTimestamp, increment, arrayUnion, writeBatch, getDocs 
 };
