@@ -3,100 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Email | SBA Grant Portal</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <title>Verifying... | SBA Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
-    <style>
-        .envelope-anim { font-size: 4rem; color: var(--navy); margin-bottom: 24px; animation: bounce 2s infinite ease-in-out; }
-        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-    </style>
 </head>
-<body style="display:flex; flex-direction:column; min-height:100vh; background: var(--bg);">
-
-    <div class="gov-banner">
-        <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="USA Flag">
-        <span>Official Verification Service</span>
-    </div>
-
-    <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:20px;">
-        <div class="card text-center" style="max-width:480px; width:100%; padding:60px 40px;">
-            <div class="envelope-anim"><i class="fa-solid fa-envelope-open-text"></i></div>
-            <h1 style="font-size:1.6rem; font-weight:800; color:var(--navy); margin-bottom:12px;">Confirm your email</h1>
-            <p style="color:var(--text-secondary); margin-bottom:8px;">We've sent a verification link to:</p>
-            <div id="userEmail" style="font-weight:700; color:var(--text-primary); margin-bottom:24px; font-size:1.1rem;">...</div>
-            
-            <div class="alert alert--info mb-6" style="text-align:left;">
-                <i class="fa-solid fa-circle-info"></i>
-                <div>Checking status automatically. Please keep this window open while you verify.</div>
-            </div>
-
-            <button class="btn btn--outline btn--full" id="btnResend">Resend Email</button>
-            <div id="resendTimer" style="margin-top:12px; font-size:0.8rem; color:var(--text-muted); display:none;"></div>
-
-            <hr style="margin:32px 0; border:none; border-top:1px solid var(--border-light);">
-            
-            <a href="login.html" id="signOutLink" style="font-size:0.9rem; color:var(--text-secondary); text-decoration:none; font-weight:600;">
-                <i class="fa-solid fa-arrow-left"></i> Wrong email? Start over
-            </a>
+<body style="display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--sba-blue-light);">
+    <div class="card" style="text-align: center; max-width: 400px; width: 90%;">
+        <div style="margin-bottom: 20px;">
+            <i class="fa-solid fa-envelope-circle-check" style="font-size: 4rem; color: var(--sba-navy);"></i>
         </div>
+        <h2 style="color: var(--sba-navy);">Confirm Your Email</h2>
+        <p style="color: var(--text-secondary); margin-top: 10px;">We've sent a verification link to your inbox. Please click the link to activate your portal access.</p>
+        <br>
+        <div style="padding: 15px; background: #fff8e1; border-radius: 8px; color: #856404; font-size: 13px;">
+            <i class="fa-solid fa-circle-info"></i> Polling for verification status automatically...
+        </div>
+        <br>
+        <button class="btn btn-outline btn-full" onclick="location.reload()">I've Clicked the Link</button>
     </div>
-
-    <script type="module">
-        import { auth, onAuthStateChanged, sendEmailVerification, signOut, updateUserData } from './firebase-config.js';
-        import { showToast } from './app.js';
-
-        let pollInterval;
-
-        onAuthStateChanged(auth, (user) => {
-            if (!user) { window.location.href = 'login.html'; return; }
-            if (user.emailVerified) { window.location.href = 'welcome.html'; return; }
-
-            document.getElementById('userEmail').innerText = user.email;
-
-            // Start Polling
-            pollInterval = setInterval(async () => {
-                await user.reload();
-                if (user.emailVerified) {
-                    clearInterval(pollInterval);
-                    await updateUserData(user.uid, { emailVerified: true });
-                    window.location.href = 'welcome.html';
-                }
-            }, 3500);
-        });
-
-        document.getElementById('btnResend').onclick = async () => {
-            const btn = document.getElementById('btnResend');
-            const timer = document.getElementById('resendTimer');
-            btn.disabled = true;
-            
-            try {
-                await sendEmailVerification(auth.currentUser);
-                showToast('Verification email resent!', 'success');
-                
-                let timeLeft = 60;
-                timer.style.display = 'block';
-                const countdown = setInterval(() => {
-                    timeLeft--;
-                    timer.innerText = `You can resend again in ${timeLeft}s`;
-                    if (timeLeft <= 0) {
-                        clearInterval(countdown);
-                        btn.disabled = false;
-                        timer.style.display = 'none';
-                    }
-                }, 1000);
-            } catch (e) {
-                btn.disabled = false;
-                showToast('Too many requests. Please wait.', 'error');
-            }
-        };
-
-        document.getElementById('signOutLink').onclick = async (e) => {
-            e.preventDefault();
-            clearInterval(pollInterval);
-            await signOut(auth);
-            window.location.href = 'register.html';
-        };
-    </script>
 </body>
 </html>
