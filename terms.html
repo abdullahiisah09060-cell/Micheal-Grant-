@@ -3,27 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms and Conditions | SBA Grant Portal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <title>Terms of Service | SBA Portal</title>
     <link rel="stylesheet" href="global.css">
-    <style>
-        .terms-layout { display: grid; grid-template-columns: 280px 1fr; gap: 40px; max-width: 1200px; margin: 40px auto; padding: 0 20px; }
-        .terms-toc { position: sticky; top: 100px; height: fit-content; background: var(--surface); padding: 24px; border-radius: var(--r-lg); border: 1px solid var(--border); }
-        .terms-toc h4 { font-weight: 800; color: var(--navy); margin-bottom: 16px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
-        .toc-link { display: block; padding: 8px 0; color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; font-weight: 600; transition: var(--t-fast); }
-        .toc-link:hover { color: var(--navy); padding-left: 4px; }
-        .terms-content h2 { color: var(--navy); font-weight: 800; margin: 40px 0 20px; font-size: 1.5rem; scroll-margin-top: 100px; }
-        .terms-content p { color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px; font-size: 0.95rem; }
-        .terms-content ul { padding-left: 20px; margin-bottom: 20px; }
-        .terms-content li { margin-bottom: 12px; color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; }
-        
-        @media (max-width: 900px) {
-            .terms-layout { grid-template-columns: 1fr; }
-            .terms-toc { display: none; }
-        }
-    </style>
 </head>
 <body>
     <div class="gov-banner">
@@ -31,112 +12,22 @@
         <span>An official website of the United States government</span>
     </div>
 
-    <header class="page-header">
-        <div class="sba-logo">
-            <svg class="sba-logo__mark" viewBox="0 0 80 80">
-                <path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/>
-                <path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/>
-                <text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text>
-                <text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text>
-                <text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text>
-            </svg>
-            <div class="sba-logo__text">
-                <span class="sba-logo__name">U.S. Small Business</span>
-                <span class="sba-logo__sub">Administration</span>
-            </div>
+    <div class="container" style="max-width: 800px;">
+        <div class="card">
+            <h1 style="color: var(--sba-navy); margin-bottom: 20px;">Portal Terms & Conditions</h1>
+            <p><strong>Last Updated: October 2024</strong></p>
+            <br>
+            <h3>1. Acceptance of Terms</h3>
+            <p>By accessing the SBA Grant Application Portal, you agree to comply with all federal regulations regarding small business assistance and electronic document submission.</p>
+            <br>
+            <h3>2. Eligibility Verification</h3>
+            <p>All applicants must undergo KYC (Know Your Customer) verification. Providing false information to a federal agency is a punishable offense under 18 U.S. Code § 1001.</p>
+            <br>
+            <h3>3. Use of Funds</h3>
+            <p>Grant funds must be used strictly for business purposes as outlined in your approved application. The SBA reserves the right to audit the use of disbursed funds.</p>
+            <br>
+            <a href="index.html" class="btn btn-primary">Return to Home</a>
         </div>
-        <div style="margin-left: auto;">
-            <a href="index.html" class="btn btn--ghost btn--sm">Back to Home</a>
-        </div>
-    </header>
-
-    <div class="terms-layout">
-        <aside class="terms-toc">
-            <h4>Table of Contents</h4>
-            <a href="#acceptance" class="toc-link">1. Acceptance of Terms</a>
-            <a href="#eligibility" class="toc-link">2. Eligibility Requirements</a>
-            <a href="#account" class="toc-link">3. Account Security</a>
-            <a href="#grant-process" class="toc-link">4. Grant Process</a>
-            <a href="#disbursement" class="toc-link">5. Disbursement Policy</a>
-            <a href="#fees" class="toc-link">6. Fees and Taxes</a>
-            <a href="#prohibited" class="toc-link">7. Prohibited Activities</a>
-            <a href="#privacy" class="toc-link">8. Privacy & Data</a>
-        </aside>
-
-        <main class="terms-content">
-            <div style="background:var(--navy-light); padding:32px; border-radius:var(--r-xl); margin-bottom:40px;">
-                <h1 style="color:var(--navy); font-weight:900; font-size:2rem; margin-bottom:12px;">Terms and Conditions</h1>
-                <p style="margin-bottom:0; font-weight:600; color:var(--text-primary);">Effective Date: January 01, 2025</p>
-                <p style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">Official Portal Version 4.2.0</p>
-            </div>
-
-            <section id="acceptance">
-                <h2>1. Acceptance of Terms</h2>
-                <p>By accessing or using the U.S. Small Business Administration (SBA) Grant Portal, you agree to be bound by these Terms and Conditions and all applicable federal laws and regulations. If you do not agree with any part of these terms, you must immediately cease use of the portal.</p>
-            </section>
-
-            <section id="eligibility">
-                <h2>2. Eligibility Requirements</h2>
-                <p>To qualify for grants through this portal, applicants must meet the following criteria:</p>
-                <ul>
-                    <li>Be a legally registered business entity within the United States or its territories.</li>
-                    <li>The applicant must be at least 18 years of age and authorized to bind the business entity.</li>
-                    <li>Must not be currently debarred, suspended, or proposed for debarment by any Federal department or agency.</li>
-                    <li>Must have a valid Employer Identification Number (EIN) or Social Security Number (SSN) for sole proprietorships.</li>
-                </ul>
-            </section>
-
-            <section id="account">
-                <h2>3. Account Security</h2>
-                <p>You are responsible for maintaining the confidentiality of your account credentials, including your password and Transaction PIN. Any activity performed through your account is deemed to be authorized by you. You must notify the SBA support team immediately if you suspect any unauthorized access.</p>
-            </section>
-
-            <section id="grant-process">
-                <h2>4. Grant Process</h2>
-                <p>Submission of an application does not guarantee funding. The SBA reserves the right to request additional documentation, perform site visits, or conduct background checks on business principles. Grants are awarded based on fund availability, program compliance, and business merit.</p>
-            </section>
-
-            <section id="disbursement">
-                <h2>5. Disbursement Policy</h2>
-                <p>Approved funds will be disbursed via the method selected in the user dashboard. The SBA is not responsible for funds sent to incorrect bank accounts or wallet addresses provided by the user. Users must ensure all banking and routing information is 100% accurate before requesting withdrawal.</p>
-            </section>
-
-            <section id="fees">
-                <h2>6. Fees and Taxes</h2>
-                <p>In accordance with federal tax regulations (IRS Section 6325), certain grant disbursements may require the payment of a Tax Clearance Certificate fee or processing fee. These fees are used to verify compliance and are separate from the grant award itself. Failure to comply with tax requirements will result in the suspension of fund disbursement.</p>
-            </section>
-
-            <section id="prohibited">
-                <h2>7. Prohibited Activities</h2>
-                <p>Users are strictly prohibited from:</p>
-                <ul>
-                    <li>Providing false, misleading, or fraudulent information on any application.</li>
-                    <li>Using grant funds for activities not specified in the approved application.</li>
-                    <li>Attempting to bypass security measures or gain unauthorized access to other user accounts.</li>
-                    <li>Reverse engineering or scraping data from the portal.</li>
-                </ul>
-            </section>
-
-            <section id="privacy">
-                <h2>8. Privacy & Data</h2>
-                <p>The SBA collects and processes personal and business data in accordance with the Federal Privacy Act of 1974. Your data is encrypted and used solely for the purpose of grant administration and identity verification.</p>
-            </section>
-
-            <div class="card mt-12" style="background:var(--surface-2); text-align:center;">
-                <p style="font-weight:700; color:var(--navy);">Ready to proceed?</p>
-                <a href="register.html" class="btn btn--primary">Return to Registration</a>
-            </div>
-        </main>
     </div>
-
-    <footer style="background:#0a1628; color:white; padding:40px 20px; text-align:center; font-size:0.8rem; margin-top:80px;">
-        <p>&copy; 2025 U.S. Small Business Administration. All rights reserved.</p>
-        <p style="opacity:0.6; margin-top:8px;">This portal is a secure federal resource. Unauthorized use is subject to prosecution under 18 U.S.C. § 1030.</p>
-    </footer>
-
-    <script type="module">
-        import { initTheme } from './app.js';
-        initTheme();
-    </script>
 </body>
 </html>
