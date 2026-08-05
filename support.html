@@ -1,142 +1,92 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Support Chat | SBA Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .chat-container { height: calc(100vh - 60px); display: flex; flex-direction: column; background: var(--bg); }
-        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-        .chat-input-area { background: white; padding: 16px 20px; border-top: 1px solid var(--border); display: flex; gap: 12px; align-items: center; }
-        .chat-input { flex: 1; border: 1px solid var(--border); border-radius: var(--r-full); padding: 12px 20px; font-family: var(--font); font-size: 0.9rem; outline: none; transition: 0.2s; }
-        .chat-input:focus { border-color: var(--navy); box-shadow: 0 0 0 3px var(--navy-light); }
-        .agent-header { background: var(--navy); color: white; padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
-        .agent-avatar { width: 40px; height: 40px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-weight: 800; border: 2px solid var(--white); }
-        .online-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; border: 2px solid var(--navy); position: absolute; bottom: 0; right: 0; }
+        .chat-layout { height: 100dvh; display: flex; flex-direction: column; background: var(--bg); }
+        .chat-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+        .chat-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+        .chat-input-bar { background: var(--surface); border-top: 1px solid var(--border); padding: 12px 20px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 12px; }
+        
+        .agent-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--navy); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; border: 2px solid var(--surface); position: absolute; bottom: 0; right: 0; }
+        
+        .chat-input { flex: 1; background: var(--surface-2); border: 1px solid var(--border); padding: 10px 16px; border-radius: 20px; font-family: inherit; font-size: 0.9rem; outline: none; }
     </style>
 </head>
 <body>
-    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
-    
-    <div class="chat-container">
-        <header class="agent-header">
-            <a href="dashboard.html" style="color:white; margin-right:8px;"><i class="fa-solid fa-arrow-left"></i></a>
-            <div style="position:relative;">
-                <div class="agent-avatar" id="agentInitials">??</div>
-                <div class="online-dot"></div>
-            </div>
-            <div>
-                <div style="font-weight:700; font-size:0.95rem;" id="agentName">SBA Support</div>
-                <div style="font-size:0.75rem; opacity:0.8;">Case Review Officer • Online</div>
-            </div>
-        </header>
-
-        <div class="chat-messages" id="chatList">
-            <!-- Messages injected here -->
+<div class="chat-layout">
+    <header class="chat-header">
+        <a href="dashboard.html" class="page-header__back" style="width:32px; height:32px;"><i class="fa-solid fa-arrow-left"></i></a>
+        <div style="position:relative;">
+            <div id="a-initials" class="agent-avatar">SA</div>
+            <div class="status-dot"></div>
         </div>
-
-        <div id="imgPreview" style="display:none; padding:10px 20px; background:#f8fafc; border-top:1px solid #eee;">
-            <div style="position:relative; display:inline-block;">
-                <img src="" id="previewTarget" style="height:60px; border-radius:4px;">
-                <button onclick="clearImg()" style="position:absolute; -5px; right:-5px; width:18px; height:18px; border-radius:50%; background:var(--red); color:white; border:none; font-size:10px; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
-            </div>
+        <div style="flex:1;">
+            <div id="a-name" style="font-weight:800; font-size:0.95rem;">Assigned Agent</div>
+            <div style="font-size:0.7rem; color:var(--text-muted);">SBA Federal Case Officer</div>
         </div>
+        <button class="btn btn--ghost" style="padding:8px;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+    </header>
 
-        <form class="chat-input-area" id="chatForm">
-            <input type="file" id="chatFile" hidden accept="image/*">
-            <button type="button" class="btn btn--ghost" style="padding:0; width:40px; height:40px;" id="btnAttach"><i class="fa-solid fa-paperclip fa-lg"></i></button>
-            <input type="text" class="chat-input" id="chatMsg" placeholder="Type your message..." autocomplete="off">
-            <button type="submit" class="btn btn--primary" style="padding:0; width:44px; height:44px; border-radius:50%;" id="btnSend"><i class="fa-solid fa-paper-plane"></i></button>
-        </form>
+    <div class="chat-body" id="chatBody"></div>
+
+    <div class="chat-input-bar">
+        <button class="btn btn--ghost" id="btnImg" style="padding:8px; font-size:1.2rem;"><i class="fa-solid fa-paperclip"></i></button>
+        <input type="file" id="in-chat-img" hidden accept="image/*">
+        <input type="text" id="m-input" class="chat-input" placeholder="Type a message...">
+        <button class="btn btn--primary" id="btnSend" style="padding:10px; border-radius:50%; width:40px; height:40px;"><i class="fa-solid fa-paper-plane"></i></button>
     </div>
+</div>
 
-    <script type="module">
-        import { db, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, compressToBase64, notifyAdmins } from './firebase-config.js';
-        import { requireAuth, initTheme } from './app.js';
+<script type="module">
+    import { db, collection, addDoc, onSnapshot, orderBy, query, serverTimestamp, notifyAdmins } from './firebase-config.js';
+    import { requireAuth, hideLoader, timeAgo } from './app.js';
 
-        requireAuth((user, userData) => {
-            initTheme();
-            
-            const agentName = userData.assignedAgent;
-            document.getElementById('agentName').innerText = agentName;
-            document.getElementById('agentInitials').innerText = agentName.split(' ').map(n=>n[0]).join('');
+    requireAuth((user, userData) => {
+        hideLoader();
+        const agent = userData.assignedAgent || 'Sarah Mitchell';
+        document.getElementById('a-name').textContent = agent;
+        document.getElementById('a-initials').textContent = agent.split(' ').map(n=>n[0]).join('');
 
-            const chatRef = collection(db, "chat", user.uid, "messages");
-            const q = query(chatRef, orderBy("timestamp", "asc"));
+        const body = document.getElementById('chatBody');
+        const q = query(collection(db, 'chat', user.uid, 'messages'), orderBy('timestamp', 'asc'));
 
-            onSnapshot(q, (snap) => {
-                const list = document.getElementById('chatList');
-                list.innerHTML = snap.docs.map(doc => {
-                    const data = doc.data();
-                    const isUser = data.sender === 'user';
-                    return `
-                        <div class="bubble bubble--${isUser ? 'user' : 'agent'}">
-                            ${data.imageBase64 ? `<img src="${data.imageBase64}" style="max-width:100%; border-radius:8px; margin-bottom:8px; display:block;">` : ''}
-                            ${data.message || ''}
-                            <div class="bubble__time">${data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...'}</div>
-                        </div>
-                    `;
-                }).join('');
-                list.scrollTop = list.scrollHeight;
+        onSnapshot(q, (snap) => {
+            if(snap.empty) {
+                // Auto-welcome
+                addDoc(collection(db, 'chat', user.uid, 'messages'), {
+                    sender: 'agent', message: `Hello ${userData.fullName.split(' ')[0]}, I'm ${agent}, your dedicated SBA officer. How can I help you with your grant today?`,
+                    timestamp: serverTimestamp(), read: false
+                });
+                return;
+            }
+            body.innerHTML = '';
+            snap.forEach(doc => {
+                const m = doc.data();
+                const div = document.createElement('div');
+                div.className = `bubble bubble--${m.sender}`;
+                div.innerHTML = `<div>${m.message}</div><div class="bubble__time" style="font-size:0.6rem; opacity:0.6; margin-top:4px;">${m.timestamp ? new Date(m.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...'}</div>`;
+                body.appendChild(div);
             });
-
-            // Welcome message if first time
-            onSnapshot(q, (snap) => {
-                if (snap.empty) {
-                    addDoc(chatRef, {
-                        sender: 'agent',
-                        message: `Hello ${userData.fullName}! I am ${agentName}, your assigned SBA Case Officer. How can I assist you with your application today?`,
-                        timestamp: serverTimestamp()
-                    });
-                }
-            }, { once: true });
-
-            let currentB64 = null;
-            document.getElementById('btnAttach').onclick = () => document.getElementById('chatFile').click();
-            document.getElementById('chatFile').onchange = async (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    currentB64 = await compressToBase64(file, 400);
-                    document.getElementById('previewTarget').src = currentB64;
-                    document.getElementById('imgPreview').style.display = 'block';
-                }
-            };
-
-            window.clearImg = () => {
-                currentB64 = null;
-                document.getElementById('imgPreview').style.display = 'none';
-                document.getElementById('chatFile').value = '';
-            };
-
-            document.getElementById('chatForm').onsubmit = async (e) => {
-                e.preventDefault();
-                const msg = document.getElementById('chatMsg').value.trim();
-                if (!msg && !currentB64) return;
-
-                const input = document.getElementById('chatMsg');
-                const btn = document.getElementById('btnSend');
-                input.value = '';
-                btn.disabled = true;
-
-                await addDoc(chatRef, {
-                    sender: 'user',
-                    message: msg,
-                    imageBase64: currentB64,
-                    timestamp: serverTimestamp()
-                });
-
-                await notifyAdmins({
-                    title: 'New Support Message',
-                    message: `${userData.fullName}: ${msg.substring(0, 50)}...`,
-                    type: 'action'
-                });
-
-                clearImg();
-                btn.disabled = false;
-            };
+            body.scrollTop = body.scrollHeight;
         });
-    </script>
+
+        const send = async () => {
+            const val = document.getElementById('m-input').value.trim();
+            if(!val) return;
+            document.getElementById('m-input').value = '';
+            await addDoc(collection(db, 'chat', user.uid, 'messages'), { sender: 'user', message: val, timestamp: serverTimestamp(), read: false });
+            await notifyAdmins({ title: 'New Support Message', message: `${userData.fullName}: ${val.substring(0, 40)}...`, type: 'action' });
+        };
+
+        document.getElementById('btnSend').onclick = send;
+        document.getElementById('m-input').onkeydown = (e) => { if(e.key === 'Enter') send(); };
+    });
+</script>
 </body>
 </html>
