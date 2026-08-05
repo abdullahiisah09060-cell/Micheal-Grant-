@@ -14,8 +14,8 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     self.registration.showNotification(payload.notification.title, {
         body: payload.notification.body,
-        icon: '/icons/sba-icon-192.png',
-        badge: '/icons/sba-badge.png',
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-192.png',
         data: payload.data
     });
 });
