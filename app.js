@@ -1,11 +1,10 @@
 import { 
-    auth, db, onAuthStateChanged, listenUserData, getUserData, setUserOnline, isAdmin
+    auth, db, onAuthStateChanged, listenUserData, getUserData, 
+    updateUserData, setUserOnline, markNotificationRead, 
+    onSnapshot, query, collection, where, orderBy, doc, getDoc 
 } from './firebase-config.js';
 
-/**
- * UI COMPONENTS & SYSTEMS
- */
-
+// --- Toast System ---
 export function showToast(message, type = 'info', duration = 4500) {
     let container = document.querySelector('.toast-container');
     if (!container) {
@@ -41,6 +40,7 @@ export function showToast(message, type = 'info', duration = 4500) {
     setTimeout(dismiss, duration);
 }
 
+// --- Confirm Modal ---
 export function showConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', onConfirm, onCancel, danger = false }) {
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
@@ -57,22 +57,13 @@ export function showConfirm({ title, message, confirmText = 'Confirm', cancelTex
     document.body.appendChild(overlay);
 
     const close = () => overlay.remove();
-
-    overlay.querySelector('#confirmCancel').onclick = () => {
-        if (onCancel) onCancel();
-        close();
-    };
-
-    overlay.querySelector('#confirmSubmit').onclick = () => {
-        if (onConfirm) onConfirm();
-        close();
-    };
+    
+    overlay.querySelector('#confirmCancel').onclick = () => { onCancel?.(); close(); };
+    overlay.querySelector('#confirmSubmit').onclick = () => { onConfirm?.(); close(); };
+    overlay.addEventListener('click', (e) => { if(e.target === overlay) close(); });
 }
 
-/**
- * AUTH GUARDS
- */
-
+// --- Auth Guards ---
 export function requireAuth(callback) {
     showLoader();
     onAuthStateChanged(auth, async (user) => {
@@ -81,39 +72,28 @@ export function requireAuth(callback) {
             return;
         }
 
-        // Maintenance Mode Check
-        const configSnap = await getUserData('config/platform'); // This is a specific path helper logic
-        // For simplicity in this prompt, we fetch config/platform doc
-        const db_ref = doc(db, 'config', 'platform');
-        const configDoc = await getDoc(db_ref);
-        const config = configDoc.data();
-
-        listenUserData(user.uid, (userData) => {
+        listenUserData(user.uid, async (userData) => {
             if (!userData) return;
-
+            
+            // Check Maintenance Mode
+            const configSnap = await getDoc(doc(db, 'config', 'platform'));
+            const config = configSnap.data();
             if (config?.maintenanceMode && userData.role !== 'admin') {
                 document.body.innerHTML = `
-                    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px;text-align:center;font-family:var(--font);">
+                    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px;text-align:center;">
                         <i class="fa-solid fa-gear fa-spin" style="font-size:3rem;color:var(--navy);margin-bottom:24px;"></i>
                         <h1 style="color:var(--navy);margin-bottom:12px;">Maintenance in Progress</h1>
-                        <p style="color:var(--text-secondary);max-width:400px;margin:0 auto;">The SBA portal is temporarily offline for scheduled maintenance. Please check back soon.</p>
+                        <p style="color:var(--text-secondary);max-width:400px;">The SBA portal is temporarily offline for scheduled maintenance. Please check back soon.</p>
                     </div>
                 `;
                 return;
             }
 
             if (userData.accountStatus === 'suspended') {
-                document.body.innerHTML = `
-                    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px;text-align:center;font-family:var(--font);">
-                        <div class="status-screen__icon status-screen__icon--error"><i class="fa-solid fa-ban"></i></div>
-                        <h1 style="color:var(--navy);margin-bottom:12px;">Account Suspended</h1>
-                        <p style="color:var(--text-secondary);max-width:400px;margin: 0 auto 24px;">Your account has been suspended for violating federal guidelines. Please contact support if you believe this is an error.</p>
-                        <button class="btn btn--primary" onclick="location.href='support.html'">Contact Support</button>
-                    </div>
-                `;
+                document.body.innerHTML = `<div class="status-screen"><div class="status-screen__icon status-screen__icon--error"><i class="fa-solid fa-ban"></i></div><h1 class="status-screen__title">Account Suspended</h1><p class="status-screen__message">Your account has been suspended for violating terms of service. Please contact support.</p><button onclick="signOut(auth).then(()=>location.href='login.html')" class="btn btn--primary">Sign Out</button></div>`;
+                hideLoader();
                 return;
             }
-
             hideLoader();
             callback(user, userData);
         });
@@ -133,19 +113,21 @@ export function requireAdmin(callback) {
 export function redirectIfLoggedIn() {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            const userData = await getUserData(user.uid);
-            if (userData?.role === 'admin') {
-                window.location.href = 'admin-portal.html';
-            } else {
-                window.location.href = 'dashboard.html';
-            }
+            const data = await getUserData(user.uid);
+            if (data?.role === 'admin') window.location.href = 'admin-portal.html';
+            else window.location.href = 'dashboard.html';
         }
     });
 }
 
-/**
- * THEME SYSTEM
- */
+// --- UI Utilities ---
+export const showLoader = () => document.getElementById('pageLoader')?.classList.add('active');
+export const hideLoader = () => document.getElementById('pageLoader')?.classList.remove('active');
+
+export function initTheme() {
+    const saved = localStorage.getItem('sba-theme') || 'system';
+    applyTheme(saved);
+}
 
 export function applyTheme(theme) {
     const root = document.documentElement;
@@ -158,201 +140,121 @@ export function applyTheme(theme) {
     localStorage.setItem('sba-theme', theme);
 }
 
-export function initTheme() {
-    const saved = localStorage.getItem('sba-theme') || 'system';
-    applyTheme(saved);
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-        if (localStorage.getItem('sba-theme') === 'system') applyTheme('system');
-    });
-}
-
-/**
- * UI BUILDERS
- */
-
-export function buildPageHeader({ title, subtitle, backUrl }) {
-    const container = document.getElementById('pageHeader');
-    if (!container) return;
-    container.className = 'page-header';
-    container.innerHTML = `
-        ${backUrl ? `<a href="${backUrl}" class="page-header__back"><i class="fa-solid fa-arrow-left"></i></a>` : ''}
-        <div class="sba-logo sba-logo--sm">
-            <svg class="sba-logo__mark" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-                <path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/>
-                <path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/>
-                <text x="8" y="58" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#003087">S</text>
-                <text x="28" y="58" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#003087">B</text>
-                <text x="50" y="58" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#003087">A</text>
-            </svg>
-        </div>
-        <div class="page-header__content">
-            <h1 class="page-header__title">${title}</h1>
-            ${subtitle ? `<span class="page-header__sub">${subtitle}</span>` : ''}
-        </div>
-    `;
-}
-
-export function buildSidebar({ activeId, userData }) {
-    const container = document.getElementById('appSidebar');
-    if (!container) return;
-    
-    const items = [
-        { id: 'dashboard', label: 'Dashboard', icon: 'fa-house', link: 'dashboard.html' },
-        { id: 'apply', label: 'Apply for Grant', icon: 'fa-file-contract', link: 'apply.html' },
-        { id: 'kyc', label: 'Identity (KYC)', icon: 'fa-id-card', link: 'kyc.html' },
-        { id: 'deposit', label: 'Deposit Funds', icon: 'fa-wallet', link: 'deposit.html' },
-        { id: 'tax', label: 'Tax Clearance', icon: 'fa-file-invoice-dollar', link: 'tax.html' },
-        { id: 'withdraw', label: 'Withdraw Funds', icon: 'fa-money-bill-transfer', link: 'withdraw.html' },
-        { id: 'ledger', label: 'Transaction History', icon: 'fa-chart-bar', link: 'ledger.html' },
-        { id: 'award', label: 'Award Certificate', icon: 'fa-trophy', link: 'award.html' },
-        { id: 'vault', label: 'Document Vault', icon: 'fa-folder-open', link: 'vault.html' },
-        { id: 'support', label: 'Support Chat', icon: 'fa-comments', link: 'support.html', badgeId: 'chat-badge' },
-        { id: 'notifications', label: 'Notifications', icon: 'fa-bell', link: 'notifications.html', badgeId: 'notif-badge' },
-        { id: 'settings', label: 'Settings', icon: 'fa-gear', link: 'settings.html' }
-    ];
-
-    container.innerHTML = `
-        <div class="app-sidebar__logo">
-            <div class="sba-logo">
-                <svg class="sba-logo__mark" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/>
-                    <path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/>
-                    <text x="8" y="58" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#003087">S</text>
-                    <text x="28" y="58" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#003087">B</text>
-                    <text x="50" y="58" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#003087">A</text>
-                </svg>
-                <div class="sba-logo__text">
-                    <span class="sba-logo__name">U.S. Small Business</span>
-                    <span class="sba-logo__sub">Administration</span>
-                </div>
-            </div>
-        </div>
-        <nav class="app-sidebar__nav">
-            ${items.map(item => `
-                <a href="${item.link}" class="nav-item ${activeId === item.id ? 'active' : ''}">
-                    <i class="fa-solid ${item.icon}"></i>
-                    <span>${item.label}</span>
-                    <span class="nav-item__badge" id="${item.badgeId || ''}"></span>
-                </a>
-            `).join('')}
-        </nav>
-        <div class="app-sidebar__footer">
-            <div class="nav-item" style="cursor:default; background:none;">
-                <div class="avatar" style="width:32px;height:32px;background:var(--navy);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;">
-                    ${userData.avatarBase64 ? `<img src="${userData.avatarBase64}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : userData.fullName.charAt(0)}
-                </div>
-                <div style="display:flex;flex-direction:column;overflow:hidden;">
-                    <span style="font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${userData.fullName}</span>
-                    <span style="font-size:0.7rem;color:var(--text-muted);">ID: ${userData.uid.substring(0,8).toUpperCase()}</span>
-                </div>
-            </div>
-            <button class="nav-item" id="sidebarSignOut" style="margin-top:10px; color:var(--red);">
-                <i class="fa-solid fa-right-from-bracket"></i>
-                <span>Sign Out</span>
-            </button>
-        </div>
-    `;
-
-    document.getElementById('sidebarSignOut').onclick = () => {
-        showConfirm({
-            title: 'Sign Out',
-            message: 'Are you sure you want to log out of your SBA account?',
-            onConfirm: () => {
-                setUserOnline(userData.uid, false);
-                auth.signOut();
-            },
-            danger: true
-        });
-    };
-}
-
-export function buildDock({ activeId }) {
-    const container = document.getElementById('mobileDock');
-    if (!container) return;
-    const items = [
-        { id: 'home', label: 'Home', icon: 'fa-house', link: 'dashboard.html' },
-        { id: 'apply', label: 'Apply', icon: 'fa-file-contract', link: 'apply.html' },
-        { id: 'deposit', label: 'Deposit', icon: 'fa-wallet', link: 'deposit.html' },
-        { id: 'support', label: 'Support', icon: 'fa-comments', link: 'support.html' },
-        { id: 'more', label: 'More', icon: 'fa-bars', action: () => document.getElementById('appSidebar').classList.add('open') }
-    ];
-
-    container.innerHTML = items.map(item => `
-        <${item.link ? 'a href="'+item.link+'"' : 'button id="dockMore"'} class="dock-item ${activeId === item.id ? 'active' : ''}">
-            <i class="fa-solid ${item.icon}"></i>
-            <span>${item.label}</span>
-        </${item.link ? 'a' : 'button'}>
-    `).join('');
-
-    if (document.getElementById('dockMore')) {
-        document.getElementById('dockMore').onclick = () => {
-            document.getElementById('appSidebar').classList.add('open');
-            document.getElementById('sidebarOverlay').classList.add('show');
-        };
-    }
-}
-
-/**
- * UTILITIES
- */
-
-export const showLoader = () => document.getElementById('pageLoader')?.classList.add('active');
-export const hideLoader = () => document.getElementById('pageLoader')?.classList.remove('active');
-
 export function formatCurrency(amount) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 }
 
 export function formatDate(ts, includeTime = false) {
-    if (!ts) return 'N/A';
+    if (!ts) return '---';
     const date = ts.toDate ? ts.toDate() : new Date(ts);
-    return includeTime ? date.toLocaleString() : date.toLocaleDateString();
+    return date.toLocaleDateString('en-US', includeTime ? { dateStyle: 'medium', timeStyle: 'short' } : { dateStyle: 'medium' });
 }
 
-export function timeAgo(ts) {
-    if (!ts) return '';
-    const date = ts.toDate ? ts.toDate() : new Date(ts);
-    const seconds = Math.floor((new Date() - date) / 1000);
-    let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + "y ago";
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + "mo ago";
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + "d ago";
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + "h ago";
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + "m ago";
-    return "just now";
-}
-
-export function copyToClipboard(text, msg = 'Copied to clipboard!') {
+export function copyToClipboard(text, msg = 'Copied!') {
     navigator.clipboard.writeText(text).then(() => showToast(msg, 'success'));
 }
 
 export function setButtonLoading(btn, isLoading, loadingText = 'Processing...', originalText) {
     if (isLoading) {
         btn.setAttribute('data-original', btn.innerHTML);
-        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> ${loadingText}`;
         btn.disabled = true;
         btn.classList.add('btn--loading');
+        btn.innerHTML = `<span style="opacity:0">${btn.innerHTML}</span>`;
     } else {
-        btn.innerHTML = originalText || btn.getAttribute('data-original');
         btn.disabled = false;
         btn.classList.remove('btn--loading');
+        btn.innerHTML = originalText || btn.getAttribute('data-original');
     }
 }
 
-export function renderStatusBadge(status) {
-    const config = {
-        IDLE: { class: 'badge--idle', icon: 'fa-clock', label: 'Pending' },
-        PENDING: { class: 'badge--pending', icon: 'fa-hourglass-half', label: 'Processing' },
-        UNDER_REVIEW: { class: 'badge--review', icon: 'fa-magnifying-glass', label: 'Review' },
-        APPROVED: { class: 'badge--approved', icon: 'fa-circle-check', label: 'Approved' },
-        REJECTED: { class: 'badge--rejected', icon: 'fa-circle-xmark', label: 'Rejected' },
-        active: { class: 'badge--active', icon: 'fa-shield-check', label: 'Active' },
-        suspended: { class: 'badge--suspended', icon: 'fa-ban', label: 'Suspended' }
-    };
-    const s = config[status] || config.IDLE;
-    return `<span class="badge ${s.class}"><i class="fa-solid ${s.icon}"></i> ${s.label}</span>`;
+// --- Layout Builders ---
+export function buildPageHeader({ title, subtitle, backUrl }) {
+    const el = document.getElementById('pageHeader');
+    if (!el) return;
+    el.className = 'page-header';
+    el.innerHTML = `
+        <a href="${backUrl}" class="page-header__back"><i class="fa-solid fa-arrow-left"></i></a>
+        <div class="page-header__title">
+            <div>${title}</div>
+            ${subtitle ? `<div class="page-header__sub">${subtitle}</div>` : ''}
+        </div>
+        <div class="sba-logo sba-logo--sm">
+            <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
+        </div>
+    `;
+}
+
+export function buildSidebar({ activeId, userData }) {
+    const el = document.getElementById('appSidebar');
+    if (!el) return;
+    
+    const items = [
+        { id: 'dashboard', icon: 'fa-house', label: 'Dashboard', url: 'dashboard.html' },
+        { id: 'apply', icon: 'fa-file-contract', label: 'Apply for Grant', url: 'apply.html' },
+        { id: 'kyc', icon: 'fa-id-card', label: 'Identity (KYC)', url: 'kyc.html' },
+        { id: 'deposit', icon: 'fa-wallet', label: 'Deposit Funds', url: 'deposit.html' },
+        { id: 'tax', icon: 'fa-file-invoice-dollar', label: 'Tax Clearance', url: 'tax.html' },
+        { id: 'withdraw', icon: 'fa-money-bill-transfer', label: 'Withdraw Funds', url: 'withdraw.html' },
+        { id: 'ledger', icon: 'fa-chart-bar', label: 'History', url: 'ledger.html' },
+        { id: 'award', icon: 'fa-trophy', label: 'Award Certificate', url: 'award.html' },
+        { id: 'vault', icon: 'fa-folder-open', label: 'Document Vault', url: 'vault.html' },
+        { id: 'support', icon: 'fa-comments', label: 'Support Chat', url: 'support.html', badge: true },
+        { id: 'notifs', icon: 'fa-bell', label: 'Notifications', url: 'notifications.html', badge: true },
+        { id: 'settings', icon: 'fa-gear', label: 'Settings', url: 'settings.html' }
+    ];
+
+    el.innerHTML = `
+        <div class="app-sidebar__logo">
+            <div class="sba-logo">
+                <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
+                <div class="sba-logo__text"><span class="sba-logo__name">U.S. Small Business</span><span class="sba-logo__sub">Administration</span></div>
+            </div>
+        </div>
+        <nav class="app-sidebar__nav">
+            ${items.map(item => `
+                <a href="${item.url}" class="nav-item ${activeId === item.id ? 'active' : ''}">
+                    <i class="fa-solid ${item.icon}"></i>
+                    <span>${item.label}</span>
+                    ${item.badge ? `<span class="nav-item__badge notif-badge" id="badge-${item.id}"></span>` : ''}
+                </a>
+            `).join('')}
+        </nav>
+        <div class="app-sidebar__footer">
+            <div class="nav-item" style="cursor:default; hover:none;">
+                <div style="width:32px;height:32px;border-radius:50%;background:var(--navy);color:white;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:800;">${userData.fullName.split(' ').map(n=>n[0]).join('')}</div>
+                <div style="overflow:hidden"><div style="font-weight:700;font-size:0.8rem;white-space:nowrap;text-overflow:ellipsis;">${userData.fullName}</div><div style="font-size:0.65rem;color:var(--text-muted)">User ID: ${userData.uid.slice(0,8)}</div></div>
+            </div>
+            <button class="nav-item" onclick="import('./firebase-config.js').then(m=>m.signOut(m.auth).then(()=>location.href='login.html'))">
+                <i class="fa-solid fa-right-from-bracket"></i><span>Sign Out</span>
+            </button>
+        </div>
+    `;
+
+    // Sidebar toggles
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle = () => { el.classList.toggle('open'); overlay.classList.toggle('show'); };
+    document.querySelectorAll('.hamburger, #sidebarOverlay').forEach(b => b.onclick = toggle);
+}
+
+export function buildDock({ activeId }) {
+    const el = document.getElementById('mobileDock');
+    if (!el) return;
+    el.innerHTML = `
+        <a href="dashboard.html" class="dock-item ${activeId==='home'?'active':''}"><i class="fa-solid fa-house"></i><span>Home</span></a>
+        <a href="apply.html" class="dock-item ${activeId==='apply'?'active':''}"><i class="fa-solid fa-file-contract"></i><span>Apply</span></a>
+        <a href="deposit.html" class="dock-item ${activeId==='deposit'?'active':''}"><i class="fa-solid fa-wallet"></i><span>Deposit</span></a>
+        <a href="support.html" class="dock-item ${activeId==='support'?'active':''}"><i class="fa-solid fa-comments"></i><span>Support</span></a>
+        <button class="dock-item hamburger"><i class="fa-solid fa-bars"></i><span>More</span></button>
+    `;
+}
+
+export function initNotificationBadge(uid) {
+    const q = query(collection(db, "notifications"), where("uid", "==", uid), where("read", "==", false));
+    onSnapshot(q, (snap) => {
+        const count = snap.size;
+        document.querySelectorAll('.notif-badge').forEach(b => {
+            b.innerText = count;
+            b.classList.toggle('show', count > 0);
+        });
+    });
 }
