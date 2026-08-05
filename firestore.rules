@@ -1,46 +1,96 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Check if user is authenticated
+    // --- BASIC HELPERS ---
+    
+    // Check if user is logged in
     function isAuth() {
       return request.auth != null;
     }
-
-    // Check if user is an admin
+    
+    // Check if the current user is the owner of the document
+    function isOwner(uid) {
+      return isAuth() && request.auth.uid == uid;
+    }
+    
+    // Check if the user has the 'admin' role in their document
+    // This is a "Get" call and counts towards your read operations
     function isAdmin() {
-      return isAuth() && (
-        request.auth.token.email == 'sba.suppor@gmail.com' || 
-        request.auth.token.email == 'liger4683@gmail.com'
-      );
+      return isAuth() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // User Profile Rules
-    match /users/{userId} {
-      allow read, write: if isAuth() && (request.auth.uid == userId || isAdmin());
+    // --- COLLECTION RULES ---
+
+    // USERS Collection
+    match /users/{uid} {
+      // Users can read their own profile; admins can read all
+      allow read: if isAuth() && (isOwner(uid) || isAdmin());
       
-      // Nested Ledger Rules
+      // Users can create their document during registration
+      allow create: if isAuth() && isOwner(uid);
+      
+      // Users can update their own profile (avatar, phone, application data)
+      // Admins can update any user (balance, statuses)
+      allow update: if isAuth() && (isOwner(uid) || isAdmin());
+      
+      // Only admins can delete user accounts
+      allow delete: if isAdmin();
+
+      // LEDGER Subcollection (inside users)
       match /ledger/{entryId} {
-        allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
-        allow write: if isAdmin(); // Only admins can modify financials
+        // Users can see their history; admins can see all
+        allow read: if isAuth() && (isOwner(uid) || isAdmin());
+        
+        // Both users and admins can create entries (e.g., submitting application creates pending entry)
+        allow create: if isAuth();
+        
+        // Only admins can modify or delete transaction records
+        allow update, delete: if isAdmin();
       }
     }
 
-    // Notification Rules
+    // NOTIFICATIONS Collection
     match /notifications/{notifId} {
-      allow read: if isAuth() && (resource.data.uid == request.auth.uid || isAdmin());
-      allow create: if isAuth(); // Allow users to trigger notifications
-      allow update: if isAuth() && request.auth.uid == resource.data.uid;
+      // Users can read notifications sent to them
+      // Admins can read notifications where uid is 'ADMIN'
+      allow read: if isAuth() && (
+        resource.data.uid == request.auth.uid || 
+        (resource.data.uid == 'ADMIN' && isAdmin())
+      );
+      
+      // System logic creates notifications on user actions
+      allow create: if isAuth();
+      
+      // Users can update their own notifications (marking as read)
+      allow update: if isAuth() && (resource.data.uid == request.auth.uid || isAdmin());
+      
+      // Only admins can delete notification history
+      allow delete: if isAdmin();
     }
 
-    // Support Chat Rules
-    match /chat/{msgId} {
-      allow read, write: if isAuth(); // In a full build, we'd limit this to specific thread IDs
+    // CHAT Collection (Root/UID/Messages/ID)
+    match /chat/{uid}/messages/{msgId} {
+      // Only the user involved or an admin can see/send messages
+      allow read, write: if isAuth() && (request.auth.uid == uid || isAdmin());
     }
 
-    // Audit Log Rules
+    // AUDIT LOG Collection
     match /auditLog/{logId} {
-      allow read, write: if isAdmin();
+      // Strictly restricted to administrators only
+      allow read, create: if isAdmin();
+      allow update, delete: if false; // Audit logs should never be modified
+    }
+
+    // CONFIG Collection
+    match /config/{docId} {
+      // Platform settings like Maintenance Mode and Disbursed Stats must be public
+      allow read: if true;
+      
+      // Only admins can change system settings
+      allow write: if isAdmin();
     }
   }
 }
