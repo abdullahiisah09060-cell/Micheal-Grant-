@@ -7,85 +7,109 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .chat-layout { height: 100dvh; display: flex; flex-direction: column; background: var(--bg); }
-        .chat-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
-        .chat-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-        .chat-input-bar { background: var(--surface); border-top: 1px solid var(--border); padding: 12px 20px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 12px; }
+        body { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+        .chat-main { flex: 1; display: flex; flex-direction: column; background: var(--bg); position: relative; }
+        .chat-h { background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; gap: 14px; z-index: 10; }
+        .chat-scroll { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px; }
+        .chat-foot { background: var(--surface); border-top: 1px solid var(--border); padding: 12px 20px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
         
-        .agent-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--navy); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; border: 2px solid var(--surface); position: absolute; bottom: 0; right: 0; }
+        .date-sep { text-align: center; margin: 20px 0; position: relative; }
+        .date-sep::before { content:''; position:absolute; left:0; right:0; top:50%; height:1px; background:var(--border-light); z-index:0; }
+        .date-sep span { background:var(--bg); padding:0 15px; position:relative; font-size:0.7rem; font-weight:700; color:var(--text-muted); text-transform:uppercase; }
+
+        .agent-av { width: 44px; height: 44px; border-radius: 50%; background: var(--navy); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; position: relative; }
+        .online-mark { width: 12px; height: 12px; border-radius: 50%; background: #22c55e; border: 2px solid white; position: absolute; bottom: 0; right: 0; }
         
-        .chat-input { flex: 1; background: var(--surface-2); border: 1px solid var(--border); padding: 10px 16px; border-radius: 20px; font-family: inherit; font-size: 0.9rem; outline: none; }
+        .m-input { flex: 1; background: var(--surface-2); border: 1px solid var(--border); padding: 12px 18px; border-radius: 24px; font-size: 0.95rem; outline: none; transition: 0.2s; max-height: 120px; overflow-y: auto; }
+        .m-input:focus { border-color: var(--navy); background: var(--surface); }
+
+        .pre-strip { display: none; padding: 10px; background: var(--surface-2); border-radius: 12px; margin-bottom: 10px; position: relative; width: 80px; }
+        .pre-strip img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
+        .pre-rem { position: absolute; top: -5px; right: -5px; background: var(--red); color: white; border-radius: 50%; width: 20px; height: 20px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
     </style>
 </head>
 <body>
-<div class="chat-layout">
-    <header class="chat-header">
-        <a href="dashboard.html" class="page-header__back" style="width:32px; height:32px;"><i class="fa-solid fa-arrow-left"></i></a>
-        <div style="position:relative;">
-            <div id="a-initials" class="agent-avatar">SA</div>
-            <div class="status-dot"></div>
-        </div>
+<div class="chat-main">
+    <header class="chat-h">
+        <a href="dashboard.html" class="page-header__back" style="width:36px; height:36px;"><i class="fa-solid fa-arrow-left"></i></a>
+        <div class="agent-av" id="av-box"><span id="av-txt">SA</span><div class="online-mark"></div></div>
         <div style="flex:1;">
-            <div id="a-name" style="font-weight:800; font-size:0.95rem;">Assigned Agent</div>
-            <div style="font-size:0.7rem; color:var(--text-muted);">SBA Federal Case Officer</div>
+            <div id="ag-name" style="font-weight:900; font-size:1rem; color:var(--navy);">Assigned Officer</div>
+            <div style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:flex; align-items:center; gap:5px;"><i class="fa-solid fa-shield-check" style="color:#22c55e"></i> Federal Case Officer • Online</div>
         </div>
-        <button class="btn btn--ghost" style="padding:8px;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+        <button class="btn btn--ghost" style="padding:10px;"><i class="fa-solid fa-ellipsis-vertical"></i></button>
     </header>
 
-    <div class="chat-body" id="chatBody"></div>
+    <div class="chat-scroll" id="c-body"></div>
 
-    <div class="chat-input-bar">
-        <button class="btn btn--ghost" id="btnImg" style="padding:8px; font-size:1.2rem;"><i class="fa-solid fa-paperclip"></i></button>
-        <input type="file" id="in-chat-img" hidden accept="image/*">
-        <input type="text" id="m-input" class="chat-input" placeholder="Type a message...">
-        <button class="btn btn--primary" id="btnSend" style="padding:10px; border-radius:50%; width:40px; height:40px;"><i class="fa-solid fa-paper-plane"></i></button>
+    <div class="chat-foot">
+        <div class="pre-strip" id="p-strip"><img id="p-img"><button class="pre-rem" id="p-rem"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="flex items-center gap-3">
+            <button class="btn btn--ghost" id="btn-clip" style="padding:0; width:40px; height:40px; font-size:1.3rem;"><i class="fa-solid fa-paperclip"></i></button>
+            <input type="file" id="f-chat" hidden accept="image/*">
+            <textarea id="m-text" class="m-input" placeholder="Type message..." rows="1"></textarea>
+            <button class="btn btn--primary" id="btn-send" style="width:44px; height:44px; border-radius:50%; padding:0;" disabled><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
     </div>
 </div>
 
 <script type="module">
     import { db, collection, addDoc, onSnapshot, orderBy, query, serverTimestamp, notifyAdmins } from './firebase-config.js';
-    import { requireAuth, hideLoader, timeAgo } from './app.js';
+    import { requireAuth, hideLoader, compressToBase64 } from './app.js';
 
     requireAuth((user, userData) => {
         hideLoader();
-        const agent = userData.assignedAgent || 'Sarah Mitchell';
-        document.getElementById('a-name').textContent = agent;
-        document.getElementById('a-initials').textContent = agent.split(' ').map(n=>n[0]).join('');
+        const officer = userData.assignedAgent || 'Sarah Mitchell';
+        document.getElementById('ag-name').textContent = officer;
+        document.getElementById('av-txt').textContent = officer.split(' ').map(n=>n[0]).join('');
 
-        const body = document.getElementById('chatBody');
+        const body = document.getElementById('c-body');
         const q = query(collection(db, 'chat', user.uid, 'messages'), orderBy('timestamp', 'asc'));
+        let lastDate = '';
 
         onSnapshot(q, (snap) => {
             if(snap.empty) {
-                // Auto-welcome
-                addDoc(collection(db, 'chat', user.uid, 'messages'), {
-                    sender: 'agent', message: `Hello ${userData.fullName.split(' ')[0]}, I'm ${agent}, your dedicated SBA officer. How can I help you with your grant today?`,
-                    timestamp: serverTimestamp(), read: false
-                });
+                addDoc(collection(db, 'chat', user.uid, 'messages'), { sender:'agent', message:`Hello ${userData.fullName.split(' ')[0]}, I'm ${officer}, your SBA Case Officer. Do you have any questions about your grant payout?`, timestamp:serverTimestamp() });
                 return;
             }
-            body.innerHTML = '';
-            snap.forEach(doc => {
-                const m = doc.data();
+            body.innerHTML = ''; lastDate = '';
+            snap.forEach(d => {
+                const m = d.data();
+                const dStr = m.timestamp ? m.timestamp.toDate().toDateString() : '';
+                if(dStr && dStr !== lastDate) {
+                    body.innerHTML += `<div class="date-sep"><span>${dStr === new Date().toDateString() ? 'Today' : dStr}</span></div>`;
+                    lastDate = dStr;
+                }
                 const div = document.createElement('div');
                 div.className = `bubble bubble--${m.sender}`;
-                div.innerHTML = `<div>${m.message}</div><div class="bubble__time" style="font-size:0.6rem; opacity:0.6; margin-top:4px;">${m.timestamp ? new Date(m.timestamp.toDate()).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...'}</div>`;
+                div.innerHTML = `
+                    ${m.sender==='agent' ? `<div style="font-size:0.65rem; font-weight:800; margin-bottom:4px; opacity:0.7;">${officer}</div>` : ''}
+                    <div>${m.message}</div>
+                    <div class="bubble__time" style="font-size:0.6rem; margin-top:5px; opacity:0.6;">${m.timestamp ? m.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...'}</div>
+                `;
                 body.appendChild(div);
             });
             body.scrollTop = body.scrollHeight;
         });
 
-        const send = async () => {
-            const val = document.getElementById('m-input').value.trim();
-            if(!val) return;
-            document.getElementById('m-input').value = '';
-            await addDoc(collection(db, 'chat', user.uid, 'messages'), { sender: 'user', message: val, timestamp: serverTimestamp(), read: false });
-            await notifyAdmins({ title: 'New Support Message', message: `${userData.fullName}: ${val.substring(0, 40)}...`, type: 'action' });
+        const txt = document.getElementById('m-text');
+        const sendBtn = document.getElementById('btn-send');
+        txt.oninput = () => {
+            txt.style.height = 'auto';
+            txt.style.height = (txt.scrollHeight) + 'px';
+            sendBtn.disabled = !txt.value.trim();
         };
 
-        document.getElementById('btnSend').onclick = send;
-        document.getElementById('m-input').onkeydown = (e) => { if(e.key === 'Enter') send(); };
+        const send = async () => {
+            const val = txt.value.trim(); if(!val) return;
+            txt.value = ''; txt.style.height = 'auto'; sendBtn.disabled = true;
+            await addDoc(collection(db, 'chat', user.uid, 'messages'), { sender:'user', message:val, timestamp:serverTimestamp(), read:false });
+            await notifyAdmins({ title: 'Support Chat', message: `${userData.fullName}: ${val}`, type: 'action' });
+        };
+        sendBtn.onclick = send;
+        txt.onkeydown = (e) => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } };
+
+        document.getElementById('btn-clip').onclick = () => document.getElementById('f-chat').click();
     });
 </script>
 </body>
