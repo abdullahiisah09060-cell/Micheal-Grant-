@@ -8,14 +8,14 @@
     <link rel="stylesheet" href="global.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
-        .cert-container { padding: 40px 0; display: flex; flex-direction: column; align-items: center; }
-        .cert-card { width: 100%; max-width: 800px; background: white; padding: 60px; border: 15px solid var(--navy); position: relative; color: #0a1628; box-shadow: var(--shadow-lg); font-family: 'Georgia', serif; }
-        .cert-card::after { content: ''; position: absolute; inset: 5px; border: 2px solid #fbbf24; pointer-events: none; }
-        .cert-header { text-align: center; margin-bottom: 40px; }
-        .cert-body { text-align: center; }
-        .cert-name { font-size: 2.5rem; font-weight: 700; color: var(--navy); margin: 24px 0; border-bottom: 2px solid #eee; display: inline-block; padding: 0 40px; }
-        .cert-seal { width: 120px; height: 120px; margin: 30px auto; border-radius: 50%; border: 3px double #fbbf24; display: flex; align-items: center; justify-content: center; background: var(--navy-light); }
-        .cert-footer { display: flex; justify-content: space-between; margin-top: 60px; font-size: 0.85rem; border-top: 1px solid #eee; padding-top: 20px; }
+        .cert-wrap { padding: 40px 0; display: flex; flex-direction: column; align-items: center; }
+        .cert-box { width: 100%; max-width: 800px; background: white; padding: 60px; border: 12px solid var(--navy); border-style: double; position: relative; color: #0a1628; box-shadow: var(--shadow-lg); font-family: 'Times New Roman', serif; text-align: center; }
+        .cert-box::after { content: ''; position: absolute; inset: 6px; border: 1px solid #fbbf24; pointer-events: none; }
+        .cert-title { font-size: 2.2rem; font-weight: 800; color: var(--navy); text-transform: uppercase; margin: 30px 0; letter-spacing: 2px; }
+        .cert-name { font-size: 2.8rem; font-weight: 700; color: #1a4a9a; border-bottom: 2px solid #ddd; display: inline-block; padding: 0 40px; margin: 20px 0; font-style: italic; }
+        .cert-seal { width: 130px; height: 130px; margin: 40px auto; border-radius: 50%; border: 3px double #fbbf24; display: flex; align-items: center; justify-content: center; background: #f8fafc; }
+        .cert-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 50px; text-align: left; font-size: 0.8rem; font-family: 'Inter', sans-serif; }
+        #locked, #certView { display: none; }
     </style>
 </head>
 <body>
@@ -26,77 +26,70 @@
         <div id="pageHeader"></div>
         <div class="app-main__content">
             
-            <div id="locked" class="status-screen" style="display:none;">
+            <div id="locked" class="status-screen">
                 <div class="status-screen__icon status-screen__icon--info"><i class="fa-solid fa-trophy"></i></div>
-                <h1 class="status-screen__title">Award Pending</h1>
-                <p class="status-screen__message">Your grant certificate will be generated automatically once your application and tax clearance are approved.</p>
+                <h1 class="status-screen__title">Award Pending Generation</h1>
+                <p class="status-screen__message">Your official Grant Award Certificate is generated after tax clearance verification is approved by the SBA board.</p>
             </div>
 
-            <div id="certView" class="cert-container fade-in" style="display:none;">
-                <div class="cert-card" id="captureCert">
-                    <div class="cert-header">
-                        <div class="sba-logo" style="justify-content:center; margin-bottom:30px;">
-                            <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
-                        </div>
-                        <h2 style="letter-spacing: 0.2em; text-transform: uppercase; font-size: 1rem; opacity: 0.8;">Certificate of Grant Award</h2>
+            <div id="certView" class="cert-wrap">
+                <div class="cert-box" id="certExport">
+                    <div class="sba-logo" style="justify-content:center; margin-bottom:20px;">
+                        <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
                     </div>
-                    <div class="cert-body">
-                        <p>This document officially certifies that</p>
-                        <div class="cert-name" id="userName">Applicant Name</div>
-                        <p>has been awarded a federal small business grant in the sum of</p>
-                        <h1 style="font-size: 3rem; margin: 15px 0;" id="awardAmt">$0.00</h1>
-                        <p>Under the <strong>2025 SBA Economic Development Program</strong></p>
-                        <div class="cert-seal">
-                            <i class="fa-solid fa-shield-halved" style="font-size:3rem; color:var(--navy);"></i>
-                        </div>
-                    </div>
+                    <div style="font-family:'Inter'; text-transform:uppercase; letter-spacing:3px; font-weight:700; font-size:0.7rem; opacity:0.7;">United States Small Business Administration</div>
+                    <h1 class="cert-title">Certificate of Grant Award</h1>
+                    <p style="font-size:1.1rem;">This document officially certifies that</p>
+                    <div class="cert-name" id="c-name">Applicant Name</div>
+                    <p style="font-size:1.1rem;">has been awarded a federal business grant in the amount of</p>
+                    <h2 style="font-size:3.5rem; margin:20px 0; color:var(--navy);" id="c-amt">$0.00</h2>
+                    <p style="font-family:'Inter'; font-size:0.9rem; opacity:0.8;">Authorized under the <strong>2025 Economic Development & Recovery Act</strong></p>
+                    
+                    <div class="cert-seal"><i class="fa-solid fa-shield-halved" style="font-size:3.5rem; color:var(--navy);"></i></div>
+
                     <div class="cert-footer">
                         <div>
-                            <strong>Grant Ref:</strong> <span id="grantRef">SBA-2025-XXXX</span><br>
-                            <strong>Award Date:</strong> <span id="awardDate">January 01, 2025</span>
+                            <strong>REF NO:</strong> <span id="c-ref">SBA-2025-XXXX</span><br>
+                            <strong>DATE:</strong> <span id="c-date">JANUARY 1, 2025</span>
                         </div>
                         <div style="text-align:right;">
-                            <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Jon_Stewart_Signature.svg" style="height:40px; filter: grayscale(1) contrast(2);"><br>
-                            <strong>Administrator, SBA</strong>
+                            <img src="https://upload.wikimedia.org/wikipedia/commons/3/3a/Jon_Stewart_Signature.svg" style="height:45px; filter:grayscale(1) brightness(0.5);"><br>
+                            <strong style="text-transform:uppercase; border-top:1px solid #000; padding-top:5px;">Administrator, SBA</strong>
                         </div>
                     </div>
                 </div>
 
                 <div class="flex gap-4 mt-12">
-                    <button class="btn btn--outline" id="btnDownload"><i class="fa-solid fa-download"></i> Download Certificate</button>
-                    <a href="withdraw.html" class="btn btn--primary">Withdraw Funds <i class="fa-solid fa-arrow-right"></i></a>
+                    <button class="btn btn--outline btn--lg" id="btnDL"><i class="fa-solid fa-file-arrow-down"></i> Download PNG</button>
+                    <a href="withdraw.html" class="btn btn--primary btn--lg">Proceed to Payout <i class="fa-solid fa-arrow-right"></i></a>
                 </div>
+                <a href="ledger.html" class="btn btn--ghost mt-6">View Transaction History</a>
             </div>
-
         </div>
     </main>
 </div>
 
 <script type="module">
-    import { requireAuth, buildSidebar, buildDock, buildPageHeader, initNotificationBadge, formatCurrency, formatDate } from './app.js';
-
+    import { requireAuth, buildSidebar, buildDock, buildPageHeader, initNotificationBadge, formatCurrency } from './app.js';
     requireAuth((user, userData) => {
         buildSidebar({ activeId: 'award', userData });
         buildDock({ activeId: 'home' });
-        buildPageHeader({ title: 'Grant Award', subtitle: 'Official Federal Certificate', backUrl: 'dashboard.html' });
+        buildPageHeader({ title: 'Grant Award', subtitle: 'Official Certificate', backUrl: 'dashboard.html' });
         initNotificationBadge(user.uid);
 
         if(userData.awardStatus !== 'APPROVED') {
             document.getElementById('locked').style.display = 'block';
         } else {
             document.getElementById('certView').style.display = 'flex';
-            document.getElementById('userName').textContent = userData.fullName;
-            document.getElementById('awardAmt').textContent = formatCurrency(userData.totalAward || 0);
-            document.getElementById('grantRef').textContent = `SBA-2025-${user.uid.substring(0,8).toUpperCase()}`;
-            document.getElementById('awardDate').textContent = new Date().toLocaleDateString('en-US', { month:'long', day:'2-digit', year:'numeric' });
+            document.getElementById('c-name').textContent = userData.fullName;
+            document.getElementById('c-amt').textContent = formatCurrency(userData.totalAward || 0);
+            document.getElementById('c-ref').textContent = `SBA-2025-${user.uid.substring(0,8).toUpperCase()}`;
+            document.getElementById('c-date').textContent = new Date().toLocaleDateString('en-US', {month:'long', day:'2-digit', year:'numeric'}).toUpperCase();
         }
 
-        document.getElementById('btnDownload').onclick = () => {
-            html2canvas(document.getElementById('captureCert')).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'SBA-Grant-Certificate.png';
-                link.href = canvas.toDataURL();
-                link.click();
+        document.getElementById('btnDL').onclick = () => {
+            html2canvas(document.getElementById('certExport'), { scale: 2 }).then(canvas => {
+                const a = document.createElement('a'); a.download = 'SBA-Award-Certificate.png'; a.href = canvas.toDataURL(); a.click();
             });
         };
     });
