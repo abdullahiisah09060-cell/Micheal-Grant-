@@ -1,67 +1,248 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile Settings | SBA Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Settings | SBA Grant Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .settings-tab { padding: 10px 20px; cursor: pointer; font-weight: 600; color: var(--text-muted); border-bottom: 2px solid transparent; }
-        .settings-tab.active { color: var(--sba-navy); border-bottom-color: var(--sba-navy); }
-        .settings-pane { display: none; padding-top: 30px; }
-        .settings-pane.active { display: block; }
+        .settings-tab { display: none; animation: fadeSlide 0.3s ease; }
+        .settings-tab.active { display: block; }
+        .avatar-upload { width: 100px; height: 100px; border-radius: 50%; background: var(--navy); color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; position: relative; margin: 0 auto 20px; overflow: hidden; cursor: pointer; }
+        .avatar-upload img { width: 100%; height: 100%; object-fit: cover; }
+        .avatar-upload__overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.2s; }
+        .avatar-upload:hover .avatar-upload__overlay { opacity: 1; }
+        
+        .theme-card { border: 2px solid var(--border); border-radius: var(--r-lg); padding: 16px; cursor: pointer; text-align: center; transition: 0.2s; background: var(--surface); }
+        .theme-card.selected { border-color: var(--navy); background: var(--navy-light); }
+        .theme-card i { font-size: 1.5rem; margin-bottom: 8px; display: block; }
     </style>
 </head>
-<body style="background: #f1f5f9;">
-    <div class="container" style="max-width: 800px;">
-        <h2 style="color: var(--sba-navy); margin-bottom: 30px;">Portal Settings</h2>
+<body>
 
-        <div class="card">
-            <div style="display: flex; gap: 20px; border-bottom: 1px solid var(--border);">
-                <div class="settings-tab active" onclick="openTab('profile')">Profile</div>
-                <div class="settings-tab" onclick="openTab('security')">Security & PIN</div>
+<div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
+
+<div class="app-layout">
+    <aside class="app-sidebar" id="appSidebar"></aside>
+    <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
+
+    <main class="app-main">
+        <div id="pageHeader"></div>
+
+        <div class="app-main__content" style="max-width: 800px;">
+            <!-- Tabs Nav -->
+            <div class="flex gap-2 mb-8 overflow-x-auto pb-2">
+                <button class="btn btn--sm btn--secondary active" data-tab="profile">Profile</button>
+                <button class="btn btn--sm btn--ghost" data-tab="security">Security</button>
+                <button class="btn btn--sm btn--ghost" data-tab="notifications">Notifications</button>
+                <button class="btn btn--sm btn--ghost" data-tab="appearance">Appearance</button>
             </div>
 
-            <!-- Profile Pane -->
-            <div id="profile" class="settings-pane active">
-                <div class="form-group">
-                    <label class="form-label">Display Name</label>
-                    <input type="text" class="form-input" id="set-name">
+            <!-- Profile Tab -->
+            <div id="tab-profile" class="settings-tab active">
+                <div class="card mb-6 text-center">
+                    <label class="avatar-upload" for="avatarInput">
+                        <img id="avatarPreview" src="" alt="" style="display:none;">
+                        <span id="avatarInitials">SM</span>
+                        <div class="avatar-upload__overlay"><i class="fa-solid fa-camera"></i></div>
+                    </label>
+                    <input type="file" id="avatarInput" hidden accept="image/*">
+                    <h3 id="profileName" style="font-weight: 800;">Applicant Name</h3>
+                    <p id="profileEmail" class="text-muted" style="font-size: 0.85rem;">email@example.com</p>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Phone Number</label>
-                    <input type="tel" class="form-input" id="set-phone">
+
+                <div class="card">
+                    <form id="profileForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Full Name</label>
+                                <input type="text" id="editFullName" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Phone Number</label>
+                                <input type="text" id="editPhone" class="form-input">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Country</label>
+                                <input type="text" id="editCountry" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" id="editDob" class="form-input">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn--primary" id="saveProfileBtn">Save Changes</button>
+                    </form>
                 </div>
-                <button class="btn btn-primary" id="saveProfile">Update Profile</button>
             </div>
 
-            <!-- Security Pane -->
-            <div id="security" class="settings-pane">
-                <div style="background: var(--sba-blue-light); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-                    <h5 style="color: var(--sba-navy);">Withdrawal PIN</h5>
-                    <p style="font-size: 13px; color: var(--text-secondary);">Your 4-digit PIN is required for all fund disbursements.</p>
+            <!-- Security Tab -->
+            <div id="tab-security" class="settings-tab">
+                <div class="card mb-6">
+                    <h4 class="mb-4">Change Password</h4>
+                    <form id="passwordForm">
+                        <div class="form-group">
+                            <label class="form-label">Current Password</label>
+                            <input type="password" id="curPass" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">New Password</label>
+                            <input type="password" id="newPass" class="form-input" required>
+                        </div>
+                        <button type="submit" class="btn btn--primary" id="passBtn">Update Password</button>
+                    </form>
                 </div>
-                <div class="form-group" style="max-width: 200px;">
-                    <label class="form-label">Set 4-Digit PIN</label>
-                    <input type="password" maxlength="4" class="form-input" placeholder="****" id="set-pin">
+                <div class="card">
+                    <h4 class="mb-4">Transaction PIN</h4>
+                    <p class="text-muted mb-4" style="font-size:0.8rem;">Required for all withdrawals and sensitive account changes.</p>
+                    <form id="pinForm">
+                        <div class="form-group">
+                            <label class="form-label">4-Digit PIN</label>
+                            <input type="password" id="newPin" class="form-input" maxlength="4" pattern="[0-9]{4}" placeholder="••••" required>
+                        </div>
+                        <button type="submit" class="btn btn--primary" id="pinBtn">Update PIN</button>
+                    </form>
                 </div>
-                <button class="btn btn-primary" id="savePin">Save Security PIN</button>
             </div>
+
+            <!-- Appearance Tab -->
+            <div id="tab-appearance" class="settings-tab">
+                <div class="card">
+                    <h4 class="mb-6">System Theme</h4>
+                    <div class="stats-grid">
+                        <div class="theme-card" data-mode="light">
+                            <i class="fa-solid fa-sun text-warning"></i>
+                            <span style="font-weight:700; font-size:0.85rem;">Light</span>
+                        </div>
+                        <div class="theme-card" data-mode="dark">
+                            <i class="fa-solid fa-moon" style="color:#6366f1;"></i>
+                            <span style="font-weight:700; font-size:0.85rem;">Dark</span>
+                        </div>
+                        <div class="theme-card" data-mode="system">
+                            <i class="fa-solid fa-desktop text-muted"></i>
+                            <span style="font-weight:700; font-size:0.85rem;">System</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
+    </main>
 
-        <div style="text-align: center; margin-top: 30px;">
-            <a href="dashboard.html" class="btn btn-outline">Back to Dashboard</a>
-        </div>
-    </div>
+    <nav class="mobile-dock" id="mobileDock"></nav>
+</div>
 
-    <script>
-        function openTab(tabId) {
-            document.querySelectorAll('.settings-pane').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+<script type="module">
+    import { auth, updateUserData, compressToBase64, reauthenticateWithCredential, EmailAuthProvider, updatePassword } from './firebase-config.js';
+    import { requireAuth, buildSidebar, buildDock, buildPageHeader, initTheme, applyTheme, showToast, setButtonLoading, initNotificationBadge } from './app.js';
+
+    requireAuth((user, userData) => {
+        buildSidebar({ activeId: 'settings', userData });
+        buildDock({ activeId: 'more' });
+        buildPageHeader({ title: 'Settings', subtitle: 'Account preferences and security', backUrl: 'dashboard.html' });
+        initNotificationBadge(user.uid);
+        initTheme();
+
+        // Fill Profile
+        document.getElementById('profileName').textContent = userData.fullName;
+        document.getElementById('profileEmail').textContent = userData.email;
+        document.getElementById('editFullName').value = userData.fullName;
+        document.getElementById('editPhone').value = userData.phoneNumber;
+        document.getElementById('editCountry').value = userData.country;
+        document.getElementById('editDob').value = userData.dob;
+
+        if (userData.avatarBase64) {
+            const preview = document.getElementById('avatarPreview');
+            preview.src = userData.avatarBase64;
+            preview.style.display = 'block';
+            document.getElementById('avatarInitials').style.display = 'none';
+        } else {
+            document.getElementById('avatarInitials').textContent = userData.fullName.split(' ').map(n=>n[0]).join('');
         }
-    </script>
+
+        // Avatar Upload
+        document.getElementById('avatarInput').onchange = async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            showToast('Uploading photo...', 'info');
+            const base64 = await compressToBase64(file);
+            await updateUserData(user.uid, { avatarBase64: base64 });
+            location.reload();
+        };
+
+        // Profile Form
+        document.getElementById('profileForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveProfileBtn');
+            setButtonLoading(btn, true);
+            await updateUserData(user.uid, {
+                fullName: document.getElementById('editFullName').value,
+                phoneNumber: document.getElementById('editPhone').value,
+                country: document.getElementById('editCountry').value,
+                dob: document.getElementById('editDob').value
+            });
+            setButtonLoading(btn, false, 'Save Changes');
+            showToast('Profile updated successfully', 'success');
+        };
+
+        // Password Form
+        document.getElementById('passwordForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('passBtn');
+            const cur = document.getElementById('curPass').value;
+            const next = document.getElementById('newPass').value;
+            setButtonLoading(btn, true);
+            try {
+                const cred = EmailAuthProvider.credential(user.email, cur);
+                await reauthenticateWithCredential(user, cred);
+                await updatePassword(user, next);
+                showToast('Password updated', 'success');
+                e.target.reset();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+            setButtonLoading(btn, false, 'Update Password');
+        };
+
+        // PIN Form
+        document.getElementById('pinForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('pinBtn');
+            const pin = document.getElementById('newPin').value;
+            setButtonLoading(btn, true);
+            await updateUserData(user.uid, { transactionPin: pin });
+            showToast('Transaction PIN updated', 'success');
+            setButtonLoading(btn, false, 'Update PIN');
+        };
+
+        // Theme Toggle
+        const currentMode = localStorage.getItem('sba-theme') || 'system';
+        document.querySelectorAll('.theme-card').forEach(card => {
+            if (card.dataset.mode === currentMode) card.classList.add('selected');
+            card.onclick = () => {
+                document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('selected'));
+                card.classList.add('selected');
+                applyTheme(card.dataset.mode);
+            };
+        });
+
+        // Tabs Logic
+        document.querySelectorAll('[data-tab]').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('[data-tab]').forEach(b => b.classList.remove('active', 'btn--secondary'));
+                document.querySelectorAll('[data-tab]').forEach(b => b.classList.add('btn--ghost'));
+                document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+                
+                btn.classList.add('active', 'btn--secondary');
+                btn.classList.remove('btn--ghost');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            };
+        });
+    });
+</script>
+
 </body>
 </html>
