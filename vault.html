@@ -7,15 +7,17 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .vault-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
-        .doc-card { cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
-        .doc-card:hover { transform: translateY(-4px); border-color: var(--navy); }
-        .doc-thumb { height: 140px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: var(--text-muted); position: relative; }
-        .doc-thumb img { width: 100%; height: 100%; object-fit: cover; filter: blur(4px) grayscale(1); opacity: 0.5; }
-        .doc-overlay { position: absolute; inset: 0; background: rgba(0,48,135,0.1); display: flex; align-items: center; justify-content: center; color: var(--navy); font-weight: 800; font-size: 0.8rem; }
+        .v-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .v-card { cursor: pointer; transition: 0.2s; position: relative; border-radius: var(--r-lg); overflow: hidden; }
+        .v-card:hover { border-color: var(--navy); transform: translateY(-4px); }
+        .v-thumb { height: 160px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 3rem; color: var(--text-muted); position: relative; }
+        .v-thumb img { width: 100%; height: 100%; object-fit: cover; filter: blur(5px); opacity: 0.4; }
+        .v-overlay { position: absolute; inset: 0; background: rgba(0,48,135,0.05); display: flex; align-items: center; justify-content: center; color: var(--navy); font-weight: 900; font-size: 0.75rem; letter-spacing: 1px; }
         
-        #viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 40px; }
-        #viewer img { max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
+        #lb { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 30px; animation: modalIn 0.3s ease; }
+        #lb img { max-width: 90vw; max-height: 85vh; border-radius: 8px; }
+        #lb-close { position: absolute; top: 20px; right: 20px; color: white; font-size: 1.5rem; background: none; border: none; cursor: pointer; }
+        #lb-dl { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); }
     </style>
 </head>
 <body>
@@ -26,26 +28,24 @@
         <div id="pageHeader"></div>
         <div class="app-main__content">
             
-            <div class="alert alert--info mb-8">
-                <i class="fa-solid fa-shield-halved"></i>
-                <p>Documents in your vault are encrypted and only accessible to you and your assigned SBA Case Officer.</p>
-            </div>
+            <div class="alert alert--info mb-10"><i class="fa-solid fa-lock-shield"></i> <p>All documents are encrypted with 256-bit AES at rest. Only authorized SBA officers can access these files during audit.</p></div>
 
-            <div id="vaultList" class="vault-grid mb-12"></div>
+            <div id="v-list" class="v-grid mb-12"></div>
 
-            <div class="card">
-                <h3 class="mb-4">Upload Additional Support Docs</h3>
-                <div class="form-group"><label class="form-label">Document Label</label><input type="text" id="docLabel" class="form-input" placeholder="e.g. Utility Bill, Business License"></div>
-                <div class="upload-area" id="up-v"><i class="fa-solid fa-cloud-arrow-up upload-area__icon"></i><p>Click to select file</p><input type="file" id="in-v" hidden accept="image/*"></div>
-                <button class="btn btn--primary mt-6" id="btnSave">Save to Vault</button>
+            <div class="card" style="max-width:500px;">
+                <h3 class="mb-4">Upload New Document</h3>
+                <div class="form-group"><label class="form-label">File Label</label><input type="text" id="v-label" class="form-input" placeholder="e.g. Business Permit"></div>
+                <div class="upload-area" id="v-up-box"><i class="fa-solid fa-cloud-arrow-up upload-area__icon"></i><p>Select image to store</p><input type="file" id="v-in" hidden accept="image/*"></div>
+                <button class="btn btn--primary mt-6 btn--full" id="btn-v-save">Encrypt & Save</button>
             </div>
         </div>
     </main>
 </div>
 
-<div id="viewer" onclick="this.style.display='none'">
-    <button class="btn btn--ghost" style="position:absolute; top:20px; right:20px; color:white;"><i class="fa-solid fa-xmark"></i> Close</button>
-    <img id="viewImg" src="">
+<div id="lb">
+    <button id="lb-close"><i class="fa-solid fa-xmark"></i></button>
+    <img id="lb-img" src="">
+    <a id="lb-dl" class="btn btn--primary" download="SBA-Document.jpg"><i class="fa-solid fa-download"></i> Download Image</a>
 </div>
 
 <script type="module">
@@ -55,48 +55,51 @@
     requireAuth((user, userData) => {
         buildSidebar({ activeId: 'vault', userData });
         buildDock({ activeId: 'home' });
-        buildPageHeader({ title: 'Document Vault', subtitle: 'Secure Federal Storage', backUrl: 'dashboard.html' });
+        buildPageHeader({ title: 'Document Vault', subtitle: 'Secure Treasury Storage', backUrl: 'dashboard.html' });
         initNotificationBadge(user.uid);
 
         const render = () => {
-            const list = document.getElementById('vaultList'); list.innerHTML = '';
+            const list = document.getElementById('v-list'); list.innerHTML = '';
             const docs = [
-                { name: 'ID Front', img: userData.kyc?.idFrontBase64, date: userData.kyc?.submittedAt },
-                { name: 'ID Back', img: userData.kyc?.idBackBase64, date: userData.kyc?.submittedAt },
-                { name: 'Deposit Receipt', img: userData.deposit?.receiptBase64, date: userData.deposit?.submittedAt },
-                { name: 'Tax Receipt', img: userData.tax?.receiptBase64, date: userData.tax?.submittedAt }
+                { id:'id-f', name:'Government ID (Front)', img: userData.kyc?.idFrontBase64, date: userData.kyc?.submittedAt },
+                { id:'id-b', name:'Government ID (Back)', img: userData.kyc?.idBackBase64, date: userData.kyc?.submittedAt },
+                { id:'dep', name:'Deposit Receipt', img: userData.deposit?.receiptBase64, date: userData.deposit?.submittedAt },
+                { id:'tax', name:'Tax Clearance Receipt', img: userData.tax?.receiptBase64, date: userData.tax?.submittedAt }
             ];
 
             (userData.additionalDocs || []).forEach(d => docs.push(d));
 
-            docs.filter(d => d.img).forEach(d => {
+            docs.forEach(d => {
                 const card = document.createElement('div');
-                card.className = 'card doc-card';
+                card.className = 'card v-card';
                 card.innerHTML = `
-                    <div class="doc-thumb">${d.img ? `<img src="${d.img}">` : '<i class="fa-solid fa-file-image"></i>'}<div class="doc-overlay">VIEW FULL</div></div>
-                    <div class="p-3" style="padding:15px;">
-                        <div style="font-weight:800; font-size:0.9rem;">${d.name}</div>
-                        <div style="font-size:0.75rem; color:var(--text-muted);">${formatDate(d.date)}</div>
+                    <div class="v-thumb">${d.img ? `<img src="${d.img}"><div class="v-overlay">CLICK TO DECRYPT</div>` : '<i class="fa-solid fa-file-circle-exclamation"></i>'}</div>
+                    <div style="padding:15px; border-top:1px solid var(--border-light);">
+                        <div style="font-weight:800; font-size:0.85rem;">${d.name}</div>
+                        <div style="font-size:0.7rem; color:var(--text-muted); margin-top:3px;">${d.img ? formatDate(d.date) : 'Not uploaded yet'}</div>
                     </div>
                 `;
-                card.onclick = () => {
-                    document.getElementById('viewImg').src = d.img;
-                    document.getElementById('viewer').style.display = 'flex';
+                if(d.img) card.onclick = () => {
+                    document.getElementById('lb-img').src = d.img;
+                    document.getElementById('lb-dl').href = d.img;
+                    document.getElementById('lb').style.display = 'flex';
                 };
                 list.appendChild(card);
             });
         };
         render();
 
-        document.getElementById('up-v').onclick = () => document.getElementById('in-v').click();
-        document.getElementById('btnSave').onclick = async () => {
-            const file = document.getElementById('in-v').files[0];
-            const label = document.getElementById('docLabel').value;
-            if(!file || !label) return showToast('Label and file required', 'warning');
-            
-            const btn = document.getElementById('btnSave'); setButtonLoading(btn, true);
-            const b64 = await compressToBase64(file);
-            await updateUserData(user.uid, { additionalDocs: arrayUnion({ name:label, img:b64, date: new Date() }) });
+        document.getElementById('lb-close').onclick = () => document.getElementById('lb').style.display = 'none';
+        window.onkeydown = (e) => { if(e.key === 'Escape') document.getElementById('lb').style.display = 'none'; };
+
+        document.getElementById('v-up-box').onclick = () => document.getElementById('v-in').click();
+        document.getElementById('btn-v-save').onclick = async () => {
+            const f = document.getElementById('v-in').files[0];
+            const l = document.getElementById('v-label').value;
+            if(!f || !l) return showToast('Label and file required', 'warning');
+            const btn = document.getElementById('btn-v-save'); setButtonLoading(btn, true);
+            const b64 = await compressToBase64(f);
+            await updateUserData(user.uid, { additionalDocs: arrayUnion({ name:l, img:b64, date: new Date() }) });
             location.reload();
         };
     });
