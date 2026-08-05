@@ -1,77 +1,303 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard | SBA Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dashboard | SBA Grant Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
+    <style>
+        .pipeline-scroll { overflow-x: auto; padding-bottom: 10px; -webkit-overflow-scrolling: touch; }
+        .nav-user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--navy); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.8rem; }
+    </style>
 </head>
 <body>
-    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
-    <div class="mobile-nav-active-wrap">
-        <div style="display: grid; grid-template-columns: 280px 1fr;" id="layoutGrid">
-            <aside class="sidebar" id="sidebar" style="background: var(--sba-navy-dark); color: white; padding: 30px 20px;">
-                <img src="sba-logo.png" style="height: 40px; filter: brightness(0) invert(1); margin-bottom: 40px;">
-                <nav style="display: flex; flex-direction: column; gap: 10px;">
-                    <a href="dashboard.html" class="btn btn-primary btn-full" style="justify-content: flex-start;"><i class="fa-solid fa-gauge"></i> Overview</a>
-                    <a href="apply.html" class="btn btn-full" style="color: white; justify-content: flex-start;"><i class="fa-solid fa-file-signature"></i> Apply Now</a>
-                    <a href="ledger.html" class="btn btn-full" style="color: white; justify-content: flex-start;"><i class="fa-solid fa-list-ul"></i> History</a>
-                    <a href="settings.html" class="btn btn-full" style="color: white; justify-content: flex-start;"><i class="fa-solid fa-gear"></i> Settings</a>
-                    <a href="index.html" class="btn btn-full" style="color: #ff9999; margin-top: 50px; justify-content: flex-start;"><i class="fa-solid fa-power-off"></i> Logout</a>
-                </nav>
-            </aside>
+<div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
-            <main style="padding: 20px; background: #f1f5f9; min-height: 100vh;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                    <h2 id="greet">Hello, Applicant</h2>
-                    <img src="sba-logo.png" class="hide-desktop" style="height: 30px;">
+<div class="app-layout">
+    <!-- Sidebar -->
+    <aside class="app-sidebar" id="appSidebar"></aside>
+    <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Content -->
+    <main class="app-main">
+        <!-- Mobile Header -->
+        <header class="mobile-topbar">
+            <div class="sba-logo sba-logo--sm">
+                <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
+                <div class="sba-logo__text"><span class="sba-logo__name">SBA Portal</span></div>
+            </div>
+            <div class="mobile-topbar__right">
+                <a href="notifications.html" class="nav-item" style="position:relative; width:40px; height:40px; padding:0; justify-content:center;">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="notif-badge">0</span>
+                </a>
+            </div>
+        </header>
+
+        <div class="app-main__content">
+            <!-- Greeting -->
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <h1 id="greeting" style="font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em;">Good Morning, Applicant</h1>
+                    <p id="currentDate" class="text-muted" style="font-size: 0.85rem;"></p>
                 </div>
+                <div class="sr-mobile">
+                    <div id="accountStatusBadge"></div>
+                </div>
+            </div>
 
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
-                        <h4 style="color: var(--sba-navy);">Grant Progress</h4>
-                        <small class="hide-desktop" style="color: var(--text-muted);">Swipe <i class="fa-solid fa-arrow-right"></i></small>
-                    </div>
-                    <div class="pipeline-container">
-                        <div class="pipeline" id="pipe">
-                            <div class="step completed"><div class="step-icon"><i class="fa-solid fa-user-check"></i></div><div class="step-label">KYC</div></div>
-                            <div class="step active"><div class="step-icon"><i class="fa-solid fa-file-pen"></i></div><div class="step-label">Apply</div></div>
-                            <div class="step"><div class="step-icon"><i class="fa-solid fa-wallet"></i></div><div class="step-label">Deposit</div></div>
-                            <div class="step"><div class="step-icon"><i class="fa-solid fa-receipt"></i></div><div class="step-label">Tax</div></div>
-                            <div class="step"><div class="step-icon"><i class="fa-solid fa-award"></i></div><div class="step-label">Award</div></div>
-                            <div class="step"><div class="step-icon"><i class="fa-solid fa-money-bill-transfer"></i></div><div class="step-label">Withdraw</div></div>
+            <!-- Announcement -->
+            <div id="announcementBox" class="alert alert--info mb-8" style="display: none; align-items: center; justify-content: space-between;">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-bullhorn"></i>
+                    <span id="announcementText"></span>
+                </div>
+                <button class="btn btn--ghost" style="padding:4px;" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid mb-8">
+                <div class="stat-card">
+                    <div class="stat-card__label">Available Balance</div>
+                    <div class="stat-card__value" id="statBalance">$0.00</div>
+                    <div class="stat-card__sub">Treasury Wallet</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__label">Requested Funding</div>
+                    <div class="stat-card__value" id="statRequested">$0.00</div>
+                    <div class="stat-card__sub">Pending Approval</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-card__label">Grant Award</div>
+                    <div class="stat-card__value" id="statAward">$0.00</div>
+                    <div class="stat-card__sub">Disbursed Total</div>
+                </div>
+            </div>
+
+            <!-- Application Pipeline -->
+            <div class="pipeline mb-8">
+                <div class="pipeline__title"><i class="fa-solid fa-route text-navy"></i> Application Progress</div>
+                <div class="pipeline-scroll">
+                    <div class="pipeline__track">
+                        <div class="pipeline__step" id="pipe-kyc">
+                            <div class="pipeline__dot"><i class="fa-solid fa-id-card"></i></div>
+                            <span class="pipeline__step-label">Identity</span>
+                        </div>
+                        <div class="pipeline__step" id="pipe-apply">
+                            <div class="pipeline__dot"><i class="fa-solid fa-file-pen"></i></div>
+                            <span class="pipeline__step-label">Application</span>
+                        </div>
+                        <div class="pipeline__step" id="pipe-deposit">
+                            <div class="pipeline__dot"><i class="fa-solid fa-coins"></i></div>
+                            <span class="pipeline__step-label">Deposit</span>
+                        </div>
+                        <div class="pipeline__step" id="pipe-tax">
+                            <div class="pipeline__dot"><i class="fa-solid fa-receipt"></i></div>
+                            <span class="pipeline__step-label">Tax Clear</span>
+                        </div>
+                        <div class="pipeline__step" id="pipe-award">
+                            <div class="pipeline__dot"><i class="fa-solid fa-trophy"></i></div>
+                            <span class="pipeline__step-label">Award</span>
+                        </div>
+                        <div class="pipeline__step" id="pipe-withdraw">
+                            <div class="pipeline__dot"><i class="fa-solid fa-building-columns"></i></div>
+                            <span class="pipeline__step-label">Withdraw</span>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                    <div class="card" style="border-left: 5px solid var(--sba-navy);">
-                        <p style="font-size: 12px; font-weight: 700; color: var(--text-muted);">BALANCE</p>
-                        <h2 id="bal" style="color: var(--sba-navy);">$0.00</h2>
+            <!-- Quick Actions -->
+            <h3 class="mb-4" style="font-size: 1rem; font-weight: 800;">Quick Actions</h3>
+            <div class="actions-grid mb-8">
+                <a href="kyc.html" class="action-tile">
+                    <div class="action-tile__icon" style="background:var(--info-bg); color:var(--info);"><i class="fa-solid fa-id-card"></i></div>
+                    <span class="action-tile__label">Identity</span>
+                </a>
+                <a href="apply.html" class="action-tile">
+                    <div class="action-tile__icon" style="background:var(--navy-light); color:var(--navy);"><i class="fa-solid fa-file-contract"></i></div>
+                    <span class="action-tile__label">Apply</span>
+                </a>
+                <a href="deposit.html" class="action-tile">
+                    <div class="action-tile__icon" style="background:var(--success-bg); color:var(--success);"><i class="fa-solid fa-wallet"></i></div>
+                    <span class="action-tile__label">Deposit</span>
+                </a>
+                <a href="withdraw.html" class="action-tile">
+                    <div class="action-tile__icon" style="background:#f3e8ff; color:#9333ea;"><i class="fa-solid fa-money-bill-transfer"></i></div>
+                    <span class="action-tile__label">Withdraw</span>
+                </a>
+                <a href="tax.html" class="action-tile">
+                    <div class="action-tile__icon" style="background:var(--warning-bg); color:var(--warning);"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                    <span class="action-tile__label">Tax Fee</span>
+                </a>
+                <a href="award.html" class="action-tile">
+                    <div class="action-tile__icon" style="background:#fef9c3; color:#a16207;"><i class="fa-solid fa-trophy"></i></div>
+                    <span class="action-tile__label">Award</span>
+                </a>
+                <a href="ledger.html" class="action-tile">
+                    <div class="action-tile__icon" style="background:#f1f5f9; color:#475569;"><i class="fa-solid fa-chart-line"></i></div>
+                    <span class="action-tile__label">History</span>
+                </a>
+                <a href="settings.html" class="action-tile">
+                    <div class="action-tile__icon" style="background:#f8fafc; color:#94a3b8;"><i class="fa-solid fa-gear"></i></div>
+                    <span class="action-tile__label">Settings</span>
+                </a>
+            </div>
+
+            <!-- Two Column Section -->
+            <div class="form-row">
+                <!-- Ledger -->
+                <div class="card">
+                    <div class="flex justify-between items-center mb-6">
+                        <h3 style="font-size: 1rem; font-weight: 800;">Recent Transactions</h3>
+                        <a href="ledger.html" class="text-navy" style="font-size: 0.8rem; font-weight: 700;">View All</a>
                     </div>
-                    <div class="card" style="border-left: 5px solid var(--sba-red);">
-                        <p style="font-size: 12px; font-weight: 700; color: var(--text-muted);">REQUESTED</p>
-                        <h2 id="req" style="color: var(--sba-navy);">$0.00</h2>
+                    <div id="ledgerList" class="flex flex-col gap-4">
+                        <div class="skel" style="height:50px;"></div>
+                        <div class="skel" style="height:50px;"></div>
                     </div>
                 </div>
-            </main>
-        </div>
-    </div>
 
-    <script type="module">
-        import { requireAuth, initMobileNav } from './app.js';
-        requireAuth((user, userData) => {
-            initMobileNav();
-            document.getElementById('greet').innerText = `Hello, ${userData.fullName.split(' ')[0]}`;
-            document.getElementById('bal').innerText = `$${userData.balance.toLocaleString()}`;
-            document.getElementById('req').innerText = `$${userData.requestedAmount.toLocaleString()}`;
-            
-            if (window.innerWidth <= 1024) {
-                document.getElementById('layoutGrid').style.gridTemplateColumns = '1fr';
+                <!-- Support Card -->
+                <div class="card card--navy">
+                    <h3 class="mb-2" style="font-size: 1.2rem; font-weight: 800; color:#fbbf24;">Need Assistance?</h3>
+                    <p style="font-size: 0.85rem; opacity: 0.8; margin-bottom: 24px;">Your dedicated SBA Case Officer is available to help with your application and funding process.</p>
+                    <div class="flex items-center gap-4 p-4 mb-6" style="background:rgba(255,255,255,0.1); border-radius:var(--r-lg);">
+                        <div id="agentAvatar" class="nav-user-avatar" style="width:44px; height:44px; background:#fbbf24; color:#001f5c; font-size:1rem;">SM</div>
+                        <div>
+                            <div id="agentName" style="font-weight:700; font-size:0.9rem;">Sarah Mitchell</div>
+                            <div style="font-size:0.7rem; opacity:0.6;">SBA Case Officer • Online</div>
+                        </div>
+                    </div>
+                    <a href="support.html" class="btn btn--primary btn--full" style="background:white; color:var(--navy); border:none;">Open Support Chat</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Mobile Dock -->
+    <nav class="mobile-dock" id="mobileDock"></nav>
+
+    <!-- Floating Support -->
+    <a href="support.html" class="float-support"><i class="fa-solid fa-headset"></i></a>
+</div>
+
+<script type="module">
+    import { db, auth, onSnapshot, collection, query, where, orderBy, limit, doc, getDoc } from './firebase-config.js';
+    import { 
+        requireAuth, buildSidebar, buildDock, initTheme, initNotificationBadge, 
+        formatCurrency, formatDate, hideLoader, renderStatusBadge, requestNotificationPermission
+    } from './app.js';
+
+    requireAuth((user, userData) => {
+        initTheme();
+        buildSidebar({ activeId: 'dashboard', userData });
+        buildDock({ activeId: 'home' });
+        initNotificationBadge(user.uid);
+        requestNotificationPermission(user.uid);
+
+        // UI Updates
+        document.getElementById('greeting').textContent = getGreeting() + ', ' + userData.fullName.split(' ')[0];
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+        document.getElementById('agentName').textContent = userData.assignedAgent || 'SBA Agent';
+        document.getElementById('agentAvatar').textContent = (userData.assignedAgent || 'SA').split(' ').map(n=>n[0]).join('');
+
+        // Platform Config (Announcements)
+        getDoc(doc(db, 'config', 'platform')).then(snap => {
+            const config = snap.data();
+            if (config?.announcementBanner) {
+                document.getElementById('announcementBox').style.display = 'flex';
+                document.getElementById('announcementText').textContent = config.announcementBanner;
             }
         });
-    </script>
+
+        // Real-time Dashboard Data
+        onSnapshot(doc(db, 'users', user.uid), (snap) => {
+            const data = snap.data();
+            updateStats(data);
+            updatePipeline(data);
+            document.getElementById('accountStatusBadge').innerHTML = `<span class="badge badge--${data.accountStatus}">${data.accountStatus}</span>`;
+        });
+
+        // Recent Ledger
+        const ledgerQuery = query(collection(db, 'users', user.uid, 'ledger'), orderBy('createdAt', 'desc'), limit(5));
+        onSnapshot(ledgerQuery, (snap) => {
+            const list = document.getElementById('ledgerList');
+            if (snap.empty) {
+                list.innerHTML = `<div class="text-center p-4 text-muted" style="font-size:0.8rem;"><i class="fa-solid fa-inbox block mb-2" style="font-size:1.5rem;"></i> No recent transactions</div>`;
+                return;
+            }
+            list.innerHTML = '';
+            snap.forEach(doc => {
+                const item = doc.data();
+                const div = document.createElement('div');
+                div.className = 'flex justify-between items-center p-3';
+                div.style.borderBottom = '1px solid var(--border-light)';
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div style="width:36px; height:36px; border-radius:50%; background:var(--navy-light); color:var(--navy); display:flex; align-items:center; justify-content:center; font-size:0.8rem;">
+                            <i class="${getTransactionIcon(item.type)}"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:0.85rem; font-weight:700;">${item.description}</div>
+                            <div style="font-size:0.7rem;" class="text-muted">${formatDate(item.createdAt)}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div style="font-size:0.9rem; font-weight:800; color:${item.amount >= 0 ? 'var(--success)' : 'var(--error)'}">
+                            ${item.amount >= 0 ? '+' : ''}${formatCurrency(item.amount)}
+                        </div>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        });
+    });
+
+    function getGreeting() {
+        const hour = new Date().getHours();
+        if (hour < 12) return "Good Morning";
+        if (hour < 17) return "Good Afternoon";
+        return "Good Evening";
+    }
+
+    function updateStats(data) {
+        document.getElementById('statBalance').textContent = formatCurrency(data.balance || 0);
+        document.getElementById('statRequested').textContent = formatCurrency(data.requestedAmount || 0);
+        document.getElementById('statAward').textContent = formatCurrency(data.totalAward || 0);
+    }
+
+    function updatePipeline(data) {
+        const steps = {
+            'pipe-kyc': data.kycStatus,
+            'pipe-apply': data.applyStatus,
+            'pipe-deposit': data.depositStatus,
+            'pipe-tax': data.taxStatus,
+            'pipe-award': data.awardStatus,
+            'pipe-withdraw': data.withdrawStatus
+        };
+        for (const [id, status] of Object.entries(steps)) {
+            const el = document.getElementById(id);
+            el.className = 'pipeline__step ' + (status || 'idle').toLowerCase().replace('_', '-');
+        }
+    }
+
+    function getTransactionIcon(type) {
+        const icons = {
+            'deposit': 'fa-wallet',
+            'withdrawal': 'fa-money-bill-transfer',
+            'award': 'fa-trophy',
+            'fee': 'fa-receipt',
+            'credit': 'fa-circle-plus',
+            'debit': 'fa-circle-minus'
+        };
+        return 'fa-solid ' + (icons[type] || 'fa-file-invoice');
+    }
+</script>
+
 </body>
 </html>
