@@ -15,13 +15,12 @@ messaging.onBackgroundMessage((payload) => {
     self.registration.showNotification(payload.notification.title, {
         body: payload.notification.body,
         icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png',
         data: payload.data
     });
 });
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const link = event.notification.data?.link || '/';
+    const link = event.notification.data?.link || '/dashboard.html';
     event.waitUntil(clients.openWindow(link));
 });
