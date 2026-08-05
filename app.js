@@ -1,6 +1,10 @@
+/**
+ * SBA GRANT PORTAL — CORE UTILITIES
+ */
+
 import { 
     auth, db, onAuthStateChanged, listenUserData, updateUserData, setUserOnline, 
-    isAdmin, query, collection, where, onSnapshot, updateDoc, doc, writeBatch 
+    isAdmin, query, collection, where, onSnapshot, updateDoc, doc, writeBatch, getDoc 
 } from './firebase-config.js';
 
 export function showToast(message, type = 'info', duration = 4500) {
@@ -10,12 +14,14 @@ export function showToast(message, type = 'info', duration = 4500) {
         container.className = 'toast-container';
         document.body.appendChild(container);
     }
+
     const icons = {
         success: 'fa-circle-check',
         error: 'fa-circle-xmark',
         warning: 'fa-triangle-exclamation',
         info: 'fa-circle-info'
     };
+
     const toast = document.createElement('div');
     toast.className = `toast toast--${type}`;
     toast.innerHTML = `
@@ -23,11 +29,14 @@ export function showToast(message, type = 'info', duration = 4500) {
         <div class="toast__content">${message}</div>
         <button class="toast__close"><i class="fa-solid fa-xmark"></i></button>
     `;
+
     container.appendChild(toast);
+
     const dismiss = () => {
         toast.classList.add('toast--hiding');
         setTimeout(() => toast.remove(), 300);
     };
+
     toast.querySelector('.toast__close').onclick = dismiss;
     setTimeout(dismiss, duration);
 }
@@ -46,9 +55,11 @@ export function showConfirm({ title, message, confirmText = 'Confirm', cancelTex
         </div>
     `;
     document.body.appendChild(overlay);
+
     const close = () => overlay.remove();
-    overlay.querySelector('#confirmCancel').onclick = () => { onCancel?.(); close(); };
-    overlay.querySelector('#confirmSubmit').onclick = () => { onConfirm?.(); close(); };
+
+    overlay.querySelector('#confirmCancel').onclick = () => { if (onCancel) onCancel(); close(); };
+    overlay.querySelector('#confirmSubmit').onclick = () => { if (onConfirm) onConfirm(); close(); };
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); }, { once: true });
 }
@@ -56,21 +67,43 @@ export function showConfirm({ title, message, confirmText = 'Confirm', cancelTex
 export function requireAuth(callback) {
     showLoader();
     onAuthStateChanged(auth, async (user) => {
-        if (!user) { window.location.href = 'login.html'; return; }
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // Maintenance Mode Check
+        const configSnap = await getDoc(doc(db, 'config', 'platform'));
+        const config = configSnap.data();
+        
         listenUserData(user.uid, (userData) => {
             if (!userData) return;
+
+            // Admin bypass for maintenance
+            if (config?.maintenanceMode && userData.role !== 'admin') {
+                document.body.innerHTML = `
+                    <div class="status-screen">
+                        <div class="status-screen__icon status-screen__icon--info"><i class="fa-solid fa-gear fa-spin"></i></div>
+                        <h1 class="status-screen__title">Maintenance in Progress</h1>
+                        <p class="status-screen__message">The SBA portal is temporarily offline for scheduled system updates. Please check back shortly.</p>
+                    </div>`;
+                hideLoader();
+                return;
+            }
+
             if (userData.accountStatus === 'suspended') {
                 document.body.innerHTML = `
                     <div class="status-screen">
                         <div class="status-screen__icon status-screen__icon--error"><i class="fa-solid fa-ban"></i></div>
                         <h1 class="status-screen__title">Account Suspended</h1>
-                        <p class="status-screen__message">Your SBA access has been suspended. Please contact support.</p>
-                        <button class="btn btn--primary" onclick="window.location.href='support.html'">Support Chat</button>
+                        <p class="status-screen__message">Access to this portal has been revoked. Please contact your assigned officer for details.</p>
+                        <button class="btn btn--primary" onclick="window.location.href='support.html'">Contact Support</button>
                     </div>`;
                 hideLoader();
                 return;
             }
-            hideLoader(); // Hide loader BEFORE calling callback
+
+            hideLoader(); // CRITICAL: Called before callback
             callback(user, userData);
         });
     });
@@ -78,7 +111,10 @@ export function requireAuth(callback) {
 
 export function requireAdmin(callback) {
     requireAuth((user, userData) => {
-        if (userData.role !== 'admin') { window.location.href = 'dashboard.html'; return; }
+        if (userData.role !== 'admin') {
+            window.location.href = 'dashboard.html';
+            return;
+        }
         callback(user, userData);
     });
 }
@@ -86,12 +122,10 @@ export function requireAdmin(callback) {
 export function redirectIfLoggedIn() {
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            const snap = await doc(db, "users", user.uid);
-            onSnapshot(snap, (d) => {
-                const data = d.data();
-                if (data.role === 'admin') window.location.href = 'admin-portal.html';
-                else window.location.href = 'dashboard.html';
-            });
+            const userData = await getDoc(doc(db, "users", user.uid));
+            const data = userData.data();
+            if (data.role === 'admin') window.location.href = 'admin-portal.html';
+            else window.location.href = 'dashboard.html';
         }
     });
 }
@@ -106,6 +140,11 @@ export function applyTheme(theme) {
     if (theme === 'system') {
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         html.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            if(localStorage.getItem('sba-theme') === 'system') {
+                html.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+            }
+        });
     } else {
         html.setAttribute('data-theme', theme);
     }
@@ -126,7 +165,7 @@ export function initNotificationBadge(uid) {
 export const showLoader = () => document.getElementById('pageLoader')?.classList.add('active');
 export const hideLoader = () => document.getElementById('pageLoader')?.classList.remove('active');
 
-export const formatCurrency = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
+export const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
 
 export const formatDate = (ts, includeTime = false) => {
     if (!ts) return 'N/A';
@@ -150,7 +189,7 @@ export function timeAgo(ts) {
     return "just now";
 }
 
-export function copyToClipboard(text, msg = 'Copied!') {
+export function copyToClipboard(text, msg = 'Copied to clipboard!') {
     navigator.clipboard.writeText(text).then(() => showToast(msg, 'success'));
 }
 
@@ -162,19 +201,22 @@ export function debounce(fn, delay = 300) {
     };
 }
 
-export function statusLabel(s) {
-    const m = { 'IDLE':'Pending', 'PENDING':'Processing', 'UNDER_REVIEW':'Under Review', 'APPROVED':'Approved', 'REJECTED':'Declined', 'CONFIRMED':'Confirmed' };
-    return m[s] || s;
+export function statusLabel(status) {
+    const map = {
+        'IDLE': 'Pending Action',
+        'PENDING': 'In Review',
+        'UNDER_REVIEW': 'Under Audit',
+        'APPROVED': 'Approved',
+        'REJECTED': 'Declined',
+        'CONFIRMED': 'Verified'
+    };
+    return map[status] || status;
 }
 
-export function statusIconClass(s) {
-    const m = { 'IDLE':'fa-clock', 'PENDING':'fa-spinner fa-spin', 'UNDER_REVIEW':'fa-magnifying-glass', 'APPROVED':'fa-circle-check', 'REJECTED':'fa-circle-xmark', 'CONFIRMED':'fa-circle-check' };
-    return m[s] || 'fa-info-circle';
-}
-
-export function renderStatusBadge(s) {
-    const cls = s.toLowerCase().replace('_', '-');
-    return `<span class="badge badge--${cls}"><i class="fa-solid ${statusIconClass(s)}"></i> ${statusLabel(s)}</span>`;
+export function renderStatusBadge(status) {
+    const cls = status.toLowerCase().replace('_', '-');
+    const icons = { 'IDLE':'fa-clock', 'PENDING':'fa-hourglass-half', 'UNDER_REVIEW':'fa-magnifying-glass', 'APPROVED':'fa-circle-check', 'REJECTED':'fa-circle-xmark', 'CONFIRMED':'fa-shield-check' };
+    return `<span class="badge badge--${cls}"><i class="fa-solid ${icons[status] || 'fa-info-circle'}"></i> ${statusLabel(status)}</span>`;
 }
 
 export function setButtonLoading(btn, isLoading, loadingText = 'Processing...', originalText = '') {
@@ -196,7 +238,7 @@ export function buildPageHeader({ title, subtitle, backUrl }) {
     header.innerHTML = `
         <div class="page-header">
             <a href="${backUrl}" class="page-header__back"><i class="fa-solid fa-arrow-left"></i></a>
-            <div class="page-header__content">
+            <div style="flex:1">
                 <h1 class="page-header__title">${title}</h1>
                 ${subtitle ? `<p class="page-header__sub">${subtitle}</p>` : ''}
             </div>
@@ -217,32 +259,34 @@ export function buildSidebar({ activeId, userData }) {
             </div>
         </div>
         <nav class="app-sidebar__nav">
-            <div class="nav-section-label">Main</div>
+            <div class="nav-section-label">Main Menu</div>
             <a href="dashboard.html" class="nav-item ${activeId==='dashboard'?'active':''}"><i class="fa-solid fa-house"></i> Dashboard</a>
-            <a href="apply.html" class="nav-item ${activeId==='apply'?'active':''}"><i class="fa-solid fa-file-contract"></i> Apply Now</a>
+            <a href="apply.html" class="nav-item ${activeId==='apply'?'active':''}"><i class="fa-solid fa-file-contract"></i> Apply for Grant</a>
             <a href="kyc.html" class="nav-item ${activeId==='kyc'?'active':''}"><i class="fa-solid fa-id-card"></i> Verify Identity</a>
-            <a href="deposit.html" class="nav-item ${activeId==='deposit'?'active':''}"><i class="fa-solid fa-wallet"></i> Deposit</a>
+            <a href="deposit.html" class="nav-item ${activeId==='deposit'?'active':''}"><i class="fa-solid fa-wallet"></i> Fund Account</a>
+            
             <div class="nav-section-label">Treasury</div>
             <a href="tax.html" class="nav-item ${activeId==='tax'?'active':''}"><i class="fa-solid fa-file-invoice-dollar"></i> Tax Clearance</a>
-            <a href="withdraw.html" class="nav-item ${activeId==='withdraw'?'active':''}"><i class="fa-solid fa-money-bill-transfer"></i> Withdraw</a>
-            <a href="ledger.html" class="nav-item ${activeId==='ledger'?'active':''}"><i class="fa-solid fa-chart-bar"></i> History</a>
-            <a href="award.html" class="nav-item ${activeId==='award'?'active':''}"><i class="fa-solid fa-trophy"></i> Awards</a>
+            <a href="withdraw.html" class="nav-item ${activeId==='withdraw'?'active':''}"><i class="fa-solid fa-money-bill-transfer"></i> Withdraw Funds</a>
+            <a href="ledger.html" class="nav-item ${activeId==='ledger'?'active':''}"><i class="fa-solid fa-chart-bar"></i> Transactions</a>
+            <a href="award.html" class="nav-item ${activeId==='award'?'active':''}"><i class="fa-solid fa-trophy"></i> Grant Award</a>
+            
             <div class="nav-section-label">Account</div>
+            <a href="vault.html" class="nav-item ${activeId==='vault'?'active':''}"><i class="fa-solid fa-folder-open"></i> Doc Vault</a>
             <a href="support.html" class="nav-item ${activeId==='support'?'active':''}"><i class="fa-solid fa-comments"></i> Support <span class="nav-item__badge notif-badge">0</span></a>
             <a href="settings.html" class="nav-item ${activeId==='settings'?'active':''}"><i class="fa-solid fa-gear"></i> Settings</a>
         </nav>
         <div class="app-sidebar__footer">
             <div class="flex items-center gap-4 mb-4">
-                <div class="nav-user-avatar">${userData.fullName.charAt(0)}</div>
-                <div class="flex-col"><span class="text-navy" style="font-weight:700;font-size:0.85rem">${userData.fullName}</span><span class="text-muted" style="font-size:0.7rem">${userData.role}</span></div>
+                <div class="nav-user-avatar" style="width:32px; height:32px; border-radius:50%; background:var(--navy); color:white; display:flex; align-items:center; justify-content:center; font-weight:700;">${userData.fullName.charAt(0)}</div>
+                <div class="flex-col"><span class="text-navy" style="font-weight:800; font-size:0.85rem">${userData.fullName}</span><span class="text-muted" style="font-size:0.7rem">${userData.role}</span></div>
             </div>
-            <button class="nav-item" id="sidebarLogout"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
+            <button class="nav-item" id="sidebarLogout" style="width:100%; text-align:left; border:none; background:none; cursor:pointer;"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</button>
         </div>`;
+    
     document.getElementById('sidebarLogout').onclick = () => {
-        showConfirm({ title:'Sign Out', message:'Log out of your SBA account?', onConfirm:()=>auth.signOut().then(()=>window.location.href='login.html') });
+        showConfirm({ title: 'Sign Out', message: 'Are you sure you want to end your secure session?', onConfirm: () => auth.signOut().then(() => window.location.href = 'login.html') });
     };
-    const overlay = document.getElementById('sidebarOverlay');
-    overlay?.addEventListener('click', () => sidebar.classList.remove('open'));
 }
 
 export function buildDock({ activeId }) {
@@ -254,9 +298,11 @@ export function buildDock({ activeId }) {
         <a href="deposit.html" class="dock-item ${activeId==='deposit'?'active':''}"><i class="fa-solid fa-wallet"></i><span>Deposit</span></a>
         <a href="support.html" class="dock-item ${activeId==='support'?'active':''}"><i class="fa-solid fa-comments"></i><span>Support</span></a>
         <button class="dock-item" id="dockMore"><i class="fa-solid fa-bars"></i><span>More</span></button>`;
+    
     document.getElementById('dockMore').onclick = () => {
         const sb = document.getElementById('appSidebar');
-        sb.classList.toggle('open');
-        document.getElementById('dockMore').querySelector('i').className = sb.classList.contains('open') ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+        const open = sb.classList.toggle('open');
+        document.getElementById('sidebarOverlay').classList.toggle('show', open);
+        document.getElementById('dockMore').querySelector('i').className = open ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
     };
 }
