@@ -1,87 +1,507 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel | SBA Portal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SBA Management Console | Admin Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        body { background: #0b0f19; color: white; }
-        .admin-sidebar { background: #111827; border-right: 1px solid #1f2937; padding: 30px 15px; height: 100vh; position: sticky; top: 0; }
-        .table-scroll { overflow-x: auto; background: #111827; border-radius: 8px; border: 1px solid #1f2937; }
-        table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        th { background: #1f2937; padding: 15px; text-align: left; font-size: 12px; color: #9ca3af; }
-        td { padding: 15px; border-bottom: 1px solid #1f2937; font-size: 14px; }
-        .btn-sm { padding: 6px 12px; font-size: 11px; }
+        /* Admin Specific Overrides */
+        body { background: #0f172a; color: #f1f5f9; overflow: hidden; }
+        .admin-layout { height: 100dvh; display: flex; }
+        .admin-sidebar { width: 260px; background: #0f172a; border-right: 1px solid #1e293b; display: flex; flex-direction: column; transition: 0.3s; z-index: 200; }
+        .admin-main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #0f172a; }
+        .admin-content { flex: 1; overflow-y: auto; padding: 30px; }
+        
+        .admin-nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 18px; color: #94a3b8; text-decoration: none; font-size: 0.875rem; font-weight: 600; border-radius: 8px; margin: 2px 12px; border: none; background: none; width: auto; cursor: pointer; transition: 0.2s; text-align: left; }
+        .admin-nav-item:hover { background: #1e293b; color: #e2e8f0; }
+        .admin-nav-item.active { background: #1e3a8a; color: #60a5fa; }
+        .admin-nav-item i { width: 18px; text-align: center; }
+        .admin-nav-item__badge { margin-left: auto; background: #f43f5e; color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 99px; display: none; }
+        .admin-nav-item__badge.show { display: block; }
+
+        .admin-topbar { height: 70px; background: #0f172a; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; }
+        
+        /* Chat Panel */
+        .chat-container { display: grid; grid-template-columns: 320px 1fr; height: 100%; background: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; }
+        .chat-sidebar { border-right: 1px solid #334155; display: flex; flex-direction: column; background: #0f172a; }
+        .chat-list { flex: 1; overflow-y: auto; }
+        .chat-row { padding: 15px; border-bottom: 1px solid #1e293b; cursor: pointer; transition: 0.2s; }
+        .chat-row:hover { background: #1e293b; }
+        .chat-row.active { background: #1e3a8a; }
+
+        /* Detail Modal */
+        .admin-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .admin-modal__card { background: #1e293b; width: 100%; max-width: 600px; border-radius: 16px; border: 1px solid #334155; padding: 30px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); position: relative; }
+
+        .user-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; font-size: 0.85rem; }
+        .user-detail-grid strong { color: #94a3b8; font-weight: 500; }
+
+        @media(max-width: 1024px) {
+            .admin-sidebar { position: fixed; top: 0; bottom: 0; left: -260px; }
+            .admin-sidebar.open { left: 0; }
+            .admin-topbar { padding: 0 15px; }
+            .admin-content { padding: 15px; }
+            .chat-container { grid-template-columns: 1fr; }
+            .chat-sidebar.hidden { display: none; }
+        }
     </style>
 </head>
 <body>
-    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
-    <div style="display: grid; grid-template-columns: 280px 1fr;" id="adminGrid">
-        <aside class="sidebar admin-sidebar">
-            <img src="sba-logo.png" style="height: 40px; filter: invert(1); margin-bottom: 40px;">
-            <nav style="display: flex; flex-direction: column; gap: 5px;">
-                <button class="btn btn-primary btn-full" style="justify-content: flex-start;"><i class="fa-solid fa-users"></i> Users</button>
-                <button class="btn btn-full" style="color: #9ca3af; justify-content: flex-start;"><i class="fa-solid fa-file-invoice"></i> Grant Apps</button>
-                <button class="btn btn-full" style="color: #ef4444; margin-top: 40px; justify-content: flex-start;"><i class="fa-solid fa-power-off"></i> Sign Out</button>
-            </nav>
-        </aside>
+<div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
-        <main style="padding: 25px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                <h3>Administrative Directory</h3>
-                <img src="sba-logo.png" class="hide-desktop" style="height: 30px; filter: invert(1);">
+<div class="admin-layout">
+    <!-- SIDEBAR -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div style="padding: 24px; border-bottom: 1px solid #1e293b;" class="flex items-center gap-3">
+            <i class="fa-solid fa-user-shield text-warning" style="font-size: 1.5rem;"></i>
+            <div><div style="font-weight: 900; font-size: 0.9rem; color: white;">SBA MASTER</div><div style="font-size: 0.65rem; color: #64748b; font-weight: 800;">ADMIN CONSOLE</div></div>
+        </div>
+        <nav style="flex:1; padding-top: 20px; overflow-y: auto;">
+            <button class="admin-nav-item active" data-tab="overview"><i class="fa-solid fa-gauge"></i> Overview</button>
+            <button class="admin-nav-item" data-tab="users"><i class="fa-solid fa-users"></i> Users</button>
+            <button class="admin-nav-item" data-tab="apps"><i class="fa-solid fa-file-contract"></i> Applications <span class="admin-nav-item__badge" id="badge-apps">0</span></button>
+            <button class="admin-nav-item" data-tab="kyc"><i class="fa-solid fa-id-card"></i> KYC Reviews <span class="admin-nav-item__badge" id="badge-kyc">0</span></button>
+            <button class="admin-nav-item" data-tab="deposits"><i class="fa-solid fa-wallet"></i> Deposits <span class="admin-nav-item__badge" id="badge-deps">0</span></button>
+            <button class="admin-nav-item" data-tab="withdraws"><i class="fa-solid fa-money-bill-transfer"></i> Payouts <span class="admin-nav-item__badge" id="badge-withdraws">0</span></button>
+            <button class="admin-nav-item" data-tab="tax"><i class="fa-solid fa-receipt"></i> Tax Clearance <span class="admin-nav-item__badge" id="badge-tax">0</span></button>
+            <button class="admin-nav-item" data-tab="awards"><i class="fa-solid fa-trophy"></i> Issue Awards</button>
+            <button class="admin-nav-item" data-tab="chat"><i class="fa-solid fa-comments"></i> Support Chat <span class="admin-nav-item__badge" id="badge-chat">0</span></button>
+            <button class="admin-nav-item" data-tab="logs"><i class="fa-solid fa-scroll"></i> Audit Logs</button>
+            <button class="admin-nav-item" data-tab="settings"><i class="fa-solid fa-sliders"></i> Platform</button>
+        </nav>
+        <div style="padding: 20px; border-top: 1px solid #1e293b;">
+            <button class="admin-nav-item" id="adminLogout" style="margin:0; width:100%;"><i class="fa-solid fa-power-off"></i> Sign Out</button>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        <header class="admin-topbar">
+            <div class="flex items-center gap-4">
+                <button id="ham" class="hamburger" style="display:flex; border-color:#334155; color:white;"><i class="fa-solid fa-bars"></i></button>
+                <h2 id="tabTitle" style="font-size: 1.1rem; font-weight: 800;">Overview</h2>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="sr-mobile" style="text-align:right;">
+                    <div id="adminName" style="font-size:0.85rem; font-weight:700;">Admin</div>
+                    <div style="font-size:0.7rem; color:#64748b;">Super Administrator</div>
+                </div>
+                <div style="width:40px; height:40px; border-radius:50%; background:#1e3a8a; color:white; display:flex; align-items:center; justify-content:center; font-weight:900;">AD</div>
+            </div>
+        </header>
+
+        <div class="admin-content" id="adminPanes">
+            
+            <!-- OVERVIEW PANE -->
+            <div class="admin-pane active" id="pane-overview">
+                <div class="admin-stats">
+                    <div class="admin-stat"><div class="admin-stat__label">Total Users</div><div class="admin-stat__value" id="stat-total-users">0</div></div>
+                    <div class="admin-stat"><div class="admin-stat__label">Active Apps</div><div class="admin-stat__value text-warning" id="stat-pending-apps">0</div></div>
+                    <div class="admin-stat"><div class="admin-stat__label">Total Disbursed</div><div class="admin-stat__value text-success" id="stat-disbursed">$0.00</div></div>
+                </div>
+                <div class="admin-card">
+                    <h3 class="mb-6">System Announcements</h3>
+                    <div class="form-group">
+                        <label class="form-label">Global Banner Text</label>
+                        <textarea id="announcementInput" class="form-input" style="background:#0f172a;" rows="2" placeholder="Enter message for all users..."></textarea>
+                    </div>
+                    <div class="flex gap-4">
+                        <button class="btn btn--primary" id="btnSaveAnnouncement">Update Banner</button>
+                        <button class="btn btn--ghost" id="btnClearAnnouncement">Clear</button>
+                    </div>
+                </div>
             </div>
 
-            <div class="table-scroll">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>User Profile</th>
-                            <th>Identity Status</th>
-                            <th>Current Balance</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminUsers">
-                        <!-- Data rows here -->
-                    </tbody>
-                </table>
+            <!-- USERS PANE -->
+            <div class="admin-pane" id="pane-users">
+                <div class="admin-card flex justify-between items-center mb-6">
+                    <input type="text" id="userSearch" class="form-input" style="max-width:300px; background:#0f172a;" placeholder="Search name or email...">
+                    <button class="btn btn--outline btn--sm" id="btnExportUsers"><i class="fa-solid fa-file-export"></i> Export All</button>
+                </div>
+                <div id="userList" class="flex flex-col gap-4"></div>
             </div>
-        </main>
+
+            <!-- APPLICATIONS PANE -->
+            <div class="admin-pane" id="pane-apps">
+                <div id="appList" class="flex flex-col gap-6"></div>
+            </div>
+
+            <!-- DEPOSITS PANE -->
+            <div class="admin-pane" id="pane-deposits">
+                <div id="depList" class="flex flex-col gap-6"></div>
+            </div>
+
+            <!-- WITHDRAWS PANE -->
+            <div class="admin-pane" id="pane-withdraws">
+                <div id="withdrawList" class="flex flex-col gap-6"></div>
+            </div>
+
+            <!-- KYC PANE -->
+            <div class="admin-pane" id="pane-kyc">
+                <div id="kycList" class="flex flex-col gap-6"></div>
+            </div>
+
+            <!-- TAX PANE -->
+            <div class="admin-pane" id="pane-tax">
+                <div id="taxList" class="flex flex-col gap-6"></div>
+            </div>
+
+            <!-- CHAT PANE -->
+            <div class="admin-pane" id="pane-chat" style="height: calc(100vh - 160px);">
+                <div class="chat-container">
+                    <div class="chat-sidebar" id="adminChatSidebar">
+                        <div class="toc-header">Active Threads</div>
+                        <div class="chat-list" id="adminChatList"></div>
+                    </div>
+                    <div class="flex flex-col" style="background:#0f172a;">
+                        <div id="adminChatHeader" class="chat-h" style="border-bottom:1px solid #1e293b; display:none;">
+                            <button class="btn btn--ghost sr-mobile" onclick="toggleAdminChat(true)"><i class="fa-solid fa-arrow-left"></i></button>
+                            <div class="agent-av" id="targetAv">US</div>
+                            <div style="flex:1;"><div id="targetName" style="font-weight:800;">User</div><div id="targetEmail" style="font-size:0.7rem; color:#64748b;">email@user.com</div></div>
+                        </div>
+                        <div id="adminChatBody" class="admin-content" style="background:#0f172a;"></div>
+                        <div id="adminChatInput" class="chat-foot" style="display:none;">
+                            <div class="flex gap-3">
+                                <input type="text" id="adminMsgIn" class="m-input" style="background:#1e293b; border-color:#334155; color:white;" placeholder="Type admin reply...">
+                                <button class="btn btn--primary" id="btnAdminSend"><i class="fa-solid fa-paper-plane"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOGS PANE -->
+            <div class="admin-pane" id="pane-logs">
+                <div class="admin-table-wrap">
+                    <table class="admin-table">
+                        <thead><tr><th>Action</th><th>Admin</th><th>Target</th><th>Date</th></tr></thead>
+                        <tbody id="logsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+<!-- REJECTION MODAL -->
+<div class="admin-modal" id="rejectModal">
+    <div class="admin-modal__card">
+        <h3 class="mb-4">Reason for Rejection</h3>
+        <textarea id="rejectReason" class="form-input mb-6" style="background:#0f172a;" rows="4" placeholder="Explain why this was declined..."></textarea>
+        <div class="flex justify-end gap-3">
+            <button class="btn btn--ghost" onclick="closeReject()">Cancel</button>
+            <button class="btn btn--danger" id="btnConfirmReject">Confirm Rejection</button>
+        </div>
     </div>
+</div>
 
-    <script type="module">
-        import { requireAdmin, initMobileNav } from './app.js';
-        import { db, collection, onSnapshot, query, orderBy } from './firebase-config.js';
+<!-- FUND MODAL -->
+<div class="admin-modal" id="fundModal">
+    <div class="admin-modal__card">
+        <h3 class="mb-4">Fund User Wallet</h3>
+        <div class="form-group"><label class="form-label">Amount (USD)</label><input type="number" id="fundAmt" class="form-input" style="background:#0f172a;"></div>
+        <div class="form-group"><label class="form-label">Note / Description</label><input type="text" id="fundNote" class="form-input" style="background:#0f172a;" placeholder="e.g. Deposit Match"></div>
+        <div class="flex justify-end gap-3">
+            <button class="btn btn--ghost" onclick="document.getElementById('fundModal').style.display='none'">Cancel</button>
+            <button class="btn btn--success" id="btnConfirmFund">Credit Balance</button>
+        </div>
+    </div>
+</div>
 
-        requireAdmin((user, userData) => {
-            initMobileNav();
-            if (window.innerWidth <= 1024) {
-                document.getElementById('adminGrid').style.gridTemplateColumns = '1fr';
-            }
+<script type="module">
+    import { db, auth, onSnapshot, collection, query, where, orderBy, doc, updateDoc, setDoc, getDoc, getDocs, deleteDoc, serverTimestamp, increment, addDoc, writeBatch } from './firebase-config.js';
+    import { requireAdmin, formatCurrency, formatDate, showToast, showConfirm, setButtonLoading, renderStatusBadge, logAdminAction, notify } from './app.js';
 
-            const q = query(collection(db, "users"), orderBy("createdAt", "desc"));
-            onSnapshot(q, (snap) => {
-                const tbody = document.getElementById('adminUsers');
-                tbody.innerHTML = snap.docs.map(doc => {
-                    const u = doc.data();
-                    return `
-                        <tr>
-                            <td>
-                                <div style="font-weight: 700;">${u.fullName}</div>
-                                <div style="font-size: 11px; color: #6b7280;">${u.email}</div>
-                            </td>
-                            <td><span style="color: ${u.kycStatus==='approved'?'#22c55e':'#f59e0b'}; font-weight: 800;">${u.kycStatus.toUpperCase()}</span></td>
-                            <td style="color: #22c55e; font-weight: 800;">$${u.balance.toLocaleString()}</td>
-                            <td><button class="btn btn-outline btn-sm" style="color: white; border-color: #374151;">Manage</button></td>
-                        </tr>
-                    `;
-                }).join('');
+    let selectedUserUid = null;
+    let selectedActionType = ''; // 'app', 'dep', 'kyc', etc
+
+    requireAdmin((user, adminData) => {
+        document.getElementById('adminName').textContent = adminData.fullName;
+        hideLoader();
+
+        // 1. DASHBOARD & STATS
+        onSnapshot(collection(db, 'users'), (snap) => {
+            document.getElementById('stat-total-users').textContent = snap.size;
+            let pendingCount = 0;
+            snap.forEach(d => { if(d.data().applyStatus === 'PENDING') pendingCount++; });
+            document.getElementById('stat-pending-apps').textContent = pendingCount;
+        });
+        onSnapshot(doc(db, 'config', 'platform'), (snap) => {
+            const data = snap.data();
+            document.getElementById('stat-disbursed').textContent = formatCurrency(data?.totalDisbursed || 0);
+            document.getElementById('announcementInput').value = data?.announcementBanner || '';
+        });
+
+        // 2. TABS LOGIC
+        document.querySelectorAll('[data-tab]').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.admin-pane').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('pane-' + btn.dataset.tab).classList.add('active');
+                document.getElementById('tabTitle').textContent = btn.innerText;
+                if(window.innerWidth < 1024) document.getElementById('adminSidebar').classList.remove('open');
+            };
+        });
+
+        // 3. USER MANAGEMENT
+        onSnapshot(collection(db, 'users'), (snap) => {
+            const list = document.getElementById('userList');
+            list.innerHTML = '';
+            snap.forEach(d => {
+                const u = d.data();
+                const card = document.createElement('div');
+                card.className = 'admin-card';
+                card.innerHTML = `
+                    <div class="flex justify-between items-center flex-wrap gap-4">
+                        <div class="flex items-center gap-4">
+                            <div style="width:40px; height:40px; border-radius:50%; background:#1e3a8a; display:flex; align-items:center; justify-content:center; font-weight:800;">${u.fullName.charAt(0)}</div>
+                            <div>
+                                <div style="font-weight:800;">${u.fullName} <span class="badge badge--${u.accountStatus}">${u.accountStatus}</span></div>
+                                <div style="font-size:0.75rem; color:#64748b;">${u.email} • ID: ${u.uid.substring(0,8)}</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="btn btn--sm btn--primary" onclick="openFund('${u.uid}')"><i class="fa-solid fa-coins"></i></button>
+                            <button class="btn btn--sm btn--secondary" onclick="toggleUserStatus('${u.uid}', '${u.accountStatus}')"><i class="fa-solid ${u.accountStatus==='active'?'fa-ban':'fa-check'}"></i></button>
+                            <button class="btn btn--sm btn--danger" onclick="deleteUser('${u.uid}', '${u.fullName}')"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="user-detail-grid mt-6">
+                        <div><strong>Wallet:</strong> ${formatCurrency(u.balance || 0)}</div>
+                        <div><strong>KYC:</strong> ${renderStatusBadge(u.kycStatus)}</div>
+                        <div><strong>Application:</strong> ${renderStatusBadge(u.applyStatus)}</div>
+                        <div><strong>Tax Fee:</strong> ${formatCurrency(u.taxFeeRequired || 0)}</div>
+                    </div>
+                `;
+                list.appendChild(card);
             });
         });
-    </script>
+
+        // 4. APPLICATIONS
+        onSnapshot(query(collection(db, 'users'), where('applyStatus', '==', 'PENDING')), (snap) => {
+            const list = document.getElementById('pane-apps');
+            document.getElementById('badge-apps').textContent = snap.size;
+            document.getElementById('badge-apps').classList.toggle('show', snap.size > 0);
+            list.innerHTML = snap.empty ? '<p class="text-center py-12 text-muted">No pending applications.</p>' : '';
+            snap.forEach(d => {
+                const u = d.data(); const a = u.application;
+                const div = document.createElement('div');
+                div.className = 'admin-card';
+                div.innerHTML = `
+                    <div class="flex justify-between mb-4">
+                        <div><h3 style="margin:0;">${u.fullName}</h3><span style="font-size:0.75rem; color:#64748b;">Submitted ${formatDate(a.submittedAt, true)}</span></div>
+                        <div style="font-size:1.5rem; font-weight:900; color:#60a5fa;">${formatCurrency(a.grantAmount)}</div>
+                    </div>
+                    <div class="user-detail-grid mb-6">
+                        <div><strong>Biz Name:</strong> ${a.bizName}</div>
+                        <div><strong>EIN:</strong> ${a.ein}</div>
+                        <div><strong>Purpose:</strong> ${a.grantPurpose}</div>
+                        <div><strong>Bank:</strong> ${a.bankName} (${a.accountNumber})</div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button class="btn btn--success" onclick="approveAction('${u.uid}', 'app')">Approve</button>
+                        <button class="btn btn--danger" onclick="rejectAction('${u.uid}', 'app')">Reject</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        });
+
+        // 5. DEPOSITS
+        onSnapshot(query(collection(db, 'users'), where('depositStatus', '==', 'PENDING')), (snap) => {
+            const list = document.getElementById('pane-deposits');
+            document.getElementById('badge-deps').textContent = snap.size;
+            document.getElementById('badge-deps').classList.toggle('show', snap.size > 0);
+            list.innerHTML = snap.empty ? '<p class="text-center py-12 text-muted">No pending deposits.</p>' : '';
+            snap.forEach(d => {
+                const u = d.data(); const dep = u.deposit;
+                const div = document.createElement('div'); div.className = 'admin-card';
+                div.innerHTML = `
+                    <div class="flex justify-between mb-4">
+                        <div><h3>${u.fullName}</h3><p style="font-size:0.75rem;">Method: ${dep.method.toUpperCase()} (${dep.coin || ''})</p></div>
+                        <div style="font-size:1.2rem; font-weight:800;">${formatCurrency(dep.amount)}</div>
+                    </div>
+                    <img src="${dep.receiptBase64}" style="width:100%; max-height:200px; object-fit:contain; background:#0f172a; border-radius:8px; margin-bottom:20px; cursor:pointer;" onclick="window.open(this.src)">
+                    <div class="flex gap-3">
+                        <button class="btn btn--success" onclick="approveAction('${u.uid}', 'dep', ${dep.amount})">Confirm Receipt</button>
+                        <button class="btn btn--danger" onclick="rejectAction('${u.uid}', 'dep')">Reject</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        });
+
+        // 6. WITHDRAWALS
+        onSnapshot(query(collection(db, 'users'), where('withdrawStatus', '==', 'PENDING')), (snap) => {
+            const list = document.getElementById('pane-withdraws');
+            document.getElementById('badge-withdraws').textContent = snap.size;
+            document.getElementById('badge-withdraws').classList.toggle('show', snap.size > 0);
+            list.innerHTML = snap.empty ? '<p class="text-center py-12 text-muted">No pending payouts.</p>' : '';
+            snap.forEach(d => {
+                const u = d.data(); const w = u.withdrawal;
+                const div = document.createElement('div'); div.className = 'admin-card';
+                div.innerHTML = `
+                    <div class="flex justify-between mb-6"><div><h3>${u.fullName}</h3><span class="badge badge--pending">${w.method.toUpperCase()}</span></div><div style="font-size:1.5rem; color:#f43f5e; font-weight:900;">-${formatCurrency(w.amount)}</div></div>
+                    <div class="user-detail-grid mb-6" style="background:#0f172a; padding:15px; border-radius:8px;">
+                        <div><strong>Dest:</strong> ${w.bank || w.zelle || w.crypto}</div>
+                        <div><strong>Routing:</strong> ${w.route || 'N/A'}</div>
+                        <div><strong>Account:</strong> ${w.acc || 'N/A'}</div>
+                    </div>
+                    <div class="flex gap-3">
+                        <button class="btn btn--success" onclick="approveAction('${u.uid}', 'withdraw')">Mark Paid</button>
+                        <button class="btn btn--danger" onclick="rejectAction('${u.uid}', 'withdraw', ${w.amount})">Decline & Refund</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        });
+
+        // 7. KYC REVIEWS
+        onSnapshot(query(collection(db, 'users'), where('kycStatus', '==', 'UNDER_REVIEW')), (snap) => {
+            const list = document.getElementById('pane-kyc');
+            document.getElementById('badge-kyc').textContent = snap.size;
+            document.getElementById('badge-kyc').classList.toggle('show', snap.size > 0);
+            list.innerHTML = snap.empty ? '<p class="text-center py-12 text-muted">No pending KYC audits.</p>' : '';
+            snap.forEach(d => {
+                const u = d.data(); const k = u.kyc;
+                const div = document.createElement('div'); div.className = 'admin-card';
+                div.innerHTML = `
+                    <h3 class="mb-4">${u.fullName}</h3>
+                    <div class="flex gap-4 mb-6">
+                        <img src="${k.idFrontBase64}" style="flex:1; height:150px; object-fit:cover; border-radius:8px; cursor:pointer;" onclick="window.open(this.src)">
+                        ${k.idBackBase64 ? `<img src="${k.idBackBase64}" style="flex:1; height:150px; object-fit:cover; border-radius:8px; cursor:pointer;" onclick="window.open(this.src)">` : ''}
+                    </div>
+                    <div class="flex gap-3"><button class="btn btn--success" onclick="approveAction('${u.uid}', 'kyc')">Approve KYC</button><button class="btn btn--danger" onclick="rejectAction('${u.uid}', 'kyc')">Reject KYC</button></div>
+                `;
+                list.appendChild(div);
+            });
+        });
+
+        // 8. CHAT SYSTEM
+        onSnapshot(collection(db, 'chat'), (snap) => {
+            const list = document.getElementById('adminChatList'); list.innerHTML = '';
+            snap.forEach(async d => {
+                const uSnap = await getDoc(doc(db, 'users', d.id));
+                const u = uSnap.data();
+                const row = document.createElement('div');
+                row.className = 'chat-row';
+                row.innerHTML = `<strong>${u.fullName}</strong><div style="font-size:0.7rem; color:#64748b;">${u.email}</div>`;
+                row.onclick = () => openAdminChat(u);
+                list.appendChild(row);
+            });
+        });
+
+        // ACTIONS LOGIC
+        window.approveAction = async (uid, type, amt = 0) => {
+            showConfirm({
+                title: 'Confirm Approval',
+                message: `Are you sure you want to approve this ${type}?`,
+                onConfirm: async () => {
+                    const fields = {};
+                    if(type === 'app') { fields.applyStatus = 'APPROVED'; }
+                    if(type === 'dep') { fields.depositStatus = 'CONFIRMED'; fields.balance = increment(amt); }
+                    if(type === 'withdraw') { fields.withdrawStatus = 'APPROVED'; }
+                    if(type === 'kyc') { fields.kycStatus = 'APPROVED'; }
+                    
+                    await updateUserData(uid, fields);
+                    await logAdminAction(user.uid, user.email, `Approve ${type}`, uid, {amt});
+                    await notify(uid, { title: 'Status Updated', message: `Your ${type} has been approved by the SBA.`, type: 'success' });
+                    showToast('Approved successfully', 'success');
+                }
+            });
+        };
+
+        window.rejectAction = (uid, type, refundAmt = 0) => {
+            selectedUserUid = uid;
+            selectedActionType = type;
+            document.getElementById('rejectModal').style.display = 'flex';
+            if(refundAmt > 0) window.currentRefund = refundAmt;
+        };
+
+        window.closeReject = () => document.getElementById('rejectModal').style.display = 'none';
+
+        document.getElementById('btnConfirmReject').onclick = async () => {
+            const reason = document.getElementById('rejectReason').value;
+            if(!reason) return showToast('Reason required', 'warning');
+            const fields = {};
+            if(selectedActionType === 'app') fields.applyStatus = 'REJECTED';
+            if(selectedActionType === 'dep') fields.depositStatus = 'REJECTED';
+            if(selectedActionType === 'withdraw') { fields.withdrawStatus = 'REJECTED'; fields.balance = increment(window.currentRefund); }
+            if(selectedActionType === 'kyc') fields.kycStatus = 'REJECTED';
+            
+            await updateUserData(selectedUserUid, fields);
+            await logAdminAction(user.uid, user.email, `Reject ${selectedActionType}`, selectedUserUid, {reason});
+            await notify(selectedUserUid, { title: 'Action Required', message: `Your ${selectedActionType} was declined. Reason: ${reason}`, type: 'warning' });
+            closeReject();
+            showToast('Rejection sent', 'info');
+        };
+
+        // USER TOOLS
+        window.openFund = (uid) => { selectedUserUid = uid; document.getElementById('fundModal').style.display = 'flex'; };
+        document.getElementById('btnConfirmFund').onclick = async () => {
+            const amt = parseFloat(document.getElementById('fundAmt').value);
+            if(!amt) return;
+            await updateUserData(selectedUserUid, { balance: increment(amt) });
+            await addLedgerEntry(selectedUserUid, { type:'credit', amount:amt, description:'Admin Manual Credit', status:'CONFIRMED' });
+            document.getElementById('fundModal').style.display = 'none';
+            showToast('User funded', 'success');
+        };
+
+        window.toggleUserStatus = (uid, cur) => {
+            const next = cur === 'active' ? 'suspended' : 'active';
+            updateUserData(uid, { accountStatus: next });
+        };
+
+        window.deleteUser = (uid, name) => {
+            showConfirm({ title: 'Delete User', message: `Permanently delete ${name}?`, danger: true, onConfirm: () => deleteDoc(doc(db, 'users', uid)) });
+        };
+
+        // CHAT LOGIC
+        const openAdminChat = (u) => {
+            selectedUserUid = u.uid;
+            document.getElementById('adminChatHeader').style.display = 'flex';
+            document.getElementById('adminChatInput').style.display = 'block';
+            document.getElementById('targetName').textContent = u.fullName;
+            document.getElementById('targetEmail').textContent = u.email;
+            document.getElementById('targetAv').textContent = u.fullName.charAt(0);
+            
+            onSnapshot(query(collection(db, 'chat', u.uid, 'messages'), orderBy('timestamp', 'asc')), (snap) => {
+                const body = document.getElementById('adminChatBody'); body.innerHTML = '';
+                snap.forEach(d => {
+                    const m = d.data();
+                    const div = document.createElement('div');
+                    div.className = `bubble bubble--${m.sender === 'agent' ? 'user' : 'agent'}`; // CSS classes reversed for admin view
+                    div.style.alignSelf = m.sender === 'agent' ? 'flex-end' : 'flex-start';
+                    div.innerHTML = `<div>${m.message}</div><div style="font-size:0.6rem; opacity:0.5; margin-top:4px;">${formatDate(m.timestamp, true)}</div>`;
+                    body.appendChild(div);
+                });
+                body.scrollTop = body.scrollHeight;
+            });
+        };
+
+        document.getElementById('btnAdminSend').onclick = async () => {
+            const val = document.getElementById('adminMsgIn').value.trim();
+            if(!val) return;
+            document.getElementById('adminMsgIn').value = '';
+            await addDoc(collection(db, 'chat', selectedUserUid, 'messages'), { sender: 'agent', message: val, timestamp: serverTimestamp(), read: false });
+        };
+
+        // ANNOUNCEMENT
+        document.getElementById('btnSaveAnnouncement').onclick = async () => {
+            const msg = document.getElementById('announcementInput').value;
+            await updateDoc(doc(db, 'config', 'platform'), { announcementBanner: msg });
+            showToast('Announcement updated', 'success');
+        };
+
+        document.getElementById('adminLogout').onclick = () => auth.signOut().then(()=>window.location.href='login.html');
+        document.getElementById('ham').onclick = () => document.getElementById('adminSidebar').classList.toggle('open');
+    });
+</script>
 </body>
 </html>
