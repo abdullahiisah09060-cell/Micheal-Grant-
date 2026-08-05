@@ -1,108 +1,318 @@
-import * as fb from './firebase-config.js';
+import { 
+    auth, db, onAuthStateChanged, listenUserData, getUserData, setUserOnline, isAdmin
+} from './firebase-config.js';
+
+/**
+ * UI COMPONENTS & SYSTEMS
+ */
 
 export function showToast(message, type = 'info', duration = 4500) {
-    let container = document.querySelector('.toast-container') || document.createElement('div');
-    if (!container.parentElement) { container.className = 'toast-container'; document.body.appendChild(container); }
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
+
     const toast = document.createElement('div');
     toast.className = `toast toast--${type}`;
-    const icons = { success:'fa-circle-check', error:'fa-circle-xmark', warning:'fa-triangle-exclamation', info:'fa-circle-info' };
-    toast.innerHTML = `<i class="fa-solid ${icons[type]} toast__icon"></i><div class="toast__content">${message}</div><button class="toast__close"><i class="fa-solid fa-xmark"></i></button>`;
+    
+    const icons = {
+        success: 'fa-circle-check',
+        error: 'fa-circle-xmark',
+        warning: 'fa-triangle-exclamation',
+        info: 'fa-circle-info'
+    };
+
+    toast.innerHTML = `
+        <i class="fa-solid ${icons[type]} toast__icon"></i>
+        <div class="toast__content">${message}</div>
+        <button class="toast__close"><i class="fa-solid fa-xmark"></i></button>
+    `;
+
     container.appendChild(toast);
-    const hide = () => { toast.classList.add('toast--hiding'); setTimeout(() => toast.remove(), 300); };
-    toast.querySelector('.toast__close').onclick = hide;
-    setTimeout(hide, duration);
+
+    const dismiss = () => {
+        toast.classList.add('toast--hiding');
+        setTimeout(() => toast.remove(), 300);
+    };
+
+    toast.querySelector('.toast__close').onclick = dismiss;
+    setTimeout(dismiss, duration);
 }
 
-export function showConfirm({ title, message, confirmText='Confirm', cancelText='Cancel', onConfirm, onCancel, danger=false }) {
-    const div = document.createElement('div');
-    div.className = 'confirm-overlay';
-    div.innerHTML = `<div class="confirm-modal"><h3 class="confirm-modal__title">${title}</h3><p class="confirm-modal__message">${message}</p><div class="confirm-modal__actions"><button class="btn btn--ghost" id="cCan">${cancelText}</button><button class="btn ${danger?'btn--danger':'btn--primary'}" id="cSub">${confirmText}</button></div></div>`;
-    document.body.appendChild(div);
-    div.querySelector('#cCan').onclick = () => { div.remove(); if(onCancel) onCancel(); };
-    div.querySelector('#cSub').onclick = () => { div.remove(); if(onConfirm) onConfirm(); };
+export function showConfirm({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', onConfirm, onCancel, danger = false }) {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.innerHTML = `
+        <div class="confirm-modal">
+            <h3 class="confirm-modal__title">${title}</h3>
+            <p class="confirm-modal__message">${message}</p>
+            <div class="confirm-modal__actions">
+                <button class="btn btn--ghost" id="confirmCancel">${cancelText}</button>
+                <button class="btn ${danger ? 'btn--danger' : 'btn--primary'}" id="confirmSubmit">${confirmText}</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const close = () => overlay.remove();
+
+    overlay.querySelector('#confirmCancel').onclick = () => {
+        if (onCancel) onCancel();
+        close();
+    };
+
+    overlay.querySelector('#confirmSubmit').onclick = () => {
+        if (onConfirm) onConfirm();
+        close();
+    };
 }
+
+/**
+ * AUTH GUARDS
+ */
 
 export function requireAuth(callback) {
     showLoader();
-    fb.onAuthStateChanged(fb.auth, async (user) => {
-        if (!user) { window.location.href = 'login.html'; return; }
-        const userData = await fb.getUserData(user.uid);
-        if (!userData) { window.location.href = 'login.html'; return; }
-        if (userData.accountStatus === 'suspended') {
-            document.body.innerHTML = `<div class="status-screen"><div class="status-screen__icon status-screen__icon--error"><i class="fa-solid fa-ban"></i></div><h1 class="status-screen__title">Account Suspended</h1><p class="status-screen__message">Contact support for details.</p></div>`;
-            hideLoader(); return;
+    onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+            window.location.href = 'login.html';
+            return;
         }
-        hideLoader(); // CRITICAL: Called before callback
-        callback(user, userData);
+
+        // Maintenance Mode Check
+        const configSnap = await getUserData('config/platform'); // This is a specific path helper logic
+        // For simplicity in this prompt, we fetch config/platform doc
+        const db_ref = doc(db, 'config', 'platform');
+        const configDoc = await getDoc(db_ref);
+        const config = configDoc.data();
+
+        listenUserData(user.uid, (userData) => {
+            if (!userData) return;
+
+            if (config?.maintenanceMode && userData.role !== 'admin') {
+                document.body.innerHTML = `
+                    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px;text-align:center;font-family:var(--font);">
+                        <i class="fa-solid fa-gear fa-spin" style="font-size:3rem;color:var(--navy);margin-bottom:24px;"></i>
+                        <h1 style="color:var(--navy);margin-bottom:12px;">Maintenance in Progress</h1>
+                        <p style="color:var(--text-secondary);max-width:400px;margin:0 auto;">The SBA portal is temporarily offline for scheduled maintenance. Please check back soon.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            if (userData.accountStatus === 'suspended') {
+                document.body.innerHTML = `
+                    <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg);padding:40px;text-align:center;font-family:var(--font);">
+                        <div class="status-screen__icon status-screen__icon--error"><i class="fa-solid fa-ban"></i></div>
+                        <h1 style="color:var(--navy);margin-bottom:12px;">Account Suspended</h1>
+                        <p style="color:var(--text-secondary);max-width:400px;margin: 0 auto 24px;">Your account has been suspended for violating federal guidelines. Please contact support if you believe this is an error.</p>
+                        <button class="btn btn--primary" onclick="location.href='support.html'">Contact Support</button>
+                    </div>
+                `;
+                return;
+            }
+
+            hideLoader();
+            callback(user, userData);
+        });
     });
 }
 
 export function requireAdmin(callback) {
     requireAuth((user, userData) => {
-        if (userData.role !== 'admin') { window.location.href = 'dashboard.html'; return; }
+        if (userData.role !== 'admin') {
+            window.location.href = 'dashboard.html';
+            return;
+        }
         callback(user, userData);
     });
 }
 
 export function redirectIfLoggedIn() {
-    fb.onAuthStateChanged(fb.auth, async (user) => {
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
-            const data = await fb.getUserData(user.uid);
-            if (data) window.location.href = data.role === 'admin' ? 'admin-portal.html' : 'dashboard.html';
+            const userData = await getUserData(user.uid);
+            if (userData?.role === 'admin') {
+                window.location.href = 'admin-portal.html';
+            } else {
+                window.location.href = 'dashboard.html';
+            }
         }
     });
 }
 
-export function initTheme() { applyTheme(localStorage.getItem('sba-theme') || 'system'); }
-export function applyTheme(t) {
-    localStorage.setItem('sba-theme', t);
-    const isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+/**
+ * THEME SYSTEM
+ */
+
+export function applyTheme(theme) {
+    const root = document.documentElement;
+    if (theme === 'system') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    } else {
+        root.setAttribute('data-theme', theme);
+    }
+    localStorage.setItem('sba-theme', theme);
 }
 
-export function initNotificationBadge(uid) {
-    const q = fb.query(fb.collection(fb.db, 'notifications'), fb.where('uid', '==', uid), fb.where('read', '==', false));
-    fb.onSnapshot(q, (s) => {
-        document.querySelectorAll('.notif-badge').forEach(b => {
-            b.textContent = s.size; b.classList.toggle('show', s.size > 0);
-        });
+export function initTheme() {
+    const saved = localStorage.getItem('sba-theme') || 'system';
+    applyTheme(saved);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        if (localStorage.getItem('sba-theme') === 'system') applyTheme('system');
     });
 }
+
+/**
+ * UI BUILDERS
+ */
+
+export function buildPageHeader({ title, subtitle, backUrl }) {
+    const container = document.getElementById('pageHeader');
+    if (!container) return;
+    container.className = 'page-header';
+    container.innerHTML = `
+        ${backUrl ? `<a href="${backUrl}" class="page-header__back"><i class="fa-solid fa-arrow-left"></i></a>` : ''}
+        <div class="sba-logo sba-logo--sm">
+            <svg class="sba-logo__mark" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/>
+                <path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/>
+                <text x="8" y="58" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#003087">S</text>
+                <text x="28" y="58" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#003087">B</text>
+                <text x="50" y="58" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#003087">A</text>
+            </svg>
+        </div>
+        <div class="page-header__content">
+            <h1 class="page-header__title">${title}</h1>
+            ${subtitle ? `<span class="page-header__sub">${subtitle}</span>` : ''}
+        </div>
+    `;
+}
+
+export function buildSidebar({ activeId, userData }) {
+    const container = document.getElementById('appSidebar');
+    if (!container) return;
+    
+    const items = [
+        { id: 'dashboard', label: 'Dashboard', icon: 'fa-house', link: 'dashboard.html' },
+        { id: 'apply', label: 'Apply for Grant', icon: 'fa-file-contract', link: 'apply.html' },
+        { id: 'kyc', label: 'Identity (KYC)', icon: 'fa-id-card', link: 'kyc.html' },
+        { id: 'deposit', label: 'Deposit Funds', icon: 'fa-wallet', link: 'deposit.html' },
+        { id: 'tax', label: 'Tax Clearance', icon: 'fa-file-invoice-dollar', link: 'tax.html' },
+        { id: 'withdraw', label: 'Withdraw Funds', icon: 'fa-money-bill-transfer', link: 'withdraw.html' },
+        { id: 'ledger', label: 'Transaction History', icon: 'fa-chart-bar', link: 'ledger.html' },
+        { id: 'award', label: 'Award Certificate', icon: 'fa-trophy', link: 'award.html' },
+        { id: 'vault', label: 'Document Vault', icon: 'fa-folder-open', link: 'vault.html' },
+        { id: 'support', label: 'Support Chat', icon: 'fa-comments', link: 'support.html', badgeId: 'chat-badge' },
+        { id: 'notifications', label: 'Notifications', icon: 'fa-bell', link: 'notifications.html', badgeId: 'notif-badge' },
+        { id: 'settings', label: 'Settings', icon: 'fa-gear', link: 'settings.html' }
+    ];
+
+    container.innerHTML = `
+        <div class="app-sidebar__logo">
+            <div class="sba-logo">
+                <svg class="sba-logo__mark" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/>
+                    <path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/>
+                    <text x="8" y="58" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#003087">S</text>
+                    <text x="28" y="58" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#003087">B</text>
+                    <text x="50" y="58" font-family="Arial Black, sans-serif" font-size="36" font-weight="900" fill="#003087">A</text>
+                </svg>
+                <div class="sba-logo__text">
+                    <span class="sba-logo__name">U.S. Small Business</span>
+                    <span class="sba-logo__sub">Administration</span>
+                </div>
+            </div>
+        </div>
+        <nav class="app-sidebar__nav">
+            ${items.map(item => `
+                <a href="${item.link}" class="nav-item ${activeId === item.id ? 'active' : ''}">
+                    <i class="fa-solid ${item.icon}"></i>
+                    <span>${item.label}</span>
+                    <span class="nav-item__badge" id="${item.badgeId || ''}"></span>
+                </a>
+            `).join('')}
+        </nav>
+        <div class="app-sidebar__footer">
+            <div class="nav-item" style="cursor:default; background:none;">
+                <div class="avatar" style="width:32px;height:32px;background:var(--navy);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;">
+                    ${userData.avatarBase64 ? `<img src="${userData.avatarBase64}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` : userData.fullName.charAt(0)}
+                </div>
+                <div style="display:flex;flex-direction:column;overflow:hidden;">
+                    <span style="font-size:0.85rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${userData.fullName}</span>
+                    <span style="font-size:0.7rem;color:var(--text-muted);">ID: ${userData.uid.substring(0,8).toUpperCase()}</span>
+                </div>
+            </div>
+            <button class="nav-item" id="sidebarSignOut" style="margin-top:10px; color:var(--red);">
+                <i class="fa-solid fa-right-from-bracket"></i>
+                <span>Sign Out</span>
+            </button>
+        </div>
+    `;
+
+    document.getElementById('sidebarSignOut').onclick = () => {
+        showConfirm({
+            title: 'Sign Out',
+            message: 'Are you sure you want to log out of your SBA account?',
+            onConfirm: () => {
+                setUserOnline(userData.uid, false);
+                auth.signOut();
+            },
+            danger: true
+        });
+    };
+}
+
+export function buildDock({ activeId }) {
+    const container = document.getElementById('mobileDock');
+    if (!container) return;
+    const items = [
+        { id: 'home', label: 'Home', icon: 'fa-house', link: 'dashboard.html' },
+        { id: 'apply', label: 'Apply', icon: 'fa-file-contract', link: 'apply.html' },
+        { id: 'deposit', label: 'Deposit', icon: 'fa-wallet', link: 'deposit.html' },
+        { id: 'support', label: 'Support', icon: 'fa-comments', link: 'support.html' },
+        { id: 'more', label: 'More', icon: 'fa-bars', action: () => document.getElementById('appSidebar').classList.add('open') }
+    ];
+
+    container.innerHTML = items.map(item => `
+        <${item.link ? 'a href="'+item.link+'"' : 'button id="dockMore"'} class="dock-item ${activeId === item.id ? 'active' : ''}">
+            <i class="fa-solid ${item.icon}"></i>
+            <span>${item.label}</span>
+        </${item.link ? 'a' : 'button'}>
+    `).join('');
+
+    if (document.getElementById('dockMore')) {
+        document.getElementById('dockMore').onclick = () => {
+            document.getElementById('appSidebar').classList.add('open');
+            document.getElementById('sidebarOverlay').classList.add('show');
+        };
+    }
+}
+
+/**
+ * UTILITIES
+ */
 
 export const showLoader = () => document.getElementById('pageLoader')?.classList.add('active');
 export const hideLoader = () => document.getElementById('pageLoader')?.classList.remove('active');
 
-export function buildPageHeader({ title, subtitle, backUrl }) {
-    const el = document.getElementById('pageHeader');
-    if (!el) return;
-    el.className = 'page-header';
-    el.innerHTML = `
-        <a href="${backUrl}" class="page-header__back"><i class="fa-solid fa-arrow-left"></i></a>
-        <div class="page-header__title">
-            <div>${title}</div>
-            ${subtitle ? `<div class="page-header__sub">${subtitle}</div>` : ''}
-        </div>
-        <div class="sba-logo sba-logo--sm"><svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg></div>
-    `;
+export function formatCurrency(amount) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
 }
 
-export function renderStatusBadge(status) {
-    const map = {
-        IDLE: { c:'idle', i:'fa-clock', l:'Pending' },
-        PENDING: { c:'pending', i:'fa-hourglass-half', l:'In Review' },
-        UNDER_REVIEW: { c:'review', i:'fa-magnifying-glass', l:'Reviewing' },
-        APPROVED: { c:'approved', i:'fa-circle-check', l:'Approved' },
-        REJECTED: { c:'rejected', i:'fa-circle-xmark', l:'Declined' }
-    };
-    const s = map[status] || map.IDLE;
-    return `<span class="badge badge--${s.c}"><i class="fa-solid ${s.i}"></i> ${s.l}</span>`;
+export function formatDate(ts, includeTime = false) {
+    if (!ts) return 'N/A';
+    const date = ts.toDate ? ts.toDate() : new Date(ts);
+    return includeTime ? date.toLocaleString() : date.toLocaleDateString();
 }
 
-export const formatCurrency = (n) => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
-export const formatDate = (ts) => ts ? new Date(ts.seconds*1000).toLocaleDateString() : 'N/A';
 export function timeAgo(ts) {
     if (!ts) return '';
-    const seconds = Math.floor((new Date() - new Date(ts.seconds*1000)) / 1000);
+    const date = ts.toDate ? ts.toDate() : new Date(ts);
+    const seconds = Math.floor((new Date() - date) / 1000);
     let interval = seconds / 31536000;
     if (interval > 1) return Math.floor(interval) + "y ago";
     interval = seconds / 2592000;
@@ -116,40 +326,33 @@ export function timeAgo(ts) {
     return "just now";
 }
 
-export const copyToClipboard = (t, m='Copied!') => navigator.clipboard.writeText(t).then(()=>showToast(m,'success'));
-export const debounce = (fn, d=300) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(()=>fn(...a), d); }; };
-
-export function setButtonLoading(btn, isL, text='Processing...') {
-    if (isL) { btn.dataset.orig = btn.innerHTML; btn.disabled = true; btn.classList.add('btn--loading'); btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${text}`; }
-    else { btn.disabled = false; btn.classList.remove('btn--loading'); btn.innerHTML = btn.dataset.orig; }
+export function copyToClipboard(text, msg = 'Copied to clipboard!') {
+    navigator.clipboard.writeText(text).then(() => showToast(msg, 'success'));
 }
 
-export function buildSidebar({ activeId, userData }) {
-    const el = document.getElementById('appSidebar'); if (!el) return;
-    const nav = [
-        { id:'dashboard', l:'Dashboard', i:'fa-house', a:'dashboard.html' },
-        { id:'apply', l:'Apply', i:'fa-file-contract', a:'apply.html' },
-        { id:'kyc', l:'KYC', i:'fa-id-card', a:'kyc.html' },
-        { id:'deposit', l:'Deposit', i:'fa-wallet', a:'deposit.html' },
-        { id:'tax', l:'Tax', i:'fa-file-invoice-dollar', a:'tax.html' },
-        { id:'withdraw', l:'Withdraw', i:'fa-money-bill-transfer', a:'withdraw.html' },
-        { id:'support', l:'Support', i:'fa-comments', a:'support.html', b:true },
-        { id:'notifications', l:'Inbox', i:'fa-bell', a:'notifications.html', b:true },
-        { id:'settings', l:'Settings', i:'fa-gear', a:'settings.html' }
-    ];
-    el.innerHTML = `
-        <div class="app-sidebar__logo"><div class="sba-logo sba-logo--sm"><svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg></div></div>
-        <nav class="app-sidebar__nav">${nav.map(n=>`<a href="${n.a}" class="nav-item ${activeId===n.id?'active':''}"><i class="fa-solid ${n.i}"></i><span>${n.l}</span>${n.b?`<span class="nav-item__badge notif-badge">0</span>`:''}</a>`).join('')}</nav>
-        <div class="app-sidebar__footer"><div class="nav-user"><div class="avatar-sm">${userData.fullName[0]}</div><div><div class="nav-user__name">${userData.fullName}</div><div class="nav-user__role">${userData.role}</div></div></div><button class="nav-item" id="logoutBtn" style="color:var(--red)"><i class="fa-solid fa-right-from-bracket"></i> Logout</button></div>
-    `;
-    const overlay = document.getElementById('sidebarOverlay');
-    const toggle = () => { el.classList.toggle('open'); overlay.classList.toggle('show'); document.querySelector('.hamburger i')?.classList.toggle('fa-bars'); document.querySelector('.hamburger i')?.classList.toggle('fa-xmark'); };
-    overlay.onclick = toggle; document.querySelectorAll('.hamburger').forEach(h=>h.onclick=toggle);
-    document.getElementById('logoutBtn').onclick = () => showConfirm({ title:'Logout', message:'Exit portal?', onConfirm:()=>fb.signOut(fb.auth).then(()=>window.location.href='login.html') });
+export function setButtonLoading(btn, isLoading, loadingText = 'Processing...', originalText) {
+    if (isLoading) {
+        btn.setAttribute('data-original', btn.innerHTML);
+        btn.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i> ${loadingText}`;
+        btn.disabled = true;
+        btn.classList.add('btn--loading');
+    } else {
+        btn.innerHTML = originalText || btn.getAttribute('data-original');
+        btn.disabled = false;
+        btn.classList.remove('btn--loading');
+    }
 }
 
-export function buildDock({ activeId }) {
-    const el = document.getElementById('mobileDock'); if(!el) return;
-    const items = [ {id:'home',i:'fa-house',l:'Home',a:'dashboard.html'}, {id:'apply',i:'fa-file-contract',l:'Apply',a:'apply.html'}, {id:'deposit',i:'fa-wallet',l:'Deposit',a:'deposit.html'}, {id:'support',i:'fa-comments',l:'Support',a:'support.html'}, {id:'more',i:'fa-bars',l:'More',a:'#'} ];
-    el.innerHTML = items.map(n=>`<a href="${n.a}" class="dock-item ${activeId===n.id?'active':''}" ${n.id==='more'?'onclick="document.getElementById(\'sidebarOverlay\').click(); return false;"':''}><i class="fa-solid ${n.i}"></i><span>${n.l}</span></a>`).join('');
+export function renderStatusBadge(status) {
+    const config = {
+        IDLE: { class: 'badge--idle', icon: 'fa-clock', label: 'Pending' },
+        PENDING: { class: 'badge--pending', icon: 'fa-hourglass-half', label: 'Processing' },
+        UNDER_REVIEW: { class: 'badge--review', icon: 'fa-magnifying-glass', label: 'Review' },
+        APPROVED: { class: 'badge--approved', icon: 'fa-circle-check', label: 'Approved' },
+        REJECTED: { class: 'badge--rejected', icon: 'fa-circle-xmark', label: 'Rejected' },
+        active: { class: 'badge--active', icon: 'fa-shield-check', label: 'Active' },
+        suspended: { class: 'badge--suspended', icon: 'fa-ban', label: 'Suspended' }
+    };
+    const s = config[status] || config.IDLE;
+    return `<span class="badge ${s.class}"><i class="fa-solid ${s.icon}"></i> ${s.label}</span>`;
 }
