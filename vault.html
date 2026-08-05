@@ -1,88 +1,105 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Document Vault | SBA Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .vault-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; margin-top: 24px; }
-        .doc-card { background: white; border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; transition: 0.2s; }
-        .doc-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--navy); }
-        .doc-preview { height: 140px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
-        .doc-preview img { width: 100%; height: 100%; object-fit: cover; filter: blur(2px) grayscale(0.5); }
-        .doc-preview .overlay { position: absolute; inset: 0; background: rgba(0,48,135,0.1); display: flex; align-items: center; justify-content: center; color: white; opacity: 0; transition: 0.3s; }
-        .doc-card:hover .overlay { opacity: 1; backdrop-filter: blur(4px); }
-        .doc-info { padding: 14px; }
-        .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 40px; }
-        .lightbox img { max-width: 100%; max-height: 100%; border-radius: var(--r-md); }
-        .lightbox-close { position: absolute; top: 20px; right: 20px; color: white; font-size: 2rem; cursor: pointer; }
+        .vault-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        .doc-card { cursor: pointer; transition: 0.2s; position: relative; overflow: hidden; }
+        .doc-card:hover { transform: translateY(-4px); border-color: var(--navy); }
+        .doc-thumb { height: 140px; background: #eee; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: var(--text-muted); position: relative; }
+        .doc-thumb img { width: 100%; height: 100%; object-fit: cover; filter: blur(4px) grayscale(1); opacity: 0.5; }
+        .doc-overlay { position: absolute; inset: 0; background: rgba(0,48,135,0.1); display: flex; align-items: center; justify-content: center; color: var(--navy); font-weight: 800; font-size: 0.8rem; }
+        
+        #viewer { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 40px; }
+        #viewer img { max-width: 100%; max-height: 100%; border-radius: 8px; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
-    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
-    <div class="app-layout">
-        <aside class="app-sidebar" id="appSidebar"></aside>
-        <main class="app-main">
-            <header class="page-header" id="pageHeader"></header>
-            <div class="app-main__content">
-                <div class="alert alert--info">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <span>Documents in your vault are encrypted and only accessible to authorized SBA review officers.</span>
-                </div>
-                
-                <div class="vault-grid" id="vaultList"></div>
+<div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
+<div class="app-layout">
+    <aside class="app-sidebar" id="appSidebar"></aside>
+    <main class="app-main">
+        <div id="pageHeader"></div>
+        <div class="app-main__content">
+            
+            <div class="alert alert--info mb-8">
+                <i class="fa-solid fa-shield-halved"></i>
+                <p>Documents in your vault are encrypted and only accessible to you and your assigned SBA Case Officer.</p>
             </div>
-        </main>
-    </div>
 
-    <div class="lightbox" id="lightbox">
-        <span class="lightbox-close" id="lightboxClose"><i class="fa-solid fa-xmark"></i></span>
-        <img src="" id="lightboxImg">
-    </div>
+            <div id="vaultList" class="vault-grid mb-12"></div>
 
-    <script type="module">
-        import { requireAuth, buildSidebar, buildPageHeader, initTheme } from './app.js';
+            <div class="card">
+                <h3 class="mb-4">Upload Additional Support Docs</h3>
+                <div class="form-group"><label class="form-label">Document Label</label><input type="text" id="docLabel" class="form-input" placeholder="e.g. Utility Bill, Business License"></div>
+                <div class="upload-area" id="up-v"><i class="fa-solid fa-cloud-arrow-up upload-area__icon"></i><p>Click to select file</p><input type="file" id="in-v" hidden accept="image/*"></div>
+                <button class="btn btn--primary mt-6" id="btnSave">Save to Vault</button>
+            </div>
+        </div>
+    </main>
+</div>
 
-        requireAuth((user, userData) => {
-            initTheme();
-            buildSidebar({ activeId: 'vault', userData });
-            buildPageHeader({ title: 'Document Vault', subtitle: 'Your encrypted submission records', backUrl: 'dashboard.html' });
+<div id="viewer" onclick="this.style.display='none'">
+    <button class="btn btn--ghost" style="position:absolute; top:20px; right:20px; color:white;"><i class="fa-solid fa-xmark"></i> Close</button>
+    <img id="viewImg" src="">
+</div>
 
-            const docs = [];
-            if (userData.kyc?.idFrontBase64) docs.push({ name: 'ID Front', img: userData.kyc.idFrontBase64, type: 'Identity' });
-            if (userData.kyc?.idBackBase64) docs.push({ name: 'ID Back', img: userData.kyc.idBackBase64, type: 'Identity' });
-            if (userData.deposit?.receiptBase64) docs.push({ name: 'Deposit Receipt', img: userData.deposit.receiptBase64, type: 'Payment' });
-            if (userData.tax?.receiptBase64) docs.push({ name: 'Tax Receipt', img: userData.tax.receiptBase64, type: 'Payment' });
+<script type="module">
+    import { updateUserData, arrayUnion, compressToBase64, serverTimestamp } from './firebase-config.js';
+    import { requireAuth, buildSidebar, buildDock, buildPageHeader, initNotificationBadge, showToast, setButtonLoading, formatDate } from './app.js';
 
-            const list = document.getElementById('vaultList');
-            if (docs.length === 0) {
-                list.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:100px 0;"><i class="fa-solid fa-folder-open fa-4x" style="color:var(--border);"></i><p class="text-muted mt-4">No documents found in your vault.</p></div>`;
-            } else {
-                list.innerHTML = docs.map((doc, idx) => `
-                    <div class="doc-card">
-                        <div class="doc-preview">
-                            <img src="${doc.img}">
-                            <div class="overlay" onclick="openLightbox('${doc.img}')"><i class="fa-solid fa-eye fa-2x"></i></div>
-                        </div>
-                        <div class="doc-info">
-                            <div style="font-weight:700; font-size:0.9rem;">${doc.name}</div>
-                            <div style="font-size:0.75rem; color:var(--text-muted);">${doc.type}</div>
-                        </div>
+    requireAuth((user, userData) => {
+        buildSidebar({ activeId: 'vault', userData });
+        buildDock({ activeId: 'home' });
+        buildPageHeader({ title: 'Document Vault', subtitle: 'Secure Federal Storage', backUrl: 'dashboard.html' });
+        initNotificationBadge(user.uid);
+
+        const render = () => {
+            const list = document.getElementById('vaultList'); list.innerHTML = '';
+            const docs = [
+                { name: 'ID Front', img: userData.kyc?.idFrontBase64, date: userData.kyc?.submittedAt },
+                { name: 'ID Back', img: userData.kyc?.idBackBase64, date: userData.kyc?.submittedAt },
+                { name: 'Deposit Receipt', img: userData.deposit?.receiptBase64, date: userData.deposit?.submittedAt },
+                { name: 'Tax Receipt', img: userData.tax?.receiptBase64, date: userData.tax?.submittedAt }
+            ];
+
+            (userData.additionalDocs || []).forEach(d => docs.push(d));
+
+            docs.filter(d => d.img).forEach(d => {
+                const card = document.createElement('div');
+                card.className = 'card doc-card';
+                card.innerHTML = `
+                    <div class="doc-thumb">${d.img ? `<img src="${d.img}">` : '<i class="fa-solid fa-file-image"></i>'}<div class="doc-overlay">VIEW FULL</div></div>
+                    <div class="p-3" style="padding:15px;">
+                        <div style="font-weight:800; font-size:0.9rem;">${d.name}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted);">${formatDate(d.date)}</div>
                     </div>
-                `).join('');
-            }
+                `;
+                card.onclick = () => {
+                    document.getElementById('viewImg').src = d.img;
+                    document.getElementById('viewer').style.display = 'flex';
+                };
+                list.appendChild(card);
+            });
+        };
+        render();
 
-            window.openLightbox = (src) => {
-                document.getElementById('lightboxImg').src = src;
-                document.getElementById('lightbox').style.display = 'flex';
-            };
-
-            document.getElementById('lightboxClose').onclick = () => {
-                document.getElementById('lightbox').style.display = 'none';
-            };
-        });
-    </script>
+        document.getElementById('up-v').onclick = () => document.getElementById('in-v').click();
+        document.getElementById('btnSave').onclick = async () => {
+            const file = document.getElementById('in-v').files[0];
+            const label = document.getElementById('docLabel').value;
+            if(!file || !label) return showToast('Label and file required', 'warning');
+            
+            const btn = document.getElementById('btnSave'); setButtonLoading(btn, true);
+            const b64 = await compressToBase64(file);
+            await updateUserData(user.uid, { additionalDocs: arrayUnion({ name:label, img:b64, date: new Date() }) });
+            location.reload();
+        };
+    });
+</script>
 </body>
 </html>
