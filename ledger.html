@@ -6,6 +6,13 @@
     <title>Transactions | SBA Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
+    <style>
+        .ledger-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
+        @media(max-width: 600px) { .ledger-hero { grid-template-columns: 1fr; } }
+        .search-wrap { position: relative; flex: 1; }
+        .search-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); }
+        .search-wrap input { padding-left: 40px; }
+    </style>
 </head>
 <body>
 <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
@@ -15,110 +22,103 @@
         <div id="pageHeader"></div>
         <div class="app-main__content">
             
-            <div class="stats-grid mb-8">
-                <div class="stat-card">
-                    <div class="stat-card__label">Total Balance</div>
-                    <div class="stat-card__value" id="ledgerBal">$0.00</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-card__label">Lifetime Awards</div>
-                    <div class="stat-card__value" id="ledgerAward">$0.00</div>
-                </div>
+            <div class="ledger-hero">
+                <div class="stat-card" style="border-bottom:4px solid var(--success);"><div class="stat-card__label">Account Balance</div><div class="stat-card__value" id="h-bal">$0.00</div></div>
+                <div class="stat-card" style="border-bottom:4px solid var(--navy);"><div class="stat-card__label">Total Grant Award</div><div class="stat-card__value" id="h-award">$0.00</div></div>
             </div>
 
             <div class="card">
-                <div class="flex justify-between items-center mb-6 overflow-x-auto gap-4 pb-2">
-                    <div class="flex gap-2">
-                        <button class="btn btn--sm btn--secondary active" data-filter="all">All</button>
-                        <button class="btn btn--sm btn--ghost" data-filter="deposit">Deposits</button>
-                        <button class="btn btn--sm btn--ghost" data-filter="withdrawal">Payouts</button>
-                    </div>
-                    <button class="btn btn--outline btn--sm" id="btnExport"><i class="fa-solid fa-file-export"></i> Export CSV</button>
+                <div class="flex justify-between items-center mb-6 gap-4 flex-wrap">
+                    <div class="search-wrap"><i class="fa-solid fa-magnifying-glass"></i><input type="text" id="l-search" class="form-input" placeholder="Search by description..."></div>
+                    <button class="btn btn--outline btn--sm" id="btnCSV"><i class="fa-solid fa-download"></i> Export CSV</button>
+                </div>
+
+                <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+                    <button class="btn btn--sm btn--secondary active" data-f="all">All</button>
+                    <button class="btn btn--sm btn--ghost" data-f="deposit">Deposits</button>
+                    <button class="btn btn--sm btn--ghost" data-f="withdrawal">Payouts</button>
+                    <button class="btn btn--sm btn--ghost" data-f="award">Awards</button>
                 </div>
 
                 <div class="admin-table-wrap">
                     <table class="admin-table">
-                        <thead>
-                            <tr>
-                                <th>Transaction</th>
-                                <th>Status</th>
-                                <th>Amount</th>
-                                <th>Date</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ledgerBody"></tbody>
+                        <thead><tr><th>Description</th><th>Status</th><th>Amount</th><th>Date</th></tr></thead>
+                        <tbody id="l-body"></tbody>
                     </table>
                 </div>
-                <div id="emptyState" style="display:none;" class="text-center py-12">
-                    <i class="fa-solid fa-inbox text-muted mb-4" style="font-size:3rem;"></i>
-                    <p class="text-muted">No transactions found matching your filters.</p>
-                </div>
+                <div id="l-empty" style="display:none;" class="text-center py-12"><i class="fa-solid fa-inbox text-muted mb-4" style="font-size:3rem;"></i><p class="text-muted">No matching transactions found.</p></div>
+                <button class="btn btn--ghost btn--full mt-6" id="btnMore" style="display:none;">Load More Transactions</button>
             </div>
-
         </div>
     </main>
 </div>
 
 <script type="module">
-    import { db, collection, query, orderBy, onSnapshot } from './firebase-config.js';
-    import { requireAuth, buildSidebar, buildDock, buildPageHeader, initNotificationBadge, formatCurrency, formatDate, renderStatusBadge } from './app.js';
+    import { db, collection, query, orderBy, limit, onSnapshot, where, startAfter } from './firebase-config.js';
+    import { requireAuth, buildSidebar, buildDock, buildPageHeader, initNotificationBadge, formatCurrency, formatDate, renderStatusBadge, debounce } from './app.js';
+
+    let lastDoc = null;
+    let allData = [];
+    let filter = 'all';
 
     requireAuth((user, userData) => {
         buildSidebar({ activeId: 'ledger', userData });
         buildDock({ activeId: 'home' });
-        buildPageHeader({ title: 'Transaction History', subtitle: 'Treasury Wallet Ledger', backUrl: 'dashboard.html' });
+        buildPageHeader({ title: 'Transaction Ledger', subtitle: 'Historical Treasury Records', backUrl: 'dashboard.html' });
         initNotificationBadge(user.uid);
 
-        document.getElementById('ledgerBal').textContent = formatCurrency(userData.balance || 0);
-        document.getElementById('ledgerAward').textContent = formatCurrency(userData.totalAward || 0);
+        document.getElementById('h-bal').textContent = formatCurrency(userData.balance || 0);
+        document.getElementById('h-award').textContent = formatCurrency(userData.totalAward || 0);
 
-        let transactions = [];
-        const q = query(collection(db, 'users', user.uid, 'ledger'), orderBy('createdAt', 'desc'));
-        
-        onSnapshot(q, (snap) => {
-            const body = document.getElementById('ledgerBody');
-            transactions = [];
-            body.innerHTML = '';
-            
-            if(snap.empty) { document.getElementById('emptyState').style.display = 'block'; return; }
-            document.getElementById('emptyState').style.display = 'none';
+        const load = (isMore = false) => {
+            let q = query(collection(db, 'users', user.uid, 'ledger'), orderBy('createdAt', 'desc'), limit(20));
+            if(isMore && lastDoc) q = query(collection(db, 'users', user.uid, 'ledger'), orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(20));
 
-            snap.forEach(doc => {
-                const t = doc.data();
-                transactions.push(t);
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>
-                        <div class="flex items-center gap-3">
-                            <div style="width:32px; height:32px; border-radius:50%; background:var(--navy-light); color:var(--navy); display:flex; align-items:center; justify-content:center; font-size:0.75rem;">
-                                <i class="fa-solid ${getIcon(t.type)}"></i>
-                            </div>
-                            <span style="font-weight:700;">${t.description}</span>
-                        </div>
-                    </td>
-                    <td>${renderStatusBadge(t.status || 'CONFIRMED')}</td>
-                    <td style="font-weight:800; color:${t.amount >= 0 ? 'var(--success)' : 'var(--error)'}">${t.amount >= 0 ? '+' : ''}${formatCurrency(t.amount)}</td>
-                    <td class="text-muted" style="font-size:0.8rem;">${formatDate(t.createdAt)}</td>
-                `;
-                body.appendChild(row);
+            onSnapshot(q, (snap) => {
+                const body = document.getElementById('l-body');
+                if(!isMore) { body.innerHTML = ''; allData = []; }
+                if(snap.empty && !isMore) { document.getElementById('l-empty').style.display='block'; return; }
+                
+                document.getElementById('l-empty').style.display='none';
+                lastDoc = snap.docs[snap.docs.length-1];
+                document.getElementById('btnMore').style.display = snap.size === 20 ? 'block' : 'none';
+
+                snap.forEach(d => {
+                    const t = d.data(); allData.push(t);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><div class="flex items-center gap-3"><div style="width:32px; height:32px; border-radius:50%; background:var(--navy-light); color:var(--navy); display:flex; align-items:center; justify-content:center; font-size:0.7rem;"><i class="fa-solid ${getIcon(t.type)}"></i></div><span style="font-weight:700; font-size:0.85rem;">${t.description}</span></div></td>
+                        <td>${renderStatusBadge(t.status || 'CONFIRMED')}</td>
+                        <td style="font-weight:800; color:${t.amount>=0?'var(--success)':'var(--error)'}">${t.amount>=0?'+':''}${formatCurrency(t.amount)}</td>
+                        <td class="text-muted" style="font-size:0.75rem;">${formatDate(t.createdAt)}</td>
+                    `;
+                    body.appendChild(row);
+                });
             });
-        });
+        };
+        load();
 
-        document.getElementById('btnExport').onclick = () => {
-            let csv = 'Date,Description,Type,Amount,Status\n';
-            transactions.forEach(t => {
-                csv += `${formatDate(t.createdAt)},"${t.description}",${t.type},${t.amount},${t.status}\n`;
+        document.getElementById('btnMore').onclick = () => load(true);
+
+        document.getElementById('l-search').oninput = debounce((e) => {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('#l-body tr').forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(term) ? '' : 'none';
             });
+        }, 300);
+
+        document.getElementById('btnCSV').onclick = () => {
+            let csv = "Date,Description,Type,Amount,Status\n";
+            allData.forEach(r => csv += `${formatDate(r.createdAt)},"${r.description}",${r.type},${r.amount},${r.status}\n`);
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'SBA-Transactions.csv'; a.click();
+            const a = document.createElement('a'); a.href = url; a.download = `SBA-Ledger-${new Date().getTime()}.csv`; a.click();
         };
     });
 
-    function getIcon(type) {
+    function getIcon(t) {
         const m = { deposit: 'fa-wallet', withdrawal: 'fa-money-bill-transfer', award: 'fa-trophy', fee: 'fa-receipt' };
-        return m[type] || 'fa-file-invoice';
+        return m[t] || 'fa-file-invoice';
     }
 </script>
 </body>
