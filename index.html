@@ -4,90 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>U.S. Small Business Administration | Official Grant Portal</title>
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#003087">
-
     <style>
-        /* Landing specific styles */
-        .gov-banner__info { display: none; background: #f0f4f9; padding: 24px; border-bottom: 1px solid #c6cdd8; font-size: 0.85rem; line-height: 1.6; }
+        .hero { padding: 100px 0 60px; background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%); color: white; position: relative; overflow: hidden; }
+        .hero-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 40px; align-items: center; max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        .hero-title { font-size: 3.5rem; font-weight: 900; line-height: 1.1; margin-bottom: 24px; letter-spacing: -0.02em; }
+        .hero-text { font-size: 1.25rem; opacity: 0.9; margin-bottom: 40px; line-height: 1.6; }
+        
+        .stat-card-glass { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); padding: 32px; border-radius: var(--r-xl); }
+        .stat-val { font-size: 2.5rem; font-weight: 900; color: #fbbf24; margin: 10px 0; font-variant-numeric: tabular-nums; }
+        
+        .gov-banner__info { display: none; background: #f0f4f9; padding: 20px; border-bottom: 1px solid #c6cdd8; font-size: 0.85rem; }
         .gov-banner__info.active { display: block; animation: fadeSlide 0.3s ease; }
-        
-        .hero { position: relative; padding: 120px 0 80px; background: linear-gradient(135deg, var(--navy-dark) 0%, var(--navy) 100%); color: white; overflow: hidden; }
-        .hero__container { max-width: 1200px; margin: 0 auto; padding: 0 24px; display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 60px; align-items: center; }
-        .hero__title { font-size: 3.5rem; font-weight: 900; line-height: 1.1; margin-bottom: 24px; letter-spacing: -0.02em; }
-        .hero__text { font-size: 1.2rem; opacity: 0.9; margin-bottom: 40px; line-height: 1.6; max-width: 600px; }
-        
-        .trust-badges { display: flex; gap: 24px; margin-top: 48px; flex-wrap: wrap; }
-        .trust-badge { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600; background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: var(--r-md); }
-        
-        .section-header { text-align: center; max-width: 700px; margin: 0 auto 60px; }
-        .section-header h2 { font-size: 2.5rem; font-weight: 800; margin-bottom: 16px; color: var(--navy); }
-        
-        .faq-item { border: 1px solid var(--border); border-radius: var(--r-lg); margin-bottom: 12px; background: white; transition: var(--t-base); }
-        .faq-trigger { width: 100%; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; background: none; border: none; cursor: pointer; text-align: left; font-weight: 700; color: var(--text-primary); font-size: 1.1rem; }
-        .faq-content { padding: 0 24px; max-height: 0; overflow: hidden; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; }
-        .faq-item.active { border-color: var(--navy); box-shadow: var(--shadow-md); }
-        .faq-item.active .faq-content { padding: 0 24px 24px; max-height: 500px; opacity: 1; }
-        .faq-item.active i { transform: rotate(180deg); color: var(--navy); }
-
-        .stat-card--hero { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); padding: 30px; border-radius: var(--r-xl); }
 
         @media (max-width: 1024px) {
-            .hero__container { grid-template-columns: 1fr; text-align: center; }
-            .hero__text { margin: 0 auto 40px; }
-            .trust-badges { justify-content: center; }
-            .hero__title { font-size: 2.5rem; }
-        }
-
-        @media (max-width: 600px) {
-            .hero__title { font-size: 2rem; }
-            .section-header h2 { font-size: 1.8rem; }
+            .hero-grid { grid-template-columns: 1fr; text-align: center; }
+            .hero-title { font-size: 2.5rem; }
+            .hero-text { max-width: 600px; margin: 0 auto 40px; }
         }
     </style>
 </head>
 <body>
-
     <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
     <!-- Gov Banner -->
     <div class="gov-banner">
-        <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="US Flag">
+        <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="USA">
         <span>An official website of the United States government</span>
-        <button class="gov-banner__expand" id="govExpand">Here's how you know <i class="fa-solid fa-chevron-down"></i></button>
+        <button class="gov-banner__expand" id="govTrigger">Here's how you know <i class="fa-solid fa-chevron-down"></i></button>
     </div>
     <div class="gov-banner__info" id="govInfo">
-        <div class="flex gap-8" style="max-width: 1200px; margin: 0 auto; flex-wrap: wrap;">
-            <div style="flex: 1; min-width: 280px;">
-                <div class="flex gap-3 mb-2"><i class="fa-solid fa-building-columns text-navy"></i> <strong>Official websites use .gov</strong></div>
+        <div class="flex gap-8 flex-wrap" style="max-width: 1200px; margin: 0 auto;">
+            <div style="flex: 1; min-width: 250px;">
+                <div class="flex gap-2 mb-2"><i class="fa-solid fa-building-columns text-navy"></i> <strong>Official websites use .gov</strong></div>
                 <p>A <strong>.gov</strong> website belongs to an official government organization in the United States.</p>
             </div>
-            <div style="flex: 1; min-width: 280px;">
-                <div class="flex gap-3 mb-2"><i class="fa-solid fa-lock text-success"></i> <strong>Secure .gov websites use HTTPS</strong></div>
+            <div style="flex: 1; min-width: 250px;">
+                <div class="flex gap-2 mb-2"><i class="fa-solid fa-lock text-success"></i> <strong>Secure .gov websites use HTTPS</strong></div>
                 <p>A lock ( <i class="fa-solid fa-lock"></i> ) or <strong>https://</strong> means you’ve safely connected to the .gov website.</p>
             </div>
         </div>
     </div>
 
     <!-- Navigation -->
-    <nav class="mobile-topbar" id="mainNav" style="display: flex; height: 80px; position: sticky; top: 0; background: white; z-index: 1000; transition: var(--t-base);">
+    <nav class="mobile-topbar" style="display: flex; height: 80px; position: sticky; top: 0; background: white; z-index: 1000; border-bottom: 1px solid var(--border-light);">
         <div class="container flex justify-between items-center" style="width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 24px;">
             <a href="index.html" class="sba-logo">
-                <svg class="sba-logo__mark" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/>
-                    <path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/>
-                    <text x="8" y="58" font-family="Arial Black, Arial, sans-serif" font-size="36" font-weight="900" fill="#003087">S</text>
-                    <text x="28" y="58" font-family="Arial Black, Arial, sans-serif" font-size="36" font-weight="900" fill="#003087">B</text>
-                    <text x="50" y="58" font-family="Arial Black, Arial, sans-serif" font-size="36" font-weight="900" fill="#003087">A</text>
-                </svg>
-                <div class="sba-logo__text">
-                    <span class="sba-logo__name">U.S. Small Business</span>
-                    <span class="sba-logo__sub">Administration</span>
-                </div>
+                <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
+                <div class="sba-logo__text"><span class="sba-logo__name">U.S. Small Business</span><span class="sba-logo__sub">Administration</span></div>
             </a>
             <div class="flex items-center gap-4">
                 <button class="btn btn--ghost" id="themeToggle"><i class="fa-solid fa-circle-half-stroke"></i></button>
@@ -99,85 +67,53 @@
 
     <!-- Hero -->
     <section class="hero">
-        <div class="hero__container">
+        <div class="hero-grid">
             <div class="fade-in">
                 <div class="badge badge--pending mb-4" style="background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);">
-                    <i class="fa-solid fa-flag"></i> 2025 Federal Funding Cycle Now Open
+                    <i class="fa-solid fa-flag"></i> Federal Opportunity 2025
                 </div>
-                <h1 class="hero__title">Empowering the American Dream.</h1>
-                <p class="hero__text">The U.S. Small Business Administration provides non-repayable grants to help you start, grow, and expand your business. Access up to $500,000 in federal funding today.</p>
-                <div class="flex gap-4" style="flex-wrap: wrap;">
-                    <a href="register.html" class="btn btn--primary btn--lg" style="background: #fbbf24; color: #001f5c; border: none;">Get Started <i class="fa-solid fa-arrow-right"></i></a>
-                    <a href="#programs" class="btn btn--outline btn--lg" style="border-color: white; color: white;">View Programs</a>
-                </div>
-                <div class="trust-badges">
-                    <div class="trust-badge"><i class="fa-solid fa-shield-halved"></i> Federal Program</div>
-                    <div class="trust-badge"><i class="fa-solid fa-lock"></i> SSL Secured</div>
-                    <div class="trust-badge"><i class="fa-solid fa-ban"></i> No Repayment</div>
+                <h1 class="hero-title">Federal Assistance for Small Businesses.</h1>
+                <p class="hero-text">The SBA helps Americans start, build, and grow businesses. Access non-repayable grants from $50,000 to $500,000 through our secure treasury portal.</p>
+                <div class="flex gap-4 flex-wrap">
+                    <a href="register.html" class="btn btn--primary btn--lg" style="background: #fbbf24; color: #001f5c; border: none;">Apply For Funding <i class="fa-solid fa-arrow-right"></i></a>
+                    <a href="#eligible" class="btn btn--outline btn--lg" style="border-color: white; color: white;">Check Eligibility</a>
                 </div>
             </div>
             <div class="sr-mobile fade-in" style="animation-delay: 0.2s;">
-                <div class="stat-card--hero">
-                    <div class="skel" id="heroStatSkel" style="height: 100px; width: 100%; margin-bottom: 20px;"></div>
-                    <div id="heroStatContent" style="display: none;">
-                        <div class="stat-card__label" style="color: white; opacity: 0.7;">Total Disbursed (2025)</div>
-                        <div class="stat-card__value count-up" style="color: #fbbf24; font-size: 2.5rem; margin: 10px 0;" id="disbursedVal">$0</div>
-                        <div style="height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 20px;">
-                            <div style="width: 82%; height: 100%; background: #fbbf24; border-radius: 2px;"></div>
-                        </div>
-                        <p style="font-size: 0.75rem; margin-top: 10px; opacity: 0.6;">82% of current annual budget allocated.</p>
+                <div class="stat-card-glass">
+                    <div class="stat-card__label" style="color: white; opacity: 0.7;">Total Awards Disbursed</div>
+                    <div class="stat-val" id="disbursedVal">$0.00</div>
+                    <div class="skel" id="statSkel" style="height: 4px; width: 100%; margin-top: 20px;"></div>
+                    <div id="statMeta" style="display: none; font-size: 0.8rem; opacity: 0.6; margin-top: 15px;">
+                        <i class="fa-solid fa-circle-check text-success"></i> 2.8 Million Successful Payouts
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Stats Strip -->
-    <div style="background: var(--navy-dark); padding: 40px 0; border-top: 1px solid rgba(255,255,255,0.1);">
-        <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 0 24px;">
-            <div class="stats-strip-grid" id="statsTrigger" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;">
-                <div class="text-center">
-                    <div class="count-up" data-target="48.7" style="font-size: 2rem; font-weight: 800; color: #fbbf24;">$0</div>
-                    <div style="font-size: 0.7rem; text-transform: uppercase; color: white; opacity: 0.7;">Billion Disbursed</div>
-                </div>
-                <div class="text-center">
-                    <div class="count-up" data-target="2.8" style="font-size: 2rem; font-weight: 800; color: #fbbf24;">0</div>
-                    <div style="font-size: 0.7rem; text-transform: uppercase; color: white; opacity: 0.7;">Millions Funded</div>
-                </div>
-                <div class="text-center">
-                    <div class="count-up" data-target="50" style="font-size: 2rem; font-weight: 800; color: #fbbf24;">0</div>
-                    <div style="font-size: 0.7rem; text-transform: uppercase; color: white; opacity: 0.7;">States Covered</div>
-                </div>
-                <div class="text-center">
-                    <div class="count-up" data-target="99.9" style="font-size: 2rem; font-weight: 800; color: #fbbf24;">0%</div>
-                    <div style="font-size: 0.7rem; text-transform: uppercase; color: white; opacity: 0.7;">System Uptime</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Grant Programs -->
-    <section id="programs" style="padding: 100px 0; background: white;">
+    <section id="eligible" style="padding: 100px 0; background: white;">
         <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 0 24px;">
             <div class="section-header">
-                <span class="text-navy" style="font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.8rem;">Funding Opportunities</span>
-                <h2>Available Grant Programs</h2>
+                <span class="text-navy" style="font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem;">Program Access</span>
+                <h2>Active Grant Programs</h2>
             </div>
-            <div class="form-row" style="grid-template-columns: repeat(2, 1fr); gap: 24px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
                 <div class="card card--shadow">
                     <div class="flex items-center gap-4 mb-4">
-                        <div style="width: 50px; height: 50px; border-radius: 12px; background: var(--navy-light); color: var(--navy); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="fa-solid fa-rocket"></i></div>
-                        <div><h3 style="font-size: 1.2rem;">Startup Innovation Grant</h3><span class="badge badge--approved">Up to $250,000</span></div>
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--navy-light); color: var(--navy); display: flex; align-items: center; justify-content: center; font-size: 1.4rem;"><i class="fa-solid fa-rocket"></i></div>
+                        <h3 style="font-size: 1.1rem;">Startup Innovation</h3>
                     </div>
-                    <p class="text-muted mb-6">Designed for entrepreneurs starting new businesses with a focus on technological advancement or community impact.</p>
+                    <p class="text-secondary mb-6">Grants up to $250,000 for new businesses focusing on technology and community development.</p>
                     <a href="register.html" class="btn btn--secondary btn--full">Learn More</a>
                 </div>
                 <div class="card card--shadow">
                     <div class="flex items-center gap-4 mb-4">
-                        <div style="width: 50px; height: 50px; border-radius: 12px; background: var(--red-light); color: var(--red); display: flex; align-items: center; justify-content: center; font-size: 1.5rem;"><i class="fa-solid fa-house-medical"></i></div>
-                        <div><h3 style="font-size: 1.2rem;">Disaster Recovery Fund</h3><span class="badge badge--approved">Up to $500,000</span></div>
+                        <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--red-light); color: var(--red); display: flex; align-items: center; justify-content: center; font-size: 1.4rem;"><i class="fa-solid fa-house-medical"></i></div>
+                        <h3 style="font-size: 1.1rem;">Disaster Recovery</h3>
                     </div>
-                    <p class="text-muted mb-6">Immediate financial assistance for businesses impacted by natural disasters, local emergencies, or economic downturns.</p>
+                    <p class="text-secondary mb-6">Immediate support up to $500,000 for businesses impacted by natural disasters or economic downturns.</p>
                     <a href="register.html" class="btn btn--secondary btn--full">Apply Now</a>
                 </div>
             </div>
@@ -190,76 +126,23 @@
             <div class="section-header"><h2>Frequently Asked Questions</h2></div>
             <div class="faq-list">
                 <div class="faq-item">
-                    <button class="faq-trigger">What are the eligibility requirements? <i class="fa-solid fa-chevron-down"></i></button>
-                    <div class="faq-content"><p>Applicants must be U.S.-based businesses, in operation for at least 1 year, and meet SBA size standards. Full identity verification (KYC) is mandatory for all primary applicants.</p></div>
+                    <button class="faq-trigger">Are SBA grants non-repayable? <i class="fa-solid fa-chevron-down"></i></button>
+                    <div class="faq-content"><p class="pb-4">Yes. Unlike SBA loans, these are federal awards. As long as funds are used for business operational costs, they do not need to be repaid.</p></div>
                 </div>
                 <div class="faq-item">
-                    <button class="faq-trigger">Do I have to pay the grant back? <i class="fa-solid fa-chevron-down"></i></button>
-                    <div class="faq-content"><p>No. SBA grants are federal awards, not loans. As long as funds are used for the business purposes described in your application, no repayment is required.</p></div>
-                </div>
-                <div class="faq-item">
-                    <button class="faq-trigger">Why is a Tax Clearance fee required? <i class="fa-solid fa-chevron-down"></i></button>
-                    <div class="faq-content"><p>Federal regulation §6325 requires verification of tax compliance for awards exceeding $50,000. This fee ensures your business is in good standing with the IRS before funds are released.</p></div>
-                </div>
-                <div class="faq-item">
-                    <button class="faq-trigger">How long does the process take? <i class="fa-solid fa-chevron-down"></i></button>
-                    <div class="faq-content"><p>Standard review typically takes 3-5 business days once all documentation is submitted. Disbursements are initiated immediately following tax clearance approval.</p></div>
+                    <button class="faq-trigger">What is the Tax Clearance Certificate? <i class="fa-solid fa-chevron-down"></i></button>
+                    <div class="faq-content"><p class="pb-4">Federal regulation §6325 requires verification of tax compliance for awards over $50,000. This ensures the business is in good standing before funds are released.</p></div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- CTA -->
-    <section style="padding: 100px 0; background: var(--navy); color: white; text-align: center;">
-        <div class="container">
-            <h2 style="font-size: 2.5rem; margin-bottom: 24px;">Ready to Fund Your Future?</h2>
-            <p style="opacity: 0.8; margin-bottom: 40px; font-size: 1.1rem;">Join over 2.8 million business owners who have secured federal support.</p>
-            <div class="flex gap-4 items-center justify-center">
-                <a href="register.html" class="btn btn--primary btn--lg" style="background: white; color: var(--navy);">Register Now</a>
-                <a href="login.html" class="btn btn--outline btn--lg" style="border-color: white; color: white;">Sign In</a>
+    <footer style="background: white; padding: 60px 0; border-top: 1px solid var(--border);">
+        <div class="container text-center" style="max-width: 1200px; margin: 0 auto; padding: 0 24px;">
+            <div class="sba-logo mb-8" style="justify-content: center;">
+                <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
             </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer style="background: white; padding: 80px 0 40px; border-top: 1px solid var(--border);">
-        <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 0 24px;">
-            <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 40px; margin-bottom: 60px;">
-                <div>
-                    <div class="sba-logo mb-6">
-                        <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
-                        <div class="sba-logo__text"><span class="sba-logo__name">U.S. Small Business</span><span class="sba-logo__sub">Administration</span></div>
-                    </div>
-                    <p class="text-muted" style="font-size: 0.85rem;">Official portal for SBA federal financial assistance. Dedicated to supporting the American small business ecosystem.</p>
-                </div>
-                <div>
-                    <h5 class="mb-4">Resources</h5>
-                    <ul style="list-style: none; font-size: 0.85rem; line-height: 2.2;">
-                        <li><a href="#" class="text-secondary">SBA.gov Official</a></li>
-                        <li><a href="support.html" class="text-secondary">Help Center</a></li>
-                        <li><a href="kyc.html" class="text-secondary">Verification</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h5 class="mb-4">Legal</h5>
-                    <ul style="list-style: none; font-size: 0.85rem; line-height: 2.2;">
-                        <li><a href="terms.html" class="text-secondary">Terms & Conditions</a></li>
-                        <li><a href="#" class="text-secondary">Privacy Policy</a></li>
-                        <li><a href="#" class="text-secondary">FOIA</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h5 class="mb-4">Portal</h5>
-                    <ul style="list-style: none; font-size: 0.85rem; line-height: 2.2;">
-                        <li><a href="login.html" class="text-secondary">User Login</a></li>
-                        <li><a href="register.html" class="text-secondary">New Application</a></li>
-                        <li><a href="admin-portal.html" class="text-secondary">Admin Console</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div style="border-top: 1px solid var(--border-light); padding-top: 40px; text-align: center; font-size: 0.75rem; color: var(--text-muted);">
-                © 2025 U.S. Small Business Administration. All rights reserved. This is a secure federal government portal.
-            </div>
+            <p class="text-muted" style="font-size: 0.8rem; max-width: 600px; margin: 0 auto;">© 2025 U.S. Small Business Administration. This is an official federal government portal. Unauthorized access is prohibited and subject to prosecution.</p>
         </div>
     </footer>
 
@@ -267,78 +150,37 @@
         import { db, doc, getDoc } from './firebase-config.js';
         import { initTheme, applyTheme, redirectIfLoggedIn, hideLoader, formatCurrency } from './app.js';
 
-        // Init
-        document.addEventListener('DOMContentLoaded', () => {
-            initTheme();
-            redirectIfLoggedIn();
-            
-            // Stats Loading
-            getDoc(doc(db, 'config', 'platform')).then(snap => {
-                const data = snap.data();
-                if(data) {
-                    document.getElementById('disbursedVal').textContent = formatCurrency(data.totalDisbursed || 48700000000);
-                }
-                document.getElementById('heroStatSkel').style.display = 'none';
-                document.getElementById('heroStatContent').style.display = 'block';
-            }).catch(() => {
-                document.getElementById('disbursedVal').textContent = "$48.7B+";
-                document.getElementById('heroStatSkel').style.display = 'none';
-                document.getElementById('heroStatContent').style.display = 'block';
-            });
+        initTheme();
+        redirectIfLoggedIn();
 
-            // Intersection Count Up
-            const counters = document.querySelectorAll('.count-up');
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const target = parseFloat(entry.target.dataset.target);
-                        animateValue(entry.target, 0, target, 2000);
-                        observer.unobserve(entry.target);
-                    }
-                });
-            }, { threshold: 0.5 });
-            counters.forEach(c => observer.observe(c));
+        window.onload = async () => {
+            const configSnap = await getDoc(doc(db, 'config', 'platform'));
+            const config = configSnap.data();
+
+            if (config?.maintenanceMode) {
+                document.body.innerHTML = `<div style="height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px;background:var(--bg);">
+                    <i class="fa-solid fa-gear fa-spin" style="font-size:4rem;color:var(--navy);margin-bottom:24px;"></i>
+                    <h1 style="color:var(--navy);">System Maintenance</h1>
+                    <p class="text-muted">The SBA Portal is currently undergoing scheduled updates. Please return in 2 hours.</p>
+                </div>`;
+                return;
+            }
+
+            // Stats Update
+            if (config?.totalDisbursed) {
+                document.getElementById('disbursedVal').textContent = formatCurrency(config.totalDisbursed);
+                document.getElementById('statSkel').style.display = 'none';
+                document.getElementById('statMeta').style.display = 'block';
+            }
 
             hideLoader();
-        });
+        };
 
-        function animateValue(obj, start, end, duration) {
-            let startTimestamp = null;
-            const step = (timestamp) => {
-                if (!startTimestamp) startTimestamp = timestamp;
-                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-                const val = (progress * (end - start)).toFixed(1);
-                const suffix = obj.textContent.includes('$') ? '$' : '';
-                const endSuffix = obj.dataset.target.includes('.') ? 'B+' : obj.textContent.includes('%') ? '%' : '';
-                obj.innerHTML = suffix + val + endSuffix;
-                if (progress < 1) window.requestAnimationFrame(step);
-            };
-            window.requestAnimationFrame(step);
-        }
-
-        // Accordion
-        document.querySelectorAll('.faq-trigger').forEach(btn => {
-            btn.onclick = () => {
-                const item = btn.parentElement;
-                const active = item.classList.contains('active');
-                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
-                if(!active) item.classList.add('active');
-            };
-        });
-
-        // Gov Expand
-        document.getElementById('govExpand').onclick = () => document.getElementById('govInfo').classList.toggle('active');
-
-        // Theme
+        document.getElementById('govTrigger').onclick = () => document.getElementById('govInfo').classList.toggle('active');
         document.getElementById('themeToggle').onclick = () => {
             const current = localStorage.getItem('sba-theme');
             applyTheme(current === 'dark' ? 'light' : 'dark');
         };
-
-        // Service Worker
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/firebase-messaging-sw.js');
-        }
     </script>
 </body>
 </html>
