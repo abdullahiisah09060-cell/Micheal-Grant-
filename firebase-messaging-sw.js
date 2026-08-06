@@ -1,7 +1,3 @@
-/**
- * SBA GRANT PORTAL — PUSH SERVICE WORKER
- */
-
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
@@ -16,15 +12,12 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-    console.log('Received background message: ', payload);
-    const notificationTitle = payload.notification.title;
-    const notificationOptions = {
+    self.registration.showNotification(payload.notification.title, {
         body: payload.notification.body,
         icon: '/icons/icon-192.png',
+        badge: '/icons/sba-badge.png',
         data: payload.data
-    };
-
-    self.registration.showNotification(notificationTitle, notificationOptions);
+    });
 });
 
 self.addEventListener('notificationclick', (event) => {
