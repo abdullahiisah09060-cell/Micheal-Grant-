@@ -3,93 +3,45 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // --- BASIC HELPERS ---
-    
-    // Check if user is logged in
-    function isAuth() {
-      return request.auth != null;
-    }
-    
-    // Check if the current user is the owner of the document
-    function isOwner(uid) {
-      return isAuth() && request.auth.uid == uid;
-    }
-    
-    // Check if the user has the 'admin' role in their document
-    // This is a "Get" call and counts towards your read operations
+    function isAuth() { return request.auth != null; }
+    function isOwner(uid) { return isAuth() && request.auth.uid == uid; }
     function isAdmin() {
       return isAuth() && 
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
-    // --- COLLECTION RULES ---
-
-    // USERS Collection
     match /users/{uid} {
-      // Users can read their own profile; admins can read all
       allow read: if isAuth() && (isOwner(uid) || isAdmin());
-      
-      // Users can create their document during registration
       allow create: if isAuth() && isOwner(uid);
-      
-      // Users can update their own profile (avatar, phone, application data)
-      // Admins can update any user (balance, statuses)
       allow update: if isAuth() && (isOwner(uid) || isAdmin());
-      
-      // Only admins can delete user accounts
       allow delete: if isAdmin();
 
-      // LEDGER Subcollection (inside users)
       match /ledger/{entryId} {
-        // Users can see their history; admins can see all
         allow read: if isAuth() && (isOwner(uid) || isAdmin());
-        
-        // Both users and admins can create entries (e.g., submitting application creates pending entry)
         allow create: if isAuth();
-        
-        // Only admins can modify or delete transaction records
         allow update, delete: if isAdmin();
       }
     }
 
-    // NOTIFICATIONS Collection
     match /notifications/{notifId} {
-      // Users can read notifications sent to them
-      // Admins can read notifications where uid is 'ADMIN'
-      allow read: if isAuth() && (
-        resource.data.uid == request.auth.uid || 
-        (resource.data.uid == 'ADMIN' && isAdmin())
-      );
-      
-      // System logic creates notifications on user actions
+      allow read: if isAuth() && (resource.data.uid == request.auth.uid || (resource.data.uid == 'ADMIN' && isAdmin()));
       allow create: if isAuth();
-      
-      // Users can update their own notifications (marking as read)
       allow update: if isAuth() && (resource.data.uid == request.auth.uid || isAdmin());
-      
-      // Only admins can delete notification history
       allow delete: if isAdmin();
     }
 
-    // CHAT Collection (Root/UID/Messages/ID)
     match /chat/{uid}/messages/{msgId} {
-      // Only the user involved or an admin can see/send messages
       allow read, write: if isAuth() && (request.auth.uid == uid || isAdmin());
     }
 
-    // AUDIT LOG Collection
     match /auditLog/{logId} {
-      // Strictly restricted to administrators only
-      allow read, create: if isAdmin();
-      allow update, delete: if false; // Audit logs should never be modified
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
     }
 
-    // CONFIG Collection
     match /config/{docId} {
-      // Platform settings like Maintenance Mode and Disbursed Stats must be public
       allow read: if true;
-      
-      // Only admins can change system settings
       allow write: if isAdmin();
     }
   }
