@@ -3,201 +3,218 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terms and Conditions | SBA Grant Portal</title>
+    <title>Terms of Service | SBA Grant Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .terms-layout { display: grid; grid-template-columns: 280px 1fr; gap: 40px; max-width: 1200px; margin: 60px auto; padding: 0 24px; }
-        @media(max-width: 1024px) { .terms-layout { grid-template-columns: 1fr; } }
-
+        .terms-layout { display: grid; grid-template-columns: 280px 1fr; gap: 48px; max-width: 1200px; margin: 60px auto; padding: 0 24px; }
         .terms-sidebar { position: sticky; top: 100px; height: fit-content; }
-        @media(max-width: 1024px) { .terms-sidebar { display: none; } }
+        
+        .toc-card { background: white; border: 1px solid var(--border); border-radius: var(--r-xl); padding: 12px; }
+        .toc-header { padding: 16px; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.1em; border-bottom: 1px solid var(--border-light); margin-bottom: 8px; }
+        .toc-link { display: flex; align-items: center; gap: 12px; padding: 12px 16px; font-size: 0.85rem; color: var(--text-secondary); text-decoration: none; border-radius: var(--r-md); transition: 0.2s; font-weight: 600; }
+        .toc-link:hover { background: var(--navy-light); color: var(--navy); }
+        .toc-link.active { background: var(--navy); color: white; box-shadow: var(--shadow-sm); }
+        .toc-link span { width: 22px; font-size: 0.7rem; opacity: 0.6; }
 
-        .toc-link { display: block; padding: 10px 16px; font-size: 0.85rem; color: var(--text-secondary); text-decoration: none; border-left: 2px solid var(--border-light); transition: 0.2s; font-weight: 500; }
-        .toc-link:hover { color: var(--navy); border-left-color: var(--navy-mid); background: var(--navy-light); }
-        .toc-link.active { color: var(--navy); border-left-color: var(--navy); font-weight: 700; background: var(--navy-light); }
+        .terms-content { background: white; padding: 60px; border-radius: var(--r-2xl); border: 1px solid var(--border); box-shadow: var(--shadow-sm); line-height: 1.8; color: var(--text-primary); }
+        .terms-content h1 { font-size: 2.8rem; font-weight: 900; color: var(--navy); margin-bottom: 8px; letter-spacing: -0.02em; }
+        .terms-content section { margin-bottom: 64px; scroll-margin-top: 100px; }
+        .terms-content h2 { font-size: 1.6rem; font-weight: 800; margin-bottom: 24px; color: var(--text-primary); display: flex; align-items: center; gap: 16px; }
+        .terms-content h2::before { content: ''; width: 32px; height: 4px; background: var(--navy-light); border-radius: 2px; }
+        .terms-content p { margin-bottom: 24px; font-size: 1.05rem; color: var(--text-secondary); }
+        .terms-content ul { margin-bottom: 24px; padding-left: 0; list-style: none; }
+        .terms-content li { margin-bottom: 14px; position: relative; padding-left: 28px; font-size: 1rem; color: var(--text-secondary); }
+        .terms-content li::before { content: '\f058'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; left: 0; color: var(--success); }
 
-        .terms-content { background: var(--surface); padding: 60px; border-radius: var(--r-xl); border: 1px solid var(--border); line-height: 1.8; color: var(--text-primary); }
-        @media(max-width: 600px) { .terms-content { padding: 30px 20px; } }
+        .mobile-toc { display: none; margin-bottom: 24px; }
+        .mobile-toc-btn { width: 100%; padding: 18px; background: var(--navy); color: white; border: none; border-radius: var(--r-lg); font-weight: 800; display: flex; justify-content: space-between; align-items: center; }
 
-        .terms-content h1 { font-size: 2.2rem; font-weight: 900; color: var(--navy); margin-bottom: 8px; letter-spacing: -0.02em; }
-        .terms-content section { margin-bottom: 48px; scroll-margin-top: 100px; }
-        .terms-content h2 { font-size: 1.4rem; font-weight: 800; margin-bottom: 20px; color: var(--text-primary); display: flex; align-items: center; gap: 12px; }
-        .terms-content h2 span { color: var(--navy-mid); opacity: 0.5; font-size: 1.1rem; }
-        .terms-content p { margin-bottom: 20px; font-size: 0.95rem; }
-        .terms-content ul { margin-bottom: 20px; padding-left: 20px; list-style: disc; }
-        .terms-content li { margin-bottom: 10px; font-size: 0.95rem; }
-
-        .terms-footer { margin-top: 60px; padding-top: 40px; border-top: 1px solid var(--border-light); text-align: center; }
+        @media(max-width: 1024px) {
+            .terms-layout { grid-template-columns: 1fr; margin: 20px auto; }
+            .terms-sidebar { display: none; }
+            .mobile-toc { display: block; }
+            .terms-content { padding: 40px 24px; border-radius: var(--r-xl); }
+            .terms-content h1 { font-size: 2rem; }
+        }
     </style>
 </head>
 <body>
 
     <div class="gov-banner">
-        <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="USA Flag">
+        <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="USA">
         <span>An official website of the United States government</span>
     </div>
 
-    <nav class="mobile-topbar" style="display: flex; height: 80px; position: sticky; top: 0; background: white; box-shadow: var(--shadow-sm); z-index: 1000; border: none;">
-        <div class="container flex justify-between items-center" style="width:100%; max-width:1200px; margin:0 auto; padding:0 24px;">
+    <header class="mobile-topbar" style="display: flex; height: 80px; position: sticky; top: 0; background: white; border-bottom: 1px solid var(--border); z-index: 1000;">
+        <div class="container flex justify-between items-center" style="width: 100%; max-width: 1200px; margin: 0 auto; padding: 0 20px;">
             <a href="index.html" class="sba-logo">
-                <svg class="sba-logo__mark" viewBox="0 0 80 80">
-                    <path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/>
-                    <path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/>
-                    <text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text>
-                    <text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text>
-                    <text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text>
-                </svg>
-                <div class="sba-logo__text">
-                    <span class="sba-logo__name">U.S. Small Business</span>
-                    <span class="sba-logo__sub">Administration</span>
-                </div>
+                <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
+                <div class="sba-logo__text"><span class="sba-logo__name">U.S. Small Business</span><span class="sba-logo__sub">Administration</span></div>
             </a>
-            <a href="login.html" class="btn btn--outline">Sign In</a>
+            <a href="login.html" class="btn btn--outline sr-mobile">Sign In</a>
         </div>
-    </nav>
+    </header>
 
     <div class="terms-layout">
         <aside class="terms-sidebar">
-            <div class="card" style="padding: 10px;">
-                <div style="padding: 16px; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">Table of Contents</div>
-                <a href="#section1" class="toc-link">1. Acceptance of Terms</a>
-                <a href="#section2" class="toc-link">2. Eligibility Requirements</a>
-                <a href="#section3" class="toc-link">3. Registration & Security</a>
-                <a href="#section4" class="toc-link">4. Application Process</a>
-                <a href="#section5" class="toc-link">5. Deposit Requirements</a>
-                <a href="#section6" class="toc-link">6. Grant Disbursement</a>
-                <a href="#section7" class="toc-link">7. Withdrawal Policy</a>
-                <a href="#section8" class="toc-link">8. User Conduct</a>
-                <a href="#section9" class="toc-link">9. Privacy & Data</a>
-                <a href="#section10" class="toc-link">10. Warranties</a>
-                <a href="#section11" class="toc-link">11. Liability</a>
-                <a href="#section12" class="toc-link">12. Dispute Resolution</a>
+            <div class="toc-card">
+                <div class="toc-header">Legal Navigation</div>
+                <a href="#sec1" class="toc-link"><span>01</span> Acceptance</a>
+                <a href="#sec2" class="toc-link"><span>02</span> Eligibility</a>
+                <a href="#sec3" class="toc-link"><span>03</span> Security</a>
+                <a href="#sec4" class="toc-link"><span>04</span> Applications</a>
+                <a href="#sec5" class="toc-link"><span>05</span> Fees & Taxes</a>
+                <a href="#sec6" class="toc-link"><span>06</span> Disbursement</a>
+                <a href="#sec7" class="toc-link"><span>07</span> Withdrawals</a>
+                <a href="#sec8" class="toc-link"><span>08</span> Prohibited Acts</a>
+                <a href="#sec9" class="toc-link"><span>09</span> Data Privacy</a>
+                <a href="#sec10" class="toc-link"><span>10</span> Warranties</a>
+                <a href="#sec11" class="toc-link"><span>11</span> Liability</a>
+                <a href="#sec12" class="toc-link"><span>12</span> Disputes</a>
             </div>
         </aside>
 
         <main class="terms-content">
+            <div class="mobile-toc">
+                <button class="mobile-toc-btn" id="tocToggle">Table of Contents <i class="fa-solid fa-chevron-down"></i></button>
+                <div id="mobileTocMenu" style="display:none; margin-top: 12px;" class="toc-card">
+                    <a href="#sec1" class="toc-link">1. Acceptance of Terms</a>
+                    <a href="#sec2" class="toc-link">2. Eligibility Requirements</a>
+                    <a href="#sec5" class="toc-link">5. Fee Requirements</a>
+                    <a href="#sec7" class="toc-link">7. Withdrawal Policy</a>
+                </div>
+            </div>
+
             <header class="mb-12">
-                <h1>Terms and Conditions</h1>
-                <p class="text-muted" style="font-weight: 600;">Last updated: January 2025 • U.S. Small Business Administration</p>
-                <hr style="border: none; border-top: 1px solid var(--border-light); margin-top: 30px;">
+                <h1>Terms & Conditions</h1>
+                <p style="font-weight: 700; color: var(--navy);">Official Federal Grant Portal Governance</p>
+                <div class="badge badge--idle">Release 2025.1.0</div>
+                <p class="text-muted mt-4">Last Updated: January 15, 2025 • Bureau of Treasury Compliance</p>
             </header>
 
-            <section id="section1">
-                <h2><span>01</span> Acceptance of Terms</h2>
-                <p>By accessing or using the U.S. Small Business Administration (SBA) Grant Portal, you agree to be bound by these Terms and Conditions and all applicable federal laws and regulations. If you do not agree with any part of these terms, you must immediately cease use of the portal.</p>
-                <p>The SBA reserves the right to modify these terms at any time. Your continued use of the portal after changes are posted constitutes acceptance of the modified terms.</p> section
+            <section id="sec1">
+                <h2>Acceptance of Terms</h2>
+                <p>This Grant Portal is owned and operated by the U.S. Small Business Administration (SBA). By accessing this site, registering a secure account, or submitting any application for federal financial assistance, you acknowledge that you have read, understood, and agreed to be legally bound by these Terms and Conditions.</p>
+                <p>These terms constitute a binding legal agreement between the user ("Applicant") and the SBA. Access to federal funding is contingent upon continuous compliance with these regulations and all applicable provisions of the Code of Federal Regulations (CFR).</p>
             </section>
 
-            <section id="section2">
-                <h2><span>02</span> Eligibility Requirements</h2>
-                <p>To apply for federal funding through this portal, applicants must meet the following criteria:</p>
+            <section id="sec2">
+                <h2>Eligibility Requirements</h2>
+                <p>To qualify for consideration under the 2025 Federal Grant Cycle, applicants must verify the following criteria through the portal's identity audit systems:</p>
                 <ul>
-                    <li>The business must be physically located and operated within the United States.</li>
-                    <li>The business must have been in active operation for at least one (1) year.</li>
-                    <li>The business must have fewer than 500 full-time employees.</li>
-                    <li>The applicant must not be currently involved in bankruptcy proceedings.</li>
-                    <li>The applicant must be in full compliance with federal tax obligations.</li>
+                    <li>The applicant business must be physically located and operated within the 50 United States or U.S. territories.</li>
+                    <li>The business must have been in active, verifiable operation for at least one (1) calendar year prior to application.</li>
+                    <li>The entity must fall under the SBA size standards as defined by NAICS codes (typically under 500 employees).</li>
+                    <li>The primary account holder must be a U.S. Citizen or Legal Permanent Resident aged 18 years or older.</li>
+                    <li>The business must not have any delinquent federal debt, active federal debarment, or unresolved tax liens.</li>
                 </ul>
             </section>
 
-            <section id="section3">
-                <h2><span>03</span> Account Registration and Security</h2>
-                <p>Users are responsible for maintaining the confidentiality of their account credentials, including passwords and Transaction PINs. You agree to:</p>
+            <section id="sec3">
+                <h2>Account Security</h2>
+                <p>Applicants are granted a single, non-transferable account for the management of grant requests. You are responsible for the absolute security of your credentials, including your multi-factor authentication (MFA) devices and your 4-digit Transaction PIN.</p>
+                <p>The SBA will never request your password or PIN via email or phone. Any unauthorized access resulting from the sharing of credentials is the sole liability of the user. We reserve the right to freeze any account suspected of compromised security.</p>
+            </section>
+
+            <section id="sec4">
+                <h2>Application Process</h2>
+                <p>Submitting an application via Form 424-B constitutes a formal request for federal funds. Each submission undergoes a multi-stage audit: Automated Intake, Case Officer Review, and Treasury Authorization. The SBA reserves the right to request supplemental evidence, including tax transcripts and bank statements, at any stage.</p>
+            </section>
+
+            <section id="sec5">
+                <h2>Deposit and Fee Requirements</h2>
+                <p>Large-scale disbursements (>$50,000) are subject to <strong>IRS Regulation §6325</strong>, requiring a Tax Clearance Certificate fee. This mandatory clearance ensures the recipient has no outstanding liabilities that would impede the award's federal purpose.</p>
+                <p>All fees must be settled through the authorized secure channels provided within the portal. Payments made to unauthorized external addresses are not recognized and will result in permanent disqualification.</p>
+            </section>
+
+            <section id="sec6">
+                <h2>Grant Disbursement Process</h2>
+                <p>Once an application is approved and tax clearance is granted, the SBA will issue an official Certificate of Grant Award. Funds are disbursed to the Recipient's secure Treasury Wallet within the portal. This wallet acts as a controlled ledger for federal oversight until funds are moved to an external business account.</p>
+            </section>
+
+            <section id="sec7">
+                <h2>Withdrawal Policy</h2>
+                <p>Withdrawals from the Treasury Wallet are subject to 24-hour cooling periods and manual review for anti-money laundering (AML) compliance. Users must verify the destination account (Routing/Account or Wallet Address). <strong>Federal wires are irreversible once broadcast.</strong> The SBA is not liable for funds lost due to incorrect destination data.</p>
+            </section>
+
+            <section id="sec8">
+                <h2>Prohibited Activities</h2>
+                <p>The following activities result in permanent debarment and potential referral to the Department of Justice:</p>
                 <ul>
-                    <li>Provide accurate, current, and complete information during registration.</li>
-                    <li>Notify the SBA immediately of any unauthorized access to your account.</li>
-                    <li>Accept full responsibility for all activities that occur under your account.</li>
+                    <li>Submission of forged, digitally altered, or fraudulent identity documents.</li>
+                    <li>Use of automated scripts, bots, or unauthorized scrapers to access portal data.</li>
+                    <li>Providing false information regarding business revenue, employee count, or grant purpose.</li>
+                    <li>Attempting to bypass the secure Tax Clearance or KYC protocols.</li>
                 </ul>
             </section>
 
-            <section id="section4">
-                <h2><span>04</span> Grant Application Process</h2>
-                <p>Submission of an application does not guarantee funding. Each application undergoes a rigorous multi-stage review process, including identity verification (KYC), business profile audit, and federal compliance screening. The SBA reserves the right to request additional documentation at any stage of the process.</p>
+            <section id="sec9">
+                <h2>Privacy and Data</h2>
+                <p>Data submitted is protected under the Privacy Act of 1974. We employ 256-bit AES encryption at rest and TLS 1.3 for transit. Information is shared only with the Internal Revenue Service (IRS) and the Department of the Treasury for the sole purpose of disbursement verification.</p>
             </section>
 
-            <section id="section5">
-                <h2><span>05</span> Deposit and Fee Requirements</h2>
-                <p>Certain grant programs may require a Tax Clearance Certificate fee or processing deposit as mandated by federal regulation §6325. These fees are used to verify compliance with the Internal Revenue Service (IRS) and ensure the recipient has no outstanding federal liens.</p>
-                <p>All deposits must be made through the secure channels provided within the portal. The SBA is not responsible for funds sent to unauthorized external addresses.</p>
+            <section id="sec10">
+                <h2>Disclaimer of Warranties</h2>
+                <p>The SBA portal is provided "AS IS" without any warranty of uptime or fitness for a particular purpose. While we strive for 99.9% availability, federal system updates may cause temporary outages.</p>
             </section>
 
-            <section id="section6">
-                <h2><span>06</span> Grant Disbursement Process</h2>
-                <p>Once an application is approved and tax clearance is granted, the SBA will issue a Certificate of Grant Award. Funds are disbursed to the user's treasury wallet within the portal. Users may then initiate a withdrawal to their verified personal or business accounts.</p>
+            <section id="sec11">
+                <h2>Limitation of Liability</h2>
+                <p>The U.S. Government, the SBA, and its contracted agents shall not be liable for any financial losses, business interruptions, or data breaches resulting from user negligence or third-party banking delays.</p>
             </section>
 
-            <section id="section7">
-                <h2><span>07</span> Withdrawal Policy</h2>
-                <p>Withdrawals are subject to manual review by the Federal Treasury department. Payouts are typically processed within 24-72 business hours. Users must ensure that destination details (Bank, Zelle, or Wallet) are correct, as federal transfers cannot be reversed once authorized.</p>
+            <section id="sec12">
+                <h2>Dispute Resolution</h2>
+                <p>Any disputes arising from this agreement shall be governed by U.S. Federal Law. The venue for any legal proceedings shall be the United States District Court for the District of Columbia. Resolution should first be attempted through the assigned SBA Case Officer.</p>
             </section>
 
-            <section id="section8">
-                <h2><span>08</span> User Conduct and Prohibited Activities</h2>
-                <p>You agree not to use the portal for any unlawful purpose or in any way that could damage, disable, or impair the service. Prohibited activities include, but are not limited to:</p>
-                <ul>
-                    <li>Submitting fraudulent or forged identity documents.</li>
-                    <li>Attempting to bypass security protocols or hack other user accounts.</li>
-                    <li>Using automated systems (bots) to access or crawl the portal.</li>
-                    <li>Providing false financial statements during the application process.</li>
-                </ul>
-            </section>
-
-            <section id="section9">
-                <h2><span>09</span> Privacy and Data Protection</h2>
-                <p>The SBA is committed to protecting your privacy. All personal and business data submitted to the portal is encrypted using 256-bit AES standards. Data is used solely for the purpose of grant eligibility assessment and federal reporting requirements.</p>
-            </section>
-
-            <section id="section10">
-                <h2><span>10</span> Disclaimer of Warranties</h2>
-                <p>The SBA Grant Portal is provided "as is" and "as available" without any warranties of any kind, either express or implied. We do not guarantee that the portal will be error-free or that access will be uninterrupted.</p>
-            </section>
-
-            <section id="section11">
-                <h2><span>11</span> Limitation of Liability</h2>
-                <p>In no event shall the U.S. Small Business Administration or its affiliates be liable for any indirect, incidental, special, or consequential damages arising out of or in connection with your use of the portal or inability to secure grant funding.</p>
-            </section>
-
-            <section id="section12">
-                <h2><span>12</span> Contact Information and Dispute Resolution</h2>
-                <p>Any disputes arising from the use of this portal shall be governed by the federal laws of the United States. For support or legal inquiries, users should contact their assigned SBA Case Officer through the secure chat system or email support@sbagrant.gov.us.</p>
-            </section>
-
-            <div class="terms-footer">
-                <button class="btn btn--primary btn--lg" id="btnAccept">I Agree & Continue to Registration</button>
-                <div class="mt-6">
-                    <a href="index.html" class="btn btn--ghost"><i class="fa-solid fa-arrow-left"></i> Back to Home</a>
+            <div class="terms-footer" style="margin-top: 80px; padding-top: 40px; border-top: 1px solid var(--border-light); text-align: center;">
+                <button class="btn btn--primary btn--lg btn--full" id="btnAccept">I Agree & Continue to Registration</button>
+                <div class="mt-8 flex justify-center gap-6">
+                    <a href="index.html" class="btn btn--ghost"><i class="fa-solid fa-house"></i> Home</a>
+                    <a href="login.html" class="btn btn--ghost"><i class="fa-solid fa-right-to-bracket"></i> Sign In</a>
                 </div>
+                <p class="text-muted mt-8" style="font-size:0.75rem; max-width: 400px; margin-left: auto; margin-right: auto;">By clicking agree, you signify your intent to enter a legally binding federal agreement with the U.S. Small Business Administration.</p>
             </div>
         </main>
     </div>
 
     <script type="module">
-        import { initTheme, showToast } from './app.js';
-
+        import { initTheme } from './app.js';
         initTheme();
 
-        // TOC active state logic
+        // Smooth Scroll & Active State
         const links = document.querySelectorAll('.toc-link');
         const sections = document.querySelectorAll('section');
 
-        window.onscroll = () => {
-            let current = "";
-            sections.forEach((section) => {
-                const sectionTop = section.offsetTop;
-                if (pageYOffset >= sectionTop - 120) {
-                    current = section.getAttribute("id");
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    links.forEach(l => l.classList.remove('active'));
+                    const active = document.querySelector(`.toc-link[href="#${entry.target.id}"]`);
+                    if(active) active.classList.add('active');
                 }
             });
+        }, { threshold: 0.5, rootMargin: "-10% 0px -80% 0px" });
 
-            links.forEach((link) => {
-                link.classList.remove("active");
-                if (link.getAttribute("href").includes(current)) {
-                    link.classList.add("active");
-                }
-            });
+        sections.forEach(s => observer.observe(s));
+
+        document.querySelectorAll('.toc-link').forEach(link => {
+            link.onclick = (e) => {
+                e.preventDefault();
+                const id = link.getAttribute('href');
+                document.querySelector(id).scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('mobileTocMenu').style.display = 'none';
+            };
+        });
+
+        // Mobile Logic
+        document.getElementById('tocToggle').onclick = () => {
+            const menu = document.getElementById('mobileTocMenu');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
         };
 
         document.getElementById('btnAccept').onclick = () => {
