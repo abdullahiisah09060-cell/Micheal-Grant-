@@ -1,125 +1,119 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sign In | SBA Grant Portal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - SBA Grant Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="global.css">
-    <style>
-        .auth-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 24px; visibility: hidden; }
-        .auth-container.ready { visibility: visible; }
-        .auth-card { width: 100%; max-width: 440px; animation: fadeSlide 0.4s ease; }
-        .input-icon { position: relative; }
-        .input-icon i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); transition: 0.2s; }
-        .input-icon input { padding-left: 48px; }
-        .input-icon input:focus + i { color: var(--navy); }
-        .pass-toggle { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); border: none; background: none; color: var(--text-muted); cursor: pointer; }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
+<body class="bg-[#030712] text-slate-100 min-h-screen flex items-center justify-center p-6 selection:bg-amber-500 selection:text-slate-950">
+    <div class="w-full max-w-md p-8 rounded-3xl bg-slate-900/80 border border-slate-800 shadow-2xl backdrop-blur-xl">
+        <div class="text-center mb-8">
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-amber-500/20 text-2xl mx-auto mb-4">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h1 class="text-2xl font-black text-white tracking-tight">Welcome Back</h1>
+            <p class="text-xs text-slate-400 mt-1">Sign in to your SBA Grant portal account</p>
+        </div>
 
-    <div class="auth-container" id="authBody">
-        <div class="auth-card">
-            <div class="text-center mb-10">
-                <a href="index.html" class="sba-logo mb-8" style="justify-content: center;">
-                    <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
-                    <div class="sba-logo__text"><span class="sba-logo__name">U.S. Small Business</span><span class="sba-logo__sub">Administration</span></div>
-                </a>
-                <h1 style="font-size: 1.8rem; font-weight: 900; color: var(--navy); letter-spacing: -0.02em;">Welcome Back</h1>
-                <p class="text-muted">Sign in to your secure grant dashboard</p>
+        <div id="loginError" class="hidden mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold flex items-center gap-3">
+            <i class="fa-solid fa-triangle-exclamation text-base"></i>
+            <span id="loginErrorText">Error message here</span>
+        </div>
+
+        <form id="loginForm" class="space-y-5">
+            <div>
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Email Address</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500">
+                        <i class="fa-solid fa-envelope"></i>
+                    </span>
+                    <input type="email" id="loginEmail" required placeholder="name@business.com" class="w-full pl-11 pr-4 py-3 rounded-xl glass-input text-sm font-medium">
+                </div>
             </div>
 
-            <div class="card card--shadow">
-                <div id="errAlert" class="alert alert--error mb-6" style="display: none;">
-                    <i class="fa-solid fa-circle-exclamation"></i> <span id="errMsg"></span>
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Password</label>
+                    <a href="forgot-password.html" class="text-xs text-amber-400 hover:underline font-semibold">Forgot Password?</a>
                 </div>
-
-                <form id="loginForm">
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <div class="input-icon">
-                            <i class="fa-solid fa-envelope"></i>
-                            <input type="email" id="email" class="form-input" placeholder="name@email.com" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="flex justify-between items-center mb-2">
-                            <label class="form-label" style="margin:0">Password</label>
-                            <a href="forgot-password.html" class="text-navy" style="font-size:0.8rem; font-weight:700">Forgot?</a>
-                        </div>
-                        <div class="input-icon">
-                            <i class="fa-solid fa-lock"></i>
-                            <input type="password" id="password" class="form-input" placeholder="••••••••" required>
-                            <button type="button" class="pass-toggle" id="togglePass"><i class="fa-solid fa-eye"></i></button>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn--primary btn--full btn--lg mt-6" id="submitBtn">Sign In to Portal</button>
-                </form>
-
-                <div style="margin: 32px 0; text-align: center; position: relative;">
-                    <hr style="border: none; border-top: 1px solid var(--border-light);">
-                    <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 0 16px; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase;">Treasury Secure Access</span>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-500">
+                        <i class="fa-solid fa-lock"></i>
+                    </span>
+                    <input type="password" id="loginPassword" required placeholder="••••••••" class="w-full pl-11 pr-12 py-3 rounded-xl glass-input text-sm font-medium">
+                    <button type="button" id="togglePassword" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-500 hover:text-slate-300">
+                        <i class="fa-solid fa-eye text-sm"></i>
+                    </button>
                 </div>
-
-                <a href="register.html" class="btn btn--ghost btn--full" style="font-weight: 700; color: var(--navy);">New here? Apply for Funding <i class="fa-solid fa-arrow-right" style="margin-left:6px;"></i></a>
             </div>
+
+            <button type="submit" id="loginBtn" class="w-full py-3.5 rounded-xl bg-amber-500 text-slate-950 font-bold hover:bg-amber-400 transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 text-sm">
+                <span>Sign In to Portal</span>
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </form>
+
+        <div class="mt-6 text-center text-xs text-slate-400">
+            Don't have an account? <a href="register.html" class="text-amber-400 font-bold hover:underline">Apply for Grant</a>
         </div>
     </div>
 
     <script type="module">
-        import { auth, signInWithEmailAndPassword, setUserOnline, doc, getDoc, db } from './firebase-config.js';
-        import { initTheme, redirectIfLoggedIn, setButtonLoading, hideLoader } from './app.js';
+        import { auth, signInWithEmailAndPassword, getUserData, isAdmin } from './firebase-config.js';
 
-        initTheme();
-        redirectIfLoggedIn();
+        const form = document.getElementById('loginForm');
+        const errBox = document.getElementById('loginError');
+        const errText = document.getElementById('loginErrorText');
+        const btn = document.getElementById('loginBtn');
+        const passInput = document.getElementById('loginPassword');
+        const toggleBtn = document.getElementById('togglePassword');
 
-        window.onload = () => {
-            setTimeout(() => {
-                document.getElementById('authBody').classList.add('ready');
-                hideLoader();
-            }, 500);
-        };
+        toggleBtn.addEventListener('click', () => {
+            if (passInput.type === 'password') {
+                passInput.type = 'text';
+                toggleBtn.innerHTML = '<i class="fa-solid fa-eye-slash text-sm"></i>';
+            } else {
+                passInput.type = 'password';
+                toggleBtn.innerHTML = '<i class="fa-solid fa-eye text-sm"></i>';
+            }
+        });
 
-        const passInput = document.getElementById('password');
-        document.getElementById('togglePass').onclick = (e) => {
-            const isPass = passInput.type === 'password';
-            passInput.type = isPass ? 'text' : 'password';
-            e.currentTarget.innerHTML = `<i class="fa-solid ${isPass ? 'fa-eye-slash' : 'fa-eye'}"></i>`;
-        };
-
-        document.getElementById('loginForm').onsubmit = async (e) => {
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const alert = document.getElementById('errAlert'); alert.style.display = 'none';
-            const btn = document.getElementById('submitBtn');
-            setButtonLoading(btn, true, 'Verifying Credentials...');
+            errBox.classList.add('hidden');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = passInput.value;
 
             try {
-                const cred = await signInWithEmailAndPassword(auth, document.getElementById('email').value.trim(), passInput.value);
-                await setUserOnline(cred.user.uid, true);
-                
-                const userSnap = await getDoc(doc(db, "users", cred.user.uid));
-                const userData = userSnap.data();
+                const cred = await signInWithEmailAndPassword(auth, email, password);
+                const userData = await getUserData(cred.user.uid);
 
-                if (userData.role === 'admin') window.location.href = 'admin-portal.html';
-                else window.location.href = 'dashboard.html';
+                if (userData && userData.accountStatus === 'suspended') {
+                    errText.textContent = 'This account has been suspended. Please contact support.';
+                    errBox.classList.remove('hidden');
+                    btn.disabled = false;
+                    btn.innerHTML = '<span>Sign In to Portal</span> <i class="fa-solid fa-arrow-right"></i>';
+                    return;
+                }
 
-            } catch (err) {
-                console.error(err.code);
-                let msg = "Invalid email or password.";
-                if(err.code === 'auth/user-not-found') msg = "No SBA account associated with this email.";
-                if(err.code === 'auth/wrong-password') msg = "Incorrect password. Access denied.";
-                if(err.code === 'auth/user-disabled') msg = "This account has been suspended for compliance issues.";
-                if(err.code === 'auth/too-many-requests') msg = "System protection triggered. Try again in 5 minutes.";
-                
-                document.getElementById('errMsg').textContent = msg;
-                alert.style.display = 'flex';
-                setButtonLoading(btn, false, 'Sign In to Portal');
+                if (userData && userData.role === 'admin') {
+                    window.location.href = 'admin-portal.html';
+                } else {
+                    window.location.href = 'dashboard.html';
+                }
+            } catch (error) {
+                errText.textContent = error.message.replace('Firebase: ', '');
+                errBox.classList.remove('hidden');
+                btn.disabled = false;
+                btn.innerHTML = '<span>Sign In to Portal</span> <i class="fa-solid fa-arrow-right"></i>';
             }
-        };
+        });
     </script>
 </body>
 </html>
