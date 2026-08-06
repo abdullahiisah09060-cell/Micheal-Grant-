@@ -3,116 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Notifications | SBA Portal</title>
+    <title>Notifications | SBA Grant Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
+    <style>
+        .filter-btn { border: none; background: none; padding: 10px 16px; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; transition: 0.2s; }
+        .filter-btn.active { color: var(--navy); border-bottom-color: var(--navy); }
+        .notif-item { cursor: pointer; transition: 0.2s; border-left: 4px solid transparent; }
+        .notif-item.unread { background: var(--navy-light); border-left-color: var(--navy); }
+        .notif-item:hover { transform: translateX(4px); }
+    </style>
 </head>
 <body>
 
-<div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
+    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
-<div class="app-layout">
-    <aside class="app-sidebar" id="appSidebar"></aside>
-    <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
+    <div class="app-layout">
+        <aside class="app-sidebar" id="appSidebar"></aside>
+        <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
 
-    <main class="app-main">
-        <div id="pageHeader"></div>
-
-        <div class="app-main__content" style="max-width:800px;">
-            <div class="flex justify-between items-center mb-6 overflow-x-auto gap-2 pb-2">
-                <div class="flex gap-2">
-                    <button class="btn btn--sm btn--secondary active" data-f="all">All</button>
-                    <button class="btn btn--sm btn--ghost" data-f="unread">Unread</button>
-                    <button class="btn btn--sm btn--ghost" data-f="system">System</button>
-                    <button class="btn btn--sm btn--ghost" data-f="action">Actions</button>
-                </div>
-                <button id="btnMarkAll" class="btn btn--ghost btn--sm" style="display:none; white-space:nowrap;"><i class="fa-solid fa-check-double"></i> Mark All Read</button>
-            </div>
-
-            <div id="notifList" class="flex flex-col gap-3"></div>
-        </div>
-    </main>
-
-    <nav class="mobile-dock" id="mobileDock"></nav>
-</div>
-
-<script type="module">
-    import { db, collection, query, where, orderBy, onSnapshot, markNotificationRead, markAllRead } from './firebase-config.js';
-    import { requireAuth, buildSidebar, buildDock, buildPageHeader, timeAgo, initNotificationBadge } from './app.js';
-
-    let filter = 'all';
-
-    requireAuth((user, userData) => {
-        buildSidebar({ activeId: 'notifications', userData });
-        buildDock({ activeId: '' });
-        buildPageHeader({ title: 'Notification Center', subtitle: 'Account alerts and federal updates', backUrl: 'dashboard.html' });
-        initNotificationBadge(user.uid);
-
-        const q = query(collection(db, 'notifications'), where('uid', 'in', [user.uid, 'ADMIN']), orderBy('createdAt', 'desc'));
-        
-        onSnapshot(q, (snap) => {
-            const list = document.getElementById('notifList');
-            const btnAll = document.getElementById('btnMarkAll');
-            let unread = 0;
-            list.innerHTML = '';
-
-            if(snap.empty) {
-                list.innerHTML = `<div class="status-screen"><div class="status-screen__icon status-screen__icon--info"><i class="fa-solid fa-bell-slash"></i></div><h2 class="status-screen__title">All Clear</h2><p class="status-screen__message">You have no new notifications at this time.</p></div>`;
-                btnAll.style.display = 'none';
-                return;
-            }
-
-            snap.forEach(doc => {
-                const n = doc.data();
-                if(!n.read) unread++;
-                if(filter === 'unread' && n.read) return;
-                if(filter === 'system' && n.type !== 'info') return;
-                if(filter === 'action' && n.type !== 'action' && n.type !== 'warning') return;
-
-                const card = document.createElement('div');
-                card.className = `card flex gap-4 items-start ${n.read ? '' : 'card--shadow'}`;
-                card.style.cursor = 'pointer';
-                card.style.borderLeft = n.read ? '1px solid var(--border)' : '4px solid var(--navy)';
-                card.style.background = n.read ? 'var(--surface)' : 'var(--navy-light)';
+        <main class="app-main">
+            <div id="pageHeader"></div>
+            <div class="app-main__content" style="max-width: 800px;">
                 
-                card.innerHTML = `
-                    <div style="width:42px; height:42px; border-radius:50%; background:var(--surface); color:var(--${n.type || 'info'}); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid var(--border);">
-                        <i class="fa-solid ${getIcon(n.type)}"></i>
+                <div class="flex justify-between items-center mb-6 overflow-x-auto gap-4">
+                    <div class="flex gap-2">
+                        <button class="filter-btn active" data-filter="all">All</button>
+                        <button class="filter-btn" data-filter="unread">Unread</button>
+                        <button class="filter-btn" data-filter="system">System</button>
+                        <button class="filter-btn" data-filter="action">Required</button>
                     </div>
-                    <div style="flex:1;">
-                        <div class="flex justify-between items-start">
-                            <h4 style="font-size:0.95rem; font-weight:800; color:var(--text-primary);">${n.title}</h4>
-                            <span style="font-size:0.7rem; font-weight:600;" class="text-muted">${timeAgo(n.createdAt)}</span>
+                    <button id="markAll" class="btn btn--ghost btn--sm" style="display: none; white-space: nowrap;"><i class="fa-solid fa-check-double"></i> Mark All Read</button>
+                </div>
+
+                <div id="notifList" class="flex flex-col gap-3"></div>
+            </div>
+        </main>
+
+        <nav class="mobile-dock" id="mobileDock"></nav>
+    </div>
+
+    <script type="module">
+        import { db, collection, query, where, orderBy, onSnapshot, markNotificationRead, markAllRead } from './firebase-config.js';
+        import { requireAuth, buildSidebar, buildDock, buildPageHeader, timeAgo, initNotificationBadge } from './app.js';
+
+        let currentFilter = 'all';
+
+        requireAuth((user, userData) => {
+            buildSidebar({ activeId: 'notifications', userData });
+            buildDock({ activeId: '' });
+            buildPageHeader({ title: 'Notifications', subtitle: 'Account alerts and system updates', backUrl: 'dashboard.html' });
+            initNotificationBadge(user.uid);
+
+            const q = query(collection(db, 'notifications'), where('uid', 'in', [user.uid, 'ADMIN']), orderBy('createdAt', 'desc'));
+            
+            onSnapshot(q, (snap) => {
+                const list = document.getElementById('notifList');
+                const markBtn = document.getElementById('markAll');
+                let unreadCount = 0;
+                list.innerHTML = '';
+
+                if(snap.empty) {
+                    list.innerHTML = `<div class="status-screen"><div class="status-screen__icon status-screen__icon--info"><i class="fa-solid fa-bell-slash"></i></div><h2 class="status-screen__title">All Caught Up</h2><p class="status-screen__message">You have no new notifications at this time.</p></div>`;
+                    markBtn.style.display = 'none';
+                    return;
+                }
+
+                snap.forEach(doc => {
+                    const n = doc.data();
+                    if(!n.read) unreadCount++;
+
+                    // Filtering Logic
+                    if(currentFilter === 'unread' && n.read) return;
+                    if(currentFilter === 'system' && n.type !== 'info') return;
+                    if(currentFilter === 'action' && n.type !== 'action' && n.type !== 'warning') return;
+
+                    const item = document.createElement('div');
+                    item.className = `card notif-item ${n.read ? '' : 'unread'}`;
+                    item.innerHTML = `
+                        <div class="flex gap-4 items-start">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: white; color: var(--${n.type || 'info'}); display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid var(--border-light);">
+                                <i class="fa-solid ${getIcon(n.type)}"></i>
+                            </div>
+                            <div style="flex: 1;">
+                                <div class="flex justify-between items-start">
+                                    <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-primary);">${n.title}</h4>
+                                    <span style="font-size: 0.7rem; font-weight: 600;" class="text-muted">${timeAgo(n.createdAt)}</span>
+                                </div>
+                                <p style="font-size: 0.85rem; margin-top: 4px; line-height: 1.4; color: var(--text-secondary);">${n.message}</p>
+                            </div>
                         </div>
-                        <p style="font-size:0.85rem; margin-top:4px; line-height:1.4;" class="text-secondary">${n.message}</p>
-                    </div>
-                `;
-                card.onclick = () => {
-                    if(!n.read) markNotificationRead(doc.id);
-                    if(n.link) window.location.href = n.link;
-                };
-                list.appendChild(card);
+                    `;
+                    
+                    item.onclick = async () => {
+                        if(!n.read) await markNotificationRead(doc.id);
+                        if(n.link) window.location.href = n.link;
+                    };
+                    list.appendChild(item);
+                });
+
+                markBtn.style.display = unreadCount > 0 ? 'flex' : 'none';
             });
 
-            btnAll.style.display = unread > 0 ? 'block' : 'none';
-            btnAll.onclick = () => markAllRead(user.uid);
+            document.getElementById('markAll').onclick = () => markAllRead(user.uid);
+
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    // Real-time listener handles the refresh
+                };
+            });
         });
 
-        document.querySelectorAll('[data-f]').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('[data-f]').forEach(b => { b.classList.remove('active', 'btn--secondary'); b.classList.add('btn--ghost'); });
-                btn.classList.add('active', 'btn--secondary');
-                btn.classList.remove('btn--ghost');
-                filter = btn.dataset.f;
-                // UI automatically refreshes via onSnapshot trigger or logic
-            };
-        });
-    });
-
-    function getIcon(t) {
-        const m = { success: 'fa-circle-check', warning: 'fa-triangle-exclamation', error: 'fa-circle-xmark', action: 'fa-bolt' };
-        return m[t] || 'fa-circle-info';
-    }
-</script>
+        function getIcon(type) {
+            const map = { success: 'fa-circle-check', warning: 'fa-triangle-exclamation', error: 'fa-circle-xmark', action: 'fa-bolt' };
+            return map[type] || 'fa-circle-info';
+        }
+    </script>
 </body>
 </html>
