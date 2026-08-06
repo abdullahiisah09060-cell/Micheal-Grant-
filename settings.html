@@ -3,231 +3,266 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Settings | SBA Portal</title>
+    <title>Settings | SBA Grant Portal</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .settings-tab { display: none; }
-        .settings-tab.active { display: block; animation: fadeSlide 0.3s ease; }
+        .settings-tab { display: none; animation: fadeSlide 0.3s ease; }
+        .settings-tab.active { display: block; }
+        
         .avatar-wrap { width: 100px; height: 100px; border-radius: 50%; background: var(--navy); color: white; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; position: relative; margin: 0 auto 20px; overflow: hidden; cursor: pointer; border: 4px solid var(--surface); box-shadow: var(--shadow-md); }
         .avatar-wrap img { width: 100%; height: 100%; object-fit: cover; }
         .avatar-edit-icon { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; opacity: 0; transition: 0.2s; }
         .avatar-wrap:hover .avatar-edit-icon { opacity: 1; }
         
         .appearance-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-        .theme-card { border: 2px solid var(--border); border-radius: var(--r-lg); padding: 20px 10px; cursor: pointer; text-align: center; background: var(--surface); }
+        .theme-card { border: 2px solid var(--border); border-radius: var(--r-lg); padding: 20px 10px; cursor: pointer; text-align: center; background: var(--surface); transition: 0.2s; }
         .theme-card.active { border-color: var(--navy); background: var(--navy-light); font-weight: 800; }
         .theme-card i { font-size: 1.5rem; margin-bottom: 8px; display: block; }
     </style>
 </head>
 <body>
 
-<div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
+    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
-<div class="app-layout">
-    <aside class="app-sidebar" id="appSidebar"></aside>
-    <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
+    <div class="app-layout">
+        <aside class="app-sidebar" id="appSidebar"></aside>
+        <div class="app-sidebar__overlay" id="sidebarOverlay"></div>
 
-    <main class="app-main">
-        <div id="pageHeader"></div>
-
-        <div class="app-main__content" style="max-width: 800px;">
-            <!-- Tab Navigation -->
-            <div class="flex gap-2 mb-8 overflow-x-auto pb-2">
-                <button class="btn btn--sm btn--secondary active" data-t="profile">Profile</button>
-                <button class="btn btn--sm btn--ghost" data-t="security">Security</button>
-                <button class="btn btn--sm btn--ghost" data-t="notifications">Alerts</button>
-                <button class="btn btn--sm btn--ghost" data-t="appearance">Theme</button>
-            </div>
-
-            <!-- Profile -->
-            <div id="tab-profile" class="settings-tab active">
-                <div class="card mb-6 text-center">
-                    <label class="avatar-wrap" for="fileIn">
-                        <img id="p-img" src="" style="display:none;">
-                        <span id="p-initials"></span>
-                        <div class="avatar-edit-icon"><i class="fa-solid fa-camera"></i></div>
-                    </label>
-                    <input type="file" id="fileIn" hidden accept="image/*">
-                    <h3 id="p-name" style="font-weight: 900; color:var(--navy);"></h3>
-                    <p id="p-email" class="text-muted" style="font-size: 0.85rem;"></p>
+        <main class="app-main">
+            <div id="pageHeader"></div>
+            <div class="app-main__content" style="max-width: 800px;">
+                
+                <!-- Tab Navigation -->
+                <div class="flex gap-2 mb-8 overflow-x-auto pb-2">
+                    <button class="btn btn--sm btn--secondary active" data-tab="profile">Profile</button>
+                    <button class="btn btn--sm btn--ghost" data-tab="security">Security</button>
+                    <button class="btn btn--sm btn--ghost" data-tab="alerts">Alerts</button>
+                    <button class="btn btn--sm btn--ghost" data-tab="theme">Appearance</button>
                 </div>
 
-                <div class="card mb-6">
-                    <form id="form-profile">
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label">Full Legal Name</label><input type="text" id="f-name" class="form-input"></div>
-                            <div class="form-group"><label class="form-label">Phone Number</label><input type="text" id="f-phone" class="form-input"></div>
+                <!-- Profile Tab -->
+                <div id="tab-profile" class="settings-tab active">
+                    <div class="card mb-6 text-center">
+                        <label class="avatar-wrap" for="avatarInput">
+                            <img id="avatarDisplay" src="" style="display:none;">
+                            <span id="initialsFallback"></span>
+                            <div class="avatar-edit-icon"><i class="fa-solid fa-camera"></i></div>
+                        </label>
+                        <input type="file" id="avatarInput" hidden accept="image/*">
+                        <h3 id="displayName" style="font-weight: 900; color: var(--navy); margin-bottom: 4px;"></h3>
+                        <p id="displayEmail" class="text-muted" style="font-size: 0.85rem; font-weight: 600;"></p>
+                    </div>
+
+                    <div class="card mb-6">
+                        <form id="profileForm">
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label">Legal Name</label><input type="text" id="f-name" class="form-input"></div>
+                                <div class="form-group"><label class="form-label">Phone Number</label><input type="text" id="f-phone" class="form-input"></div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group"><label class="form-label">Country</label><input type="text" id="f-country" class="form-input"></div>
+                                <div class="form-group"><label class="form-label">Date of Birth</label><input type="date" id="f-dob" class="form-input"></div>
+                            </div>
+                            <button type="submit" class="btn btn--primary" id="saveProfile">Save Changes</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <h4 class="mb-2">Referral Code</h4>
+                        <p class="text-muted mb-4" style="font-size: 0.8rem;">Share this code with fellow business owners.</p>
+                        <div class="flex items-center gap-3 p-4" style="background: var(--surface-2); border: 1px dashed var(--border); border-radius: var(--r-md);">
+                            <code id="refCode" style="font-weight: 900; color: var(--navy); font-size: 1.1rem; flex: 1;">SBA-REF-XXXX</code>
+                            <button class="btn btn--secondary btn--sm" id="copyRef"><i class="fa-solid fa-copy"></i> Copy</button>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group"><label class="form-label">Country</label><input type="text" id="f-country" class="form-input"></div>
-                            <div class="form-group"><label class="form-label">Date of Birth</label><input type="date" id="f-dob" class="form-input"></div>
+                    </div>
+                </div>
+
+                <!-- Security Tab -->
+                <div id="tab-security" class="settings-tab">
+                    <div class="card mb-6">
+                        <h4 class="mb-6">Change Login Password</h4>
+                        <form id="passForm">
+                            <div class="form-group"><label class="form-label">Current Password</label><input type="password" id="curPass" class="form-input" required></div>
+                            <div class="form-group"><label class="form-label">New Password</label><input type="password" id="newPass" class="form-input" required></div>
+                            <button type="submit" class="btn btn--primary" id="savePass">Update Password</button>
+                        </form>
+                    </div>
+                    <div class="card">
+                        <h4 class="mb-4">Transaction PIN</h4>
+                        <p class="text-muted mb-6" style="font-size: 0.85rem;">Required for all treasury withdrawals.</p>
+                        <form id="pinForm">
+                            <input type="password" id="newPin" class="form-input mb-4" maxlength="4" placeholder="••••" style="font-size: 1.2rem; text-align: center; letter-spacing: 1em;" required>
+                            <button type="submit" class="btn btn--primary" id="savePin">Save Security PIN</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Alerts Tab -->
+                <div id="tab-alerts" class="settings-tab">
+                    <div class="card">
+                        <div class="flex justify-between items-center mb-8">
+                            <div><strong>Push Notifications</strong><p class="text-muted" style="font-size: 0.75rem;" id="pushStatus">Status: Unknown</p></div>
+                            <button class="btn btn--outline btn--sm" id="enablePush">Enable</button>
                         </div>
-                        <button type="submit" class="btn btn--primary" id="btn-p-save">Save Profile Changes</button>
-                    </form>
-                </div>
-
-                <div class="card">
-                    <h4 class="mb-2">Referral Program</h4>
-                    <p class="text-muted mb-4" style="font-size:0.8rem;">Share your code with other business owners to earn rewards.</p>
-                    <div class="flex items-center gap-3 p-3" style="background:var(--surface-2); border:1px dashed var(--border); border-radius:var(--r-md);">
-                        <code id="refCode" style="font-weight:800; color:var(--navy); font-size:1.1rem; flex:1;">SBA-REF-XXXX</code>
-                        <button class="btn btn--secondary btn--sm" id="btnCopyRef"><i class="fa-solid fa-copy"></i> Copy</button>
+                        <hr class="mb-8" style="border: none; border-top: 1px solid var(--border-light);">
+                        <div class="flex justify-between items-center">
+                            <div><strong>Email Updates</strong><p class="text-muted" style="font-size: 0.75rem;">Disbursement and audit notifications</p></div>
+                            <input type="checkbox" id="emailCheck" style="width: 22px; height: 22px; cursor: pointer;">
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Security -->
-            <div id="tab-security" class="settings-tab">
-                <div class="card mb-6">
-                    <h4 class="mb-4">Update Password</h4>
-                    <form id="form-pass">
-                        <div class="form-group"><label class="form-label">Current Password</label><input type="password" id="s-cur" class="form-input" required></div>
-                        <div class="form-group"><label class="form-label">New Password</label><input type="password" id="s-new" class="form-input" required></div>
-                        <button type="submit" class="btn btn--primary" id="btn-s-pass">Update Password</button>
-                    </form>
-                </div>
-                <div class="card">
-                    <h4 class="mb-2">Security PIN</h4>
-                    <p class="text-muted mb-4" style="font-size:0.8rem;">4-digit code required for treasury withdrawals.</p>
-                    <form id="form-pin">
-                        <input type="password" id="s-pin" class="form-input mb-4" maxlength="4" placeholder="••••" required>
-                        <button type="submit" class="btn btn--primary" id="btn-s-pin">Save New PIN</button>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Alerts -->
-            <div id="tab-notifications" class="settings-tab">
-                <div class="card mb-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <div><h4 style="margin:0;">Push Notifications</h4><p class="text-muted" style="font-size:0.75rem;" id="pushStatus">Not Configured</p></div>
-                        <button class="btn btn--outline btn--sm" id="btnEnablePush">Enable</button>
-                    </div>
-                    <hr class="mb-6" style="border:none; border-top:1px solid var(--border-light);">
-                    <div class="flex justify-between items-center">
-                        <div><h4 style="margin:0;">Email Notifications</h4><p class="text-muted" style="font-size:0.75rem;">Status updates and disbursement alerts</p></div>
-                        <input type="checkbox" id="checkEmail" style="width:20px; height:20px;">
+                <!-- Theme Tab -->
+                <div id="tab-theme" class="settings-tab">
+                    <div class="card">
+                        <h4 class="mb-8">Interface Theme</h4>
+                        <div class="appearance-grid">
+                            <div class="theme-card" data-mode="light"><i class="fa-solid fa-sun text-warning"></i><span>Light</span></div>
+                            <div class="theme-card" data-mode="dark"><i class="fa-solid fa-moon" style="color: #6366f1;"></i><span>Dark</span></div>
+                            <div class="theme-card" data-mode="system"><i class="fa-solid fa-desktop text-muted"></i><span>System</span></div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Theme -->
-            <div id="tab-appearance" class="settings-tab">
-                <div class="card">
-                    <h4 class="mb-6">System Appearance</h4>
-                    <div class="appearance-grid">
-                        <div class="theme-card" data-mode="light"><i class="fa-solid fa-sun text-warning"></i><span>Light</span></div>
-                        <div class="theme-card" data-mode="dark"><i class="fa-solid fa-moon" style="color:#6366f1;"></i><span>Dark</span></div>
-                        <div class="theme-card" data-mode="system"><i class="fa-solid fa-desktop text-muted"></i><span>System</span></div>
-                    </div>
+                <div class="mt-12 text-center">
+                    <button class="btn btn--danger btn--ghost" id="btnSignOut"><i class="fa-solid fa-right-from-bracket"></i> Logout of Portal</button>
                 </div>
             </div>
+        </main>
+    </div>
 
-        </div>
-    </main>
-</div>
+    <script type="module">
+        import { auth, updateUserData, compressToBase64, reauthenticateWithCredential, EmailAuthProvider, updatePassword, requestNotificationPermission } from './firebase-config.js';
+        import { requireAuth, buildSidebar, buildDock, buildPageHeader, initTheme, applyTheme, showToast, setButtonLoading, initNotificationBadge } from './app.js';
 
-<script type="module">
-    import { auth, updateUserData, compressToBase64, reauthenticateWithCredential, EmailAuthProvider, updatePassword, requestNotificationPermission } from './firebase-config.js';
-    import { requireAuth, buildSidebar, buildDock, buildPageHeader, initTheme, applyTheme, showToast, setButtonLoading, initNotificationBadge } from './app.js';
+        requireAuth((user, userData) => {
+            buildSidebar({ activeId: 'settings', userData });
+            buildDock({ activeId: '' });
+            buildPageHeader({ title: 'Portal Settings', subtitle: 'Security and profile management', backUrl: 'dashboard.html' });
+            initNotificationBadge(user.uid);
+            initTheme();
 
-    requireAuth((user, userData) => {
-        buildSidebar({ activeId: 'settings', userData });
-        buildDock({ activeId: '' });
-        buildPageHeader({ title: 'Account Settings', subtitle: 'Manage your security and preferences', backUrl: 'dashboard.html' });
-        initNotificationBadge(user.uid);
-        initTheme();
+            // Populate Profile
+            document.getElementById('displayName').textContent = userData.fullName;
+            document.getElementById('displayEmail').textContent = user.email;
+            document.getElementById('f-name').value = userData.fullName;
+            document.getElementById('f-phone').value = userData.phoneNumber || '';
+            document.getElementById('f-country').value = userData.country || '';
+            document.getElementById('f-dob').value = userData.dob || '';
+            document.getElementById('emailCheck').checked = userData.emailNotifications;
+            document.getElementById('refCode').textContent = `SBA-REF-${user.uid.substring(0, 8).toUpperCase()}`;
 
-        // Data Fill
-        document.getElementById('p-name').textContent = userData.fullName;
-        document.getElementById('p-email').textContent = user.email;
-        document.getElementById('f-name').value = userData.fullName;
-        document.getElementById('f-phone').value = userData.phoneNumber || '';
-        document.getElementById('f-country').value = userData.country || '';
-        document.getElementById('f-dob').value = userData.dob || '';
-        document.getElementById('refCode').textContent = `SBA-REF-${user.uid.substring(0, 8).toUpperCase()}`;
-        document.getElementById('checkEmail').checked = userData.emailNotifications;
-        
-        if (userData.avatarBase64) {
-            document.getElementById('p-img').src = userData.avatarBase64;
-            document.getElementById('p-img').style.display = 'block';
-        } else {
-            document.getElementById('p-initials').textContent = userData.fullName.split(' ').map(n=>n[0]).join('');
-        }
+            if(userData.avatarBase64) {
+                document.getElementById('avatarDisplay').src = userData.avatarBase64;
+                document.getElementById('avatarDisplay').style.display = 'block';
+                document.getElementById('initialsFallback').style.display = 'none';
+            } else {
+                document.getElementById('initialsFallback').textContent = userData.fullName.split(' ').map(n=>n[0]).join('');
+            }
 
-        // Push Status UI
-        const checkPush = () => {
-            const s = Notification.permission;
-            const el = document.getElementById('pushStatus');
-            const btn = document.getElementById('btnEnablePush');
-            if(s === 'granted') { el.textContent = 'Status: Active ✓'; btn.disabled = true; btn.textContent = 'Active'; }
-            else if(s === 'denied') { el.textContent = 'Status: Blocked by Browser'; btn.disabled = true; }
-            else { el.textContent = 'Status: Waiting for permission'; }
-        };
-        checkPush();
-        document.getElementById('btnEnablePush').onclick = async () => {
-            await requestNotificationPermission(user.uid);
-            checkPush();
-        };
+            // Avatar Upload
+            document.getElementById('avatarInput').onchange = async (e) => {
+                const f = e.target.files[0];
+                if(!f) return;
+                showToast('Processing image...', 'info');
+                const b64 = await compressToBase64(f);
+                await updateUserData(user.uid, { avatarBase64: b64 });
+                location.reload();
+            };
 
-        // File Logic
-        document.getElementById('fileIn').onchange = async (e) => {
-            const f = e.target.files[0]; if(!f) return;
-            showToast('Processing image...', 'info');
-            const b64 = await compressToBase64(f);
-            await updateUserData(user.uid, { avatarBase64: b64 });
-            location.reload();
-        };
+            // Form Profile
+            document.getElementById('profileForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('saveProfile');
+                setButtonLoading(btn, true);
+                await updateUserData(user.uid, {
+                    fullName: document.getElementById('f-name').value,
+                    phoneNumber: document.getElementById('f-phone').value,
+                    country: document.getElementById('f-country').value,
+                    dob: document.getElementById('f-dob').value
+                });
+                setButtonLoading(btn, false, 'Save Changes');
+                showToast('Profile updated', 'success');
+            };
 
-        // Form Submission
-        document.getElementById('form-profile').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = document.getElementById('btn-p-save');
-            setButtonLoading(btn, true);
-            await updateUserData(user.uid, {
-                fullName: document.getElementById('f-name').value,
-                phoneNumber: document.getElementById('f-phone').value,
-                country: document.getElementById('f-country').value,
-                dob: document.getElementById('f-dob').value
+            document.getElementById('emailCheck').onchange = (e) => {
+                updateUserData(user.uid, { emailNotifications: e.target.checked });
+                showToast('Email preferences updated', 'success');
+            };
+
+            // Password
+            document.getElementById('passForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('savePass');
+                const cur = document.getElementById('curPass').value;
+                const next = document.getElementById('newPass').value;
+                setButtonLoading(btn, true);
+                try {
+                    const cred = EmailAuthProvider.credential(user.email, cur);
+                    await reauthenticateWithCredential(user, cred);
+                    await updatePassword(user, next);
+                    showToast('Password updated', 'success');
+                    e.target.reset();
+                } catch (err) { showToast(err.message, 'error'); }
+                setButtonLoading(btn, false, 'Update Password');
+            };
+
+            // PIN
+            document.getElementById('pinForm').onsubmit = async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('savePin');
+                setButtonLoading(btn, true);
+                await updateUserData(user.uid, { transactionPin: document.getElementById('newPin').value });
+                showToast('Transaction PIN updated', 'success');
+                setButtonLoading(btn, false, 'Save New PIN');
+            };
+
+            // Push Logic
+            const updatePushUI = () => {
+                const s = Notification.permission;
+                const el = document.getElementById('pushStatus');
+                const btn = document.getElementById('enablePush');
+                if(s === 'granted') { el.textContent = 'Status: Active ✓'; btn.disabled = true; btn.textContent = 'Enabled'; }
+                else if(s === 'denied') { el.textContent = 'Status: Blocked by Browser'; btn.disabled = true; }
+                else { el.textContent = 'Status: Not configured'; }
+            };
+            updatePushUI();
+            document.getElementById('enablePush').onclick = async () => {
+                await requestNotificationPermission(user.uid);
+                updatePushUI();
+            };
+
+            // Copy Ref
+            document.getElementById('copyRef').onclick = () => {
+                navigator.clipboard.writeText(document.getElementById('refCode').textContent);
+                showToast('Referral code copied!', 'success');
+            };
+
+            // Theme Tab Logic
+            const curMode = localStorage.getItem('sba-theme') || 'system';
+            document.querySelectorAll('.theme-card').forEach(c => {
+                if(c.dataset.mode === curMode) c.classList.add('active');
+                c.onclick = () => {
+                    document.querySelectorAll('.theme-card').forEach(x => x.classList.remove('active'));
+                    c.classList.add('active');
+                    applyTheme(c.dataset.mode);
+                };
             });
-            setButtonLoading(btn, false, 'Save Profile Changes');
-            showToast('Profile updated', 'success');
-        };
 
-        document.getElementById('checkEmail').onchange = (e) => {
-            updateUserData(user.uid, { emailNotifications: e.target.checked });
-            showToast('Email preferences updated', 'success');
-        };
+            // Tab Switcher
+            document.querySelectorAll('[data-tab]').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('[data-tab]').forEach(b => { b.classList.remove('active', 'btn--secondary'); b.classList.add('btn--ghost'); });
+                    document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
+                    btn.classList.add('active', 'btn--secondary');
+                    btn.classList.remove('btn--ghost');
+                    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+                };
+            });
 
-        document.getElementById('btnCopyRef').onclick = () => {
-            navigator.clipboard.writeText(document.getElementById('refCode').textContent);
-            document.getElementById('btnCopyRef').innerHTML = '<i class="fa-solid fa-check"></i> Copied';
-            setTimeout(() => { document.getElementById('btnCopyRef').innerHTML = '<i class="fa-solid fa-copy"></i> Copy'; }, 2000);
-        };
-
-        // Theme Tab Logic
-        const cur = localStorage.getItem('sba-theme') || 'system';
-        document.querySelectorAll('.theme-card').forEach(c => {
-            if(c.dataset.mode === cur) c.classList.add('active');
-            c.onclick = () => {
-                document.querySelectorAll('.theme-card').forEach(x => x.classList.remove('active'));
-                c.classList.add('active');
-                applyTheme(c.dataset.mode);
-            };
+            document.getElementById('btnSignOut').onclick = () => auth.signOut().then(() => window.location.href = 'login.html');
         });
-
-        // Tab Switching
-        document.querySelectorAll('[data-t]').forEach(btn => {
-            btn.onclick = () => {
-                document.querySelectorAll('[data-t]').forEach(b => { b.classList.remove('active', 'btn--secondary'); b.classList.add('btn--ghost'); });
-                document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
-                btn.classList.add('active', 'btn--secondary');
-                btn.classList.remove('btn--ghost');
-                document.getElementById('tab-' + btn.dataset.t).classList.add('active');
-            };
-        });
-    });
-</script>
+    </script>
 </body>
 </html>
