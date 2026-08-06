@@ -1,8 +1,3 @@
-/**
- * SBA GRANT PORTAL — FIREBASE CONFIGURATION
- * Version: 10.12.2 (CDN)
- */
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
     getAuth, onAuthStateChanged, signOut,
@@ -38,31 +33,27 @@ let messaging = null;
 try {
     messaging = getMessaging(app);
 } catch (e) {
-    console.warn("FCM not supported in this browser.");
+    console.warn("Push messaging not supported in this browser.");
 }
 
-// Persistence
+// Set Persistence
 setPersistence(auth, browserLocalPersistence);
 
-// Admin emails
+// Constants
 export const ADMIN_EMAILS = ['sba.suppor@gmail.com', 'liger4683@gmail.com'];
-
-// Assigned Agents
 export const AGENTS = ['Sarah Mitchell', 'James Caldwell', 'Diana Torres', 'Robert Hughes', 'Patricia Wells', 'Michael Chen', 'Angela Davis', 'Thomas Brown'];
 
-/**
- * NOTIFICATION SETUP (REPLACE WITH YOUR KEYS)
- */
-export const EMAILJS_PUBLIC_KEY = 'YOUR_EMAILJS_PUBLIC_KEY'; // REPLACE WITH YOUR KEY
-export const EMAILJS_SERVICE_ID = 'service_sba';             // REPLACE WITH YOUR KEY
-export const EMAILJS_TEMPLATE_ID = 'template_notification';  // REPLACE WITH YOUR KEY
-export const FCM_VAPID_KEY = 'BM_YOUR_VAPID_KEY';            // REPLACE WITH YOUR KEY
+// NOTIFICATION KEYS (REPLACE WITH YOUR ACTUAL KEYS)
+export const EMAILJS_PUBLIC_KEY = 'YOUR_EMAILJS_PUBLIC_KEY'; // REPLACE ME
+export const EMAILJS_SERVICE_ID = 'service_sba';             // REPLACE ME
+export const EMAILJS_TEMPLATE_ID = 'template_notification';  // REPLACE ME
+export const FCM_VAPID_KEY = 'YOUR_VAPID_KEY';                // REPLACE ME
 
 // Helpers
 export const isAdmin = (email) => ADMIN_EMAILS.includes(email?.toLowerCase());
 export const getRandomAgent = () => AGENTS[Math.floor(Math.random() * AGENTS.length)];
 
-export const compressToBase64 = (file, maxWidth = 800, quality = 0.78) => {
+export const compressToBase64 = (file, maxWidth = 800, quality = 0.7) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -81,6 +72,7 @@ export const compressToBase64 = (file, maxWidth = 800, quality = 0.78) => {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
+                // Stricter quality for Firestore limit (1MB)
                 resolve(canvas.toDataURL('image/jpeg', quality));
             };
         };
@@ -129,35 +121,21 @@ export const getUserData = async (uid) => {
     return snap.exists() ? snap.data() : null;
 };
 
-export const listenUserData = (uid, callback) => {
-    return onSnapshot(doc(db, "users", uid), (doc) => callback(doc.data()));
-};
+export const listenUserData = (uid, callback) => onSnapshot(doc(db, "users", uid), (doc) => callback(doc.data()));
 
-export const updateUserData = (uid, fields) => {
-    return updateDoc(doc(db, "users", uid), {
-        ...fields,
-        updatedAt: serverTimestamp()
-    });
-};
+export const updateUserData = (uid, fields) => updateDoc(doc(db, "users", uid), { ...fields, updatedAt: serverTimestamp() });
 
-export const setUserOnline = (uid, status) => {
-    return updateDoc(doc(db, "users", uid), {
-        isOnline: status,
-        lastSeen: serverTimestamp()
-    });
-};
+export const setUserOnline = (uid, status) => updateDoc(doc(db, "users", uid), { isOnline: status, lastSeen: serverTimestamp() });
 
 export const addLedgerEntry = (uid, {type, amount, description, status, ref}) => {
     return addDoc(collection(db, "users", uid, "ledger"), {
-        type, amount, description, status, ref: ref || '',
-        createdAt: serverTimestamp()
+        type, amount, description, status, ref: ref || '', createdAt: serverTimestamp()
     });
 };
 
 export const logAdminAction = (adminUid, adminEmail, action, targetUid, details) => {
     return addDoc(collection(db, "auditLog"), {
-        adminUid, adminEmail, action, targetUid, details,
-        timestamp: serverTimestamp()
+        adminUid, adminEmail, action, targetUid, details, timestamp: serverTimestamp()
     });
 };
 
@@ -167,14 +145,14 @@ export const notify = async (uid, {title, message, type, link, sendEmail}) => {
     });
     if (sendEmail) {
         const user = await getUserData(uid);
-        if (user && user.emailNotifications) {
-            sendEmailNotification({
-                toEmail: user.email,
-                toName: user.fullName,
+        if (user && user.emailNotifications && typeof emailjs !== 'undefined') {
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+                to_email: user.email,
+                to_name: user.fullName,
                 subject: title,
                 message: message,
-                actionUrl: window.location.origin + '/' + (link || 'dashboard.html')
-            });
+                action_url: window.location.origin + '/' + (link || 'dashboard.html')
+            }, EMAILJS_PUBLIC_KEY);
         }
     }
 };
@@ -184,10 +162,6 @@ export const notifyAdmins = async ({title, message, type, link}) => {
     const snap = await getDocs(q);
     snap.forEach(adminDoc => {
         notify(adminDoc.id, {title, message, type, link, sendEmail: false});
-    });
-    // Global admin tracking
-    addDoc(collection(db, "notifications"), {
-        uid: 'ADMIN', title, message, type, link: link || '', read: false, createdAt: serverTimestamp()
     });
 };
 
@@ -209,7 +183,7 @@ export const requestNotificationPermission = async (uid) => {
             const token = await getToken(messaging, { vapidKey: FCM_VAPID_KEY });
             if (token) await updateUserData(uid, { fcmToken: token, pushNotifications: true });
         }
-    } catch (e) { console.error("FCM Token Error", e); }
+    } catch (e) { console.error("FCM Permission denied", e); }
 };
 
 export const initForegroundMessages = (onReceive) => {
@@ -217,33 +191,15 @@ export const initForegroundMessages = (onReceive) => {
     return onMessage(messaging, (payload) => onReceive(payload));
 };
 
-export const saveRegStep = (data) => {
-    const current = JSON.parse(sessionStorage.getItem('SBA_REG') || '{}');
-    sessionStorage.setItem('SBA_REG', JSON.stringify({ ...current, ...data }));
-};
+export const saveRegStep = (data) => sessionStorage.setItem('SBA_REG', JSON.stringify({...getRegData(), ...data}));
 export const getRegData = () => JSON.parse(sessionStorage.getItem('SBA_REG') || '{}');
 export const clearRegData = () => sessionStorage.removeItem('SBA_REG');
 
-export const sendEmailNotification = ({toEmail, toName, subject, message, actionUrl}) => {
-    if (typeof emailjs === 'undefined') return;
-    try {
-        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-            to_email: toEmail,
-            to_name: toName,
-            subject: subject,
-            message: message,
-            action_url: actionUrl
-        }, EMAILJS_PUBLIC_KEY);
-    } catch (e) { console.error("EmailJS Silent Fail", e); }
-};
-
-// Re-exports
-export {
-    auth, db, messaging, onAuthStateChanged, signOut,
-    createUserWithEmailAndPassword, signInWithEmailAndPassword,
-    sendEmailVerification, sendPasswordResetEmail,
-    updatePassword, reauthenticateWithCredential, EmailAuthProvider,
-    doc, getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc,
-    collection, query, where, orderBy, limit, onSnapshot,
-    serverTimestamp, increment, arrayUnion, writeBatch, updateProfile
+// Export Firebase methods
+export { 
+    auth, db, messaging, onAuthStateChanged, signOut, createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, 
+    updatePassword, reauthenticateWithCredential, EmailAuthProvider, updateProfile,
+    doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc, collection, query, where, 
+    orderBy, limit, onSnapshot, serverTimestamp, increment, arrayUnion, writeBatch, getDocs 
 };
