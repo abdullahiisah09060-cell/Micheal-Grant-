@@ -1,7 +1,7 @@
 {
     "name": "SBA Grant Portal",
     "short_name": "SBA Grants",
-    "description": "U.S. Small Business Administration Official Grant Portal",
+    "description": "U.S. Small Business Administration Official Grant Management Portal",
     "start_url": "/index.html",
     "display": "standalone",
     "background_color": "#003087",
