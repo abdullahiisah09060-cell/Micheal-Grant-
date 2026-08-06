@@ -9,84 +9,61 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="global.css">
     <style>
-        .auth-layout { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
-        .auth-container { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
+        .auth-wrapper { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); padding: 24px; visibility: hidden; }
+        .auth-wrapper.ready { visibility: visible; }
         .auth-card { width: 100%; max-width: 440px; animation: fadeSlide 0.4s ease; }
-        
-        .input-icon-wrapper { position: relative; }
-        .input-icon-wrapper i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); transition: 0.2s; }
-        .input-icon-wrapper .form-input { padding-left: 48px; }
-        .input-icon-wrapper .form-input:focus + i { color: var(--navy); }
-
-        .pass-toggle { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; }
+        .input-group { position: relative; }
+        .input-group i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--text-muted); transition: 0.2s; }
+        .input-group input { padding-left: 48px; }
+        .input-group input:focus + i { color: var(--navy); }
+        .pass-eye { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer; }
     </style>
 </head>
 <body>
+    <div id="pageLoader" class="page-loader active"><div class="spinner"></div></div>
 
-    <div id="pageLoader" class="page-loader"><div class="spinner"></div></div>
+    <div class="auth-wrapper" id="authWrapper">
+        <div class="auth-card">
+            <div class="text-center mb-10">
+                <a href="index.html" class="sba-logo mb-8" style="justify-content: center;">
+                    <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
+                    <div class="sba-logo__text"><span class="sba-logo__name">U.S. Small Business</span><span class="sba-logo__sub">Administration</span></div>
+                </a>
+                <h1 style="font-size: 1.8rem; font-weight: 900; color: var(--navy); letter-spacing: -0.01em;">Welcome Back</h1>
+                <p class="text-muted">Sign in to your secure treasury dashboard</p>
+            </div>
 
-    <div class="auth-layout">
-        <!-- Gov Banner -->
-        <div class="gov-banner">
-            <img src="https://upload.wikimedia.org/wikipedia/en/a/a4/Flag_of_the_United_States.svg" alt="US Flag">
-            <span>An official website of the United States government</span>
-        </div>
+            <div class="card card--shadow">
+                <div id="authErr" class="alert alert--error mb-6" style="display: none;"><i class="fa-solid fa-circle-exclamation"></i> <span id="errText"></span></div>
 
-        <div class="auth-container">
-            <div class="auth-card">
-                <div class="text-center mb-8">
-                    <a href="index.html" class="sba-logo" style="justify-content: center; margin-bottom: 32px;">
-                        <svg class="sba-logo__mark" viewBox="0 0 80 80"><path d="M6 6 H32 V14 H14 V32 H6 Z" fill="#003087"/><path d="M48 66 H66 V48 H74 V74 H48 Z" fill="#c8102e"/><text x="8" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">S</text><text x="28" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">B</text><text x="50" y="58" font-family="Arial Black" font-size="36" font-weight="900" fill="#003087">A</text></svg>
-                        <div class="sba-logo__text"><span class="sba-logo__name">U.S. Small Business</span><span class="sba-logo__sub">Administration</span></div>
-                    </a>
-                    <h1 style="font-size: 1.8rem; font-weight: 900; color: var(--navy); letter-spacing: -0.01em;">Welcome Back</h1>
-                    <p class="text-muted">Sign in to manage your grant application</p>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <div class="input-group">
+                            <input type="email" id="email" class="form-input" placeholder="name@email.com" required>
+                            <i class="fa-solid fa-envelope"></i>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="form-label" style="margin:0;">Password</label>
+                            <a href="forgot-password.html" class="text-navy" style="font-size:0.8rem; font-weight:700;">Forgot Password?</a>
+                        </div>
+                        <div class="input-group">
+                            <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+                            <i class="fa-solid fa-lock"></i>
+                            <button type="button" class="pass-eye" id="eye"><i class="fa-solid fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn--primary btn--full btn--lg mt-6" id="btnLogin">Sign In to Console</button>
+                </form>
+
+                <div style="margin: 32px 0; text-align: center; position: relative;">
+                    <hr style="border: none; border-top: 1px solid var(--border-light);">
+                    <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 0 16px; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Treasury Encrypted</span>
                 </div>
 
-                <div class="card card--shadow">
-                    <div id="errorAlert" class="alert alert--error mb-6" style="display: none;">
-                        <i class="fa-solid fa-circle-exclamation"></i>
-                        <span id="errorMsg"></span>
-                    </div>
-
-                    <form id="loginForm">
-                        <div class="form-group">
-                            <label class="form-label">Email Address</label>
-                            <div class="input-icon-wrapper">
-                                <input type="email" id="email" class="form-input" placeholder="name@company.com" required>
-                                <i class="fa-solid fa-envelope"></i>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <div class="flex justify-between items-center mb-2">
-                                <label class="form-label" style="margin-bottom: 0;">Password</label>
-                                <a href="forgot-password.html" class="text-navy" style="font-size: 0.8rem; font-weight: 700;">Forgot Password?</a>
-                            </div>
-                            <div class="input-icon-wrapper">
-                                <input type="password" id="password" class="form-input" placeholder="••••••••" required>
-                                <i class="fa-solid fa-lock"></i>
-                                <button type="button" class="pass-toggle" id="togglePass"><i class="fa-solid fa-eye"></i></button>
-                            </div>
-                        </div>
-
-                        <div class="form-group flex justify-between items-center mb-8">
-                            <label class="flex items-center gap-2" style="cursor: pointer;">
-                                <input type="checkbox" id="remember" style="width: 18px; height: 18px;">
-                                <span style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">Remember me</span>
-                            </label>
-                        </div>
-
-                        <button type="submit" class="btn btn--primary btn--full btn--lg" id="submitBtn">Sign In to Portal</button>
-                    </form>
-
-                    <div style="margin: 32px 0; text-align: center; position: relative;">
-                        <hr style="border: none; border-top: 1px solid var(--border-light);">
-                        <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 0 16px; font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Authorized Access Only</span>
-                    </div>
-
-                    <a href="register.html" class="btn btn--ghost btn--full" style="font-weight: 700; color: var(--navy);">Don't have an account? Apply Now <i class="fa-solid fa-arrow-right" style="margin-left: 6px;"></i></a>
-                </div>
+                <a href="register.html" class="btn btn--ghost btn--full" style="font-weight: 700; color: var(--navy);">New Applicant? Apply Now <i class="fa-solid fa-arrow-right" style="margin-left:6px;"></i></a>
             </div>
         </div>
     </div>
@@ -97,61 +74,50 @@
 
         initTheme();
         redirectIfLoggedIn();
-        window.onload = hideLoader;
 
-        const form = document.getElementById('loginForm');
-        const errBox = document.getElementById('errorAlert');
-        const errMsg = document.getElementById('errorMsg');
-        const submitBtn = document.getElementById('submitBtn');
-
-        // Toggle Pass
-        document.getElementById('togglePass').onclick = (e) => {
-            const pin = document.getElementById('password');
-            const icon = e.currentTarget.querySelector('i');
-            if(pin.type === 'password') {
-                pin.type = 'text';
-                icon.className = 'fa-solid fa-eye-slash';
-            } else {
-                pin.type = 'password';
-                icon.className = 'fa-solid fa-eye';
-            }
+        window.onload = () => { 
+            setTimeout(() => {
+                document.getElementById('authWrapper').classList.add('ready');
+                hideLoader();
+            }, 500);
         };
 
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            errBox.style.display = 'none';
-            setButtonLoading(submitBtn, true, 'Verifying Credentials...');
+        const eye = document.getElementById('eye');
+        eye.onclick = () => {
+            const pass = document.getElementById('password');
+            const isPass = pass.type === 'password';
+            pass.type = isPass ? 'text' : 'password';
+            eye.innerHTML = `<i class="fa-solid ${isPass ? 'fa-eye-slash' : 'fa-eye'}"></i>`;
+        };
 
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value;
+        document.getElementById('loginForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const errBox = document.getElementById('authErr');
+            errBox.style.display = 'none';
+            const btn = document.getElementById('btnLogin');
+            setButtonLoading(btn, true, 'Verifying Credentials...');
 
             try {
-                const cred = await signInWithEmailAndPassword(auth, email, password);
+                const cred = await signInWithEmailAndPassword(auth, document.getElementById('email').value.trim(), document.getElementById('password').value);
                 await setUserOnline(cred.user.uid, true);
-
-                // Fetch data for role-based redirect
+                
                 const userSnap = await getDoc(doc(db, "users", cred.user.uid));
-                const userData = userSnap.data();
+                const data = userSnap.data();
 
-                if(userData.role === 'admin') window.location.href = 'admin-portal.html';
+                if (data.role === 'admin') window.location.href = 'admin-portal.html';
                 else window.location.href = 'dashboard.html';
 
             } catch (err) {
-                console.error(err);
-                let message = "The email or password you entered is incorrect.";
+                console.error(err.code);
+                let msg = "Invalid email or password.";
+                if(err.code === 'auth/user-not-found') msg = "No SBA account found with this email.";
+                if(err.code === 'auth/wrong-password') msg = "Incorrect password. Please try again.";
+                if(err.code === 'auth/user-disabled') msg = "This account has been suspended for compliance issues.";
+                if(err.code === 'auth/too-many-requests') msg = "Too many failed attempts. Try again in 5 minutes.";
                 
-                switch(err.code) {
-                    case 'auth/user-not-found': message = "No account found with this email address."; break;
-                    case 'auth/wrong-password': message = "Incorrect password. Please try again."; break;
-                    case 'auth/too-many-requests': message = "Too many failed attempts. Access temporarily locked."; break;
-                    case 'auth/user-disabled': message = "This account has been suspended by the SBA."; break;
-                    case 'auth/invalid-email': message = "Please enter a valid email format."; break;
-                    case 'auth/invalid-credential': message = "Invalid login credentials. Please check and retry."; break;
-                }
-
-                errMsg.textContent = message;
+                document.getElementById('errText').textContent = msg;
                 errBox.style.display = 'flex';
-                setButtonLoading(submitBtn, false);
+                setButtonLoading(btn, false, 'Sign In to Console');
             }
         };
     </script>
