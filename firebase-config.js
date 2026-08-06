@@ -1,3 +1,9 @@
+/**
+ * SBA GRANT PORTAL — FIREBASE CORE ENGINE
+ * Project: sbagrant-b7e5d
+ * Version: 10.12.2 (CDN Modular)
+ */
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import {
     getAuth, onAuthStateChanged, signOut,
@@ -24,7 +30,7 @@ const firebaseConfig = {
     appId: "1:802243206422:web:bbe74af7ce227092250437"
 };
 
-// Initialize
+// Initialize Services
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -33,27 +39,30 @@ let messaging = null;
 try {
     messaging = getMessaging(app);
 } catch (e) {
-    console.warn("Push messaging not supported in this browser.");
+    console.warn("FCM Not supported in this browser environment.");
 }
 
-// Set Persistence
+// Config
 setPersistence(auth, browserLocalPersistence);
 
-// Constants
+// Identity Constants
 export const ADMIN_EMAILS = ['sba.suppor@gmail.com', 'liger4683@gmail.com'];
 export const AGENTS = ['Sarah Mitchell', 'James Caldwell', 'Diana Torres', 'Robert Hughes', 'Patricia Wells', 'Michael Chen', 'Angela Davis', 'Thomas Brown'];
 
-// NOTIFICATION KEYS (REPLACE WITH YOUR ACTUAL KEYS)
-export const EMAILJS_PUBLIC_KEY = 'YOUR_EMAILJS_PUBLIC_KEY'; // REPLACE ME
-export const EMAILJS_SERVICE_ID = 'service_sba';             // REPLACE ME
-export const EMAILJS_TEMPLATE_ID = 'template_notification';  // REPLACE ME
-export const FCM_VAPID_KEY = 'YOUR_VAPID_KEY';                // REPLACE ME
+// Keys for Notification Gateways (REPLACE WITH YOUR KEYS)
+export const EMAILJS_PUBLIC_KEY = 'YOUR_PUBLIC_KEY'; 
+export const EMAILJS_SERVICE_ID = 'service_sba';    
+export const EMAILJS_TEMPLATE_ID = 'template_notification';
+export const FCM_VAPID_KEY = 'YOUR_VAPID_KEY';     
 
-// Helpers
+/**
+ * CORE HELPERS
+ */
 export const isAdmin = (email) => ADMIN_EMAILS.includes(email?.toLowerCase());
 export const getRandomAgent = () => AGENTS[Math.floor(Math.random() * AGENTS.length)];
 
-export const compressToBase64 = (file, maxWidth = 800, quality = 0.7) => {
+// Image Compression (Strict 0.78 Quality for Firestore document limits)
+export const compressToBase64 = (file, maxWidth = 800, quality = 0.78) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -72,14 +81,16 @@ export const compressToBase64 = (file, maxWidth = 800, quality = 0.7) => {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                // Stricter quality for Firestore limit (1MB)
                 resolve(canvas.toDataURL('image/jpeg', quality));
             };
         };
-        reader.onerror = (err) => reject(err);
+        reader.onerror = err => reject(err);
     });
 };
 
+/**
+ * DATA MODEL BUILDER
+ */
 export const buildNewUserPayload = (data) => {
     const role = isAdmin(data.email) ? 'admin' : 'user';
     return {
@@ -96,16 +107,19 @@ export const buildNewUserPayload = (data) => {
         referredBy: data.referredBy || '',
         allocatedProgram: "SBA Grant Program",
         assignedAgent: getRandomAgent(),
+        // Status Pipeline
         kycStatus: "IDLE",
         applyStatus: "IDLE",
         depositStatus: "IDLE",
         taxStatus: "IDLE",
         withdrawStatus: "IDLE",
         awardStatus: "IDLE",
+        // Financials
         balance: 0,
         requestedAmount: 0,
         totalAward: 0,
         taxFeeRequired: 0,
+        // Account Meta
         accountStatus: "active",
         emailNotifications: true,
         pushNotifications: false,
@@ -116,6 +130,9 @@ export const buildNewUserPayload = (data) => {
     };
 };
 
+/**
+ * FIRESTORE ACTIONS
+ */
 export const getUserData = async (uid) => {
     const snap = await getDoc(doc(db, "users", uid));
     return snap.exists() ? snap.data() : null;
@@ -134,11 +151,12 @@ export const addLedgerEntry = (uid, {type, amount, description, status, ref}) =>
 };
 
 export const logAdminAction = (adminUid, adminEmail, action, targetUid, details) => {
-    return addDoc(collection(db, "auditLog"), {
-        adminUid, adminEmail, action, targetUid, details, timestamp: serverTimestamp()
-    });
+    return addDoc(collection(db, "auditLog"), { adminUid, adminEmail, action, targetUid, details, timestamp: serverTimestamp() });
 };
 
+/**
+ * NOTIFICATION SYSTEM
+ */
 export const notify = async (uid, {title, message, type, link, sendEmail}) => {
     await addDoc(collection(db, "notifications"), {
         uid, title, message, type, link: link || '', read: false, createdAt: serverTimestamp()
@@ -183,7 +201,7 @@ export const requestNotificationPermission = async (uid) => {
             const token = await getToken(messaging, { vapidKey: FCM_VAPID_KEY });
             if (token) await updateUserData(uid, { fcmToken: token, pushNotifications: true });
         }
-    } catch (e) { console.error("FCM Permission denied", e); }
+    } catch (e) { console.error("Notification permission error", e); }
 };
 
 export const initForegroundMessages = (onReceive) => {
@@ -191,15 +209,18 @@ export const initForegroundMessages = (onReceive) => {
     return onMessage(messaging, (payload) => onReceive(payload));
 };
 
+// Session Storage Helpers for Multi-step Forms
 export const saveRegStep = (data) => sessionStorage.setItem('SBA_REG', JSON.stringify({...getRegData(), ...data}));
 export const getRegData = () => JSON.parse(sessionStorage.getItem('SBA_REG') || '{}');
 export const clearRegData = () => sessionStorage.removeItem('SBA_REG');
 
-// Export Firebase methods
-export { 
-    auth, db, messaging, onAuthStateChanged, signOut, createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, 
-    updatePassword, reauthenticateWithCredential, EmailAuthProvider, updateProfile,
-    doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc, collection, query, where, 
-    orderBy, limit, onSnapshot, serverTimestamp, increment, arrayUnion, writeBatch, getDocs 
+// Export Re-usable Firebase Methods
+export {
+    auth, db, messaging, onAuthStateChanged, signOut,
+    createUserWithEmailAndPassword, signInWithEmailAndPassword,
+    sendEmailVerification, sendPasswordResetEmail,
+    updatePassword, reauthenticateWithCredential, EmailAuthProvider,
+    doc, getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc,
+    collection, query, where, orderBy, limit, onSnapshot,
+    serverTimestamp, increment, arrayUnion, writeBatch, updateProfile
 };
